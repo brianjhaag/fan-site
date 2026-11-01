@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvyc6eg4";
-import { Fan } from "./hosts.js?v=mvyc6eg4";
-import { Calc } from "./calc.js?v=mvyc6eg4";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvyc6eg4";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvye5dax";
+import { Fan } from "./hosts.js?v=mvye5dax";
+import { Calc } from "./calc.js?v=mvye5dax";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvye5dax";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -94,16 +94,17 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
   async function handleFill(x, delayMs) {
     await ticketsReady;
     const id = x.venue === "kalshi" ? x.trade_id : x.venue + "-" + x.trade_id;
-    let known = false, waiting = false;
+    let known = false, waiting = false, savedClient = null;
     try {
       if (inStore && x.env !== "demo") {
         const had = await Fan.store.get("fills", "feed-" + id);
+        savedClient = had && had.client;   // a fill replayed after a restart comes from Kalshi's list, which leaves out the client id. The record heard live has it, and without it the order's own ticket isn't recognized and a second one gets made
         waiting = !!had && had.handled === false; known = !!had && !waiting;
         if (!had) Fan.store.set("fills", "feed-" + id, { at: Date.now(), venue: x.venue, env: x.env, source: x.catchup ? "catchup" : "feed", ticker: x.ticker, side: x.side, action: x.action, price: x.price, filled: x.count, fee: x.fee, order: x.order_id, client: x.client_order_id || null, tradeMs: x.ts_ms, serverMs: x.received_ms, ...(x.catchup ? {} : { delayMs }), reply: x.raw }).catch(() => {});
       }
     } catch (e) {}
     const done = () => { if (waiting) Fan.store.update("fills", "feed-" + id, { handled: true, ...(x.catchup ? {} : { delayMs }) }).catch(() => {}); };
-    const cid = x.client_order_id;
+    const cid = x.client_order_id || savedClient;
     if (cid && ownOrders.has(cid)) { ownOrders.get(cid).push(x); trueUpOrder(cid); return; }
     if (known) return;
     // Another Fan window may have sent this order, and its ticket comes with the order's reply, after the fill. Give it time to arrive before saving one from the fill.
