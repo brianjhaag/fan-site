@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js";
     return tag;
   }
 
-  const APP_VERSION = "0.5.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.5.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -474,7 +474,7 @@ import { Fan } from "./hosts.js";
   // The week view must not scroll vertically: if the page is taller than the window, the games area (and the card height) shrinks by the overflow. It always tries the full size
   // first, so a window that grows later gets the room back at the next render; nothing is sized from the window directly, which is what made an auto-sized frame run away before.
   const PHONE = "(max-width: 760px)";
-  // With no ticket column there's room to show every game with no scrolling sideways: the cards give up width, down to 300px [C].
+  // With no ticket column there's room to show every game with no scrolling sideways: the cards give up width, down to 240px [C].
   function fitCardWidth() {
     const g = $("games");
     g.style.removeProperty("--cw");
@@ -482,7 +482,7 @@ import { Fan } from "./hosts.js";
     const over = g.scrollWidth - g.clientWidth;
     if (over <= 0) return;
     const cols = [...g.querySelectorAll(".slot-cards")].reduce((s, c) => s + Number(c.style.getPropertyValue("--cols") || 1), 0);
-    g.style.setProperty("--cw", Math.max(300, Math.floor(376 - over / cols)) + "px");
+    g.style.setProperty("--cw", Math.max(240, Math.floor(376 - over / cols)) + "px");
   }
   // On a phone the week tabs scroll sideways, so the open week is brought into view.
   function showOpenWeek() { if (matchMedia(PHONE).matches) document.querySelectorAll(".weektabs.wk2 [aria-selected=true]").forEach(b => { const r = b.closest(".tabrows"); r.scrollLeft = b.getBoundingClientRect().left - r.getBoundingClientRect().left + r.scrollLeft - 40; }); }

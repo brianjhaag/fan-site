@@ -843,6 +843,12 @@
   .tracking-off .game.is-final { grid-template-rows: minmax(0, 1fr); }
 
   .tracking-off .strip-row2, .tracking-off .sectiontabs { display: none; }
+  /* No prices: the moneyline, spread and total columns would stand empty, so the badge takes the card, centered in the room left of the icons. */
+  .prices-off .board.lines td.ml, .prices-off .board.lines td.sp, .prices-off .board.lines td.tot { display: none; }
+  .prices-off .board.lines:has(.plate) td.tn { width: 100%; }
+  .prices-off .board .tname.plate { width: 100%; max-width: 250px; margin-inline: auto; }
+  .prices-off .board .tname.plate .pl-no { font-size: 27px; }
+  .prices-off .g-top.upcoming .g-when, .prices-off .g-air, .prices-off .g-top.live .g-st { left: 50%; }
 
   /* ===== Phones ===== */
   @media (max-width: 760px) {
