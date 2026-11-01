@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js";
     return tag;
   }
 
-  const APP_VERSION = "0.5.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.5.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -309,7 +309,7 @@ import { Fan } from "./hosts.js";
   function cardGutter(g) {
     const box = el("div", "g-gut");
     box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
-    CARD_ACTIONS.forEach(([name, icon]) => {
+    CARD_ACTIONS.filter(([name]) => trackingOn || (name !== "Tape" && name !== "Risk detail")).forEach(([name, icon]) => {
       const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? status(g)[1] === "live" : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
@@ -470,9 +470,24 @@ import { Fan } from "./hosts.js";
   }
   // The week view must not scroll vertically: if the page is taller than the window, the games area (and the card height) shrinks by the overflow. It always tries the full size
   // first, so a window that grows later gets the room back at the next render; nothing is sized from the window directly, which is what made an auto-sized frame run away before.
+  const PHONE = "(max-width: 760px)";
+  // With no ticket column there's room to show every game with no scrolling sideways: the cards give up width, down to 300px [C].
+  function fitCardWidth() {
+    const g = $("games");
+    g.style.removeProperty("--cw");
+    if (trackingOn || !g.classList.contains("strip") || g.classList.contains("flat") || g.classList.contains("bd") || matchMedia(PHONE).matches) return;
+    const over = g.scrollWidth - g.clientWidth;
+    if (over <= 0) return;
+    const cols = [...g.querySelectorAll(".slot-cards")].reduce((s, c) => s + Number(c.style.getPropertyValue("--cols") || 1), 0);
+    g.style.setProperty("--cw", Math.max(300, Math.floor(376 - over / cols)) + "px");
+  }
+  // On a phone the week tabs scroll sideways, so the open week is brought into view.
+  function showOpenWeek() { if (matchMedia(PHONE).matches) document.querySelectorAll(".weektabs.wk2 [aria-selected=true]").forEach(b => { const r = b.closest(".tabrows"); r.scrollLeft = b.getBoundingClientRect().left - r.getBoundingClientRect().left + r.scrollLeft - 40; }); }
   function fitViewportHeight() {
+    showOpenWeek();
     if (view !== "week") return;
     const root = document.documentElement;
+    if (matchMedia(PHONE).matches) { root.style.setProperty("--card-h", "150px"); return; }   // a phone's page scrolls
     // measured with the wager ticket in place (not the selected game's graph card), so selecting a game never changes the card sizes
     const col = document.querySelector(".col.left"), rc = $("riskCard"), sel = col.classList.contains("has-sel");
     if (sel) { col.classList.remove("has-sel"); rc.classList.add("rk-off"); rc.classList.remove("rk-over"); }
@@ -504,7 +519,7 @@ import { Fan } from "./hosts.js";
     const h = bottom - (r.top + window.scrollY);
     if (h > 0 && h < r.height - 1) { col.style.alignSelf = "start"; col.style.height = Math.max(300, h) + "px"; }
   }
-  window.addEventListener("resize", () => { fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); });
+  window.addEventListener("resize", () => { fitCardWidth(); fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); });
   window.addEventListener("load", () => fitTicketColumn());
   window.addEventListener("resize", () => fitSectionTabs());
   document.addEventListener("dragstart", e => { if (e.target.closest && e.target.closest(".tabrows")) e.preventDefault(); });   // the bottom strip tabs are fixed in place (no dragging)
@@ -641,6 +656,7 @@ import { Fan } from "./hosts.js";
       made.push([g, card]);
     });
     windowColumns(box, made);
+    fitCardWidth();
     renderSectionTabs();
     fitViewportHeight();
     fitSectionTabs();

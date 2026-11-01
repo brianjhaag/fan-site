@@ -842,6 +842,36 @@
   .tracking-off .g-bot { display: none; }
   .tracking-off .game.is-final { grid-template-rows: minmax(0, 1fr); }
 
+  .tracking-off .strip-row2, .tracking-off .sectiontabs { display: none; }
+
+  /* ===== Phones ===== */
+  @media (max-width: 760px) {
+    html, body { height: auto !important; overflow-x: hidden; }
+    .tabrows:not(.bottom) { position: static !important; display: flex; overflow-x: auto; scrollbar-width: none; padding-top: 82px; }   /* Fan and the league picker above one row of tabs */
+    .tabrows:not(.bottom) .weektabs.pinned.wk2 { display: contents; }
+    #tab-season { position: relative !important; top: 0; left: auto !important; width: auto !important; flex: none; }
+    #fanMenu { right: 16px; }
+    .tabrows:not(.bottom) .weektabs.pinned.wk2 button { flex: none; width: auto !important; position: relative !important; top: 0; left: auto !important; height: 41px; font-size: 16px; padding-inline: 10px; }
+    .tabrows.bottom { position: static; margin-top: 8px; }
+    .garrow { display: none !important; }
+    .top { display: block; }
+    .games, .games.strip { display: block; height: auto; overflow: visible; }
+    .games.strip .slot { margin-bottom: 12px; }
+    .games.strip .slot-cards { display: grid; grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto; grid-auto-columns: auto; }
+    .games.strip .slot-cards .game { grid-row: auto !important; min-height: var(--card-h, 150px); }
+    .games.strip .slot-cards .sun-h { grid-row: auto !important; }
+    .flat-cards { grid-template-columns: minmax(0, 1fr) !important; zoom: 1 !important; }
+    .games.bd, .bd-wrap { height: auto !important; overflow: visible !important; }
+    .top.bd-open .games.bd { width: 100% !important; }
+    .bd-info { white-space: normal; padding-right: 36px; }
+    .bd-team { zoom: .6; min-width: 0; }
+    .bd-low { display: block !important; }
+    .bd-half { display: block !important; width: auto !important; height: auto !important; margin-bottom: 16px; }
+    .bd-sgrid { flex: 1; grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .bd-sgrid .bd-sc:nth-child(n) { border-left: 0; }
+    .bd-col { width: auto !important; margin-bottom: 8px; }
+  }
+
   /* ===== Windows and motion ===== */
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   /* Portrait window: the ticket column gives up width so two full columns of game cards fit (2 x 376 + 12 gap = 764), never under 400px. Landscape windows never see this. */
