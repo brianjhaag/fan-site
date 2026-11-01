@@ -1,11 +1,16 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvy1hbit";
-import { Fan } from "./hosts.js?v=mvy1hbit";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvy1hbit";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvy1hbit";
-import { setBet } from "./trade.js?v=mvy1hbit";
+import { espnState } from "./espn.js?v=mvy2ozfp";
+import { Fan } from "./hosts.js?v=mvy2ozfp";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvy2ozfp";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvy2ozfp";
+import { setBet } from "./trade.js?v=mvy2ozfp";
   // Fan's button opens the settings window.
   let fillSettings;
+  // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
+  const findConnector = () => {
+    try { if (Fan.hostHello || !Fan.startLink || localStorage.getItem("fan.connector") !== "yes" || location.search.includes("stay")) return; } catch (e) { return; }
+    Fan.connectorUp().then(() => { $("slateNote").textContent = "Found your connector. Moving to it…"; location.href = Fan.localFan; }, () => {});
+  };
   { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
     const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) win.close(); };
     let tab = "about";
@@ -64,10 +69,12 @@ import { setBet } from "./trade.js?v=mvy1hbit";
       const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = pricesWanted; c.addEventListener("change", () => setPrices(c.checked)); lab.append(c, "Price"); return [lab];
     };
     // Starting the connector from the page. This tab then goes to the connector's own address, or reloads if it's already there. Nothing answering after a while says so, and it can be pressed again.
+    const knowConnector = () => { try { localStorage.setItem("fan.connector", "yes"); } catch (e) {} };
     const startItem = () => {
       const a = el("a", "fan-start", "Start connector"), box = el("div", "fan-starting");
       a.href = Fan.startLink;
       a.addEventListener("click", () => {
+        knowConnector();
         box.querySelector("small")?.remove();
         const note = el("small", null, "Starting…");
         box.append(note); a.hidden = true;
@@ -84,14 +91,19 @@ import { setBet } from "./trade.js?v=mvy1hbit";
     const connectorRows = () => {
       const box = el("div", "fan-connector"), steps = el("ol"), step = (...parts) => { const li = el("li"); li.append(...parts); steps.append(li); };
       const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, get = el("a", "fan-start", mac ? "Download for Mac" : "Download for Windows");
-      get.href = mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe"; get.setAttribute("download", "");
+      get.href = mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe"; get.setAttribute("download", ""); get.addEventListener("click", knowConnector);
       box.append(el("h3", null, "Why it's needed"), el("p", null, "Watch and Track work right here. Price and Bet need the Fan connector: a small program on your computer that pulls prices over your own connection and holds your own Kalshi key. Nothing about your bets or your key leaves your computer for this site."));
       if (!windows && !mac) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector runs on a Windows or Mac computer.")); return [box]; }
-      step(el("b", null, "Download it. "), get);
-      if (mac) step(el("b", null, "Open it. "), "Open the zip, then double-click Fan Connector Setup. Apple hasn't checked it yet, so the Mac refuses the first time: go to System Settings, Privacy & Security, scroll down and choose Open Anyway. It needs no admin password.");
+      step(el("b", null, "Download it. "), get, el("small", null, "It's new and isn't signed yet, so your browser may call it suspicious. To keep it, open the browser's downloads list and choose Keep."));
+      if (mac) {
+        const set = el("a", "fan-start", "Open Settings");
+        set.href = "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension";
+        step(el("b", null, "Open it. "), "Open the zip and double-click Fan Connector Setup. Apple hasn't checked it yet, so the Mac refuses the first time. That's expected, and it unlocks the next step.");
+        step(el("b", null, "Allow it. "), set, " In Privacy & Security, scroll down to Security and choose Open Anyway. Your browser asks before it opens Settings. It needs no admin password.");
+      }
       else step(el("b", null, "Run the file. "), "It isn't signed yet, so your browser may ask whether to keep it, and Windows may warn you: choose More info, then Run anyway. It needs no admin rights.");
-      step(el("b", null, "Use the new address. "), "It installs and opens Fan from your own computer, at localhost:5180. Use that address from now on: it's the one with prices and betting. Settings, telecast links and bets typed on this site stay with this site, so set those up once there.");
-      box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "It runs only when it's started, and closes itself 30 minutes after your last Fan page closes. Start it here, or tick Start the connector when I log in, in the status list at the new address. The first time you press Start, your browser asks to open it: tick always allow."), startItem(), el("p", null, "To update it, download and run the file again. Your records and key stay where they are."));
+      step(el("b", null, "You're moved. "), "It installs and opens Fan from your own computer, at localhost:5180. That's the copy with prices and betting. Settings, telecast links and bets typed on this site stay with this site, so set those up once there.");
+      box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "Always start from this page. When the connector is running, this page finds it and moves you to it. When it isn't, press Start connector. The first time, your browser asks two things: whether to open Fan connector, where you can tick always allow, and whether this site may look for programs on your computer. Say yes to both."), startItem(), el("p", null, "The connector closes itself 30 minutes after your last Fan page closes, unless you tick Start the connector when I log in, in the status list once you've moved. Its page stays current by itself. To update the program, download and run the file again. Your records and key stay where they are."));
       return [box];
     };
     const getOrStart = () => { const box = el("div", "fan-get"), get = el("button", null, "Get the connector"); get.type = "button"; get.addEventListener("click", () => { tab = "connector"; fill(); }); box.append(startItem(), get); return box; };
@@ -103,7 +115,7 @@ import { setBet } from "./trade.js?v=mvy1hbit";
     const ABOUT = () => ({
       watch: [partCheck("Watch", true), "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up."],
       track: [partCheck("Track", trackingOn, on => setTracking(on)), "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them."],
-      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines ? on => setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? "Free. Uses the Fan connector, running on your computer." : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", !Fan.lines && Fan.startLink ? getOrStart() : null],
+      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines ? on => setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? (pricesWanted ? "On, and that's all it takes: no key or account. Prices reach the game cards within a minute, and the status list says how old they are." : "Free. Uses the Fan connector, running on your computer. Tick the box and that's all it takes: no key or account.") : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", !Fan.lines && Fan.startLink ? getOrStart() : null],
       bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed ? on => setBet(on) : null), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one. Off, Fan sends no orders, and fills you make anywhere else still arrive.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.account && !Fan.keyed ? keysItem() : null]
     });
     // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
@@ -168,4 +180,4 @@ import { setBet } from "./trade.js?v=mvy1hbit";
     $("fanClose").addEventListener("click", () => open(false));
     setTimeout(() => { fill(); open(true); }, 0);
     fillSettings = () => { if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
-export { fillSettings };
+export { fillSettings, findConnector };
