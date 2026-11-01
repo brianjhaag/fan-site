@@ -1,9 +1,9 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { HELMETS } from "./data/assets.js?v=mvxacqz5";
-import { Fan } from "./hosts.js?v=mvxacqz5";
-import { $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, curWeek, dayFmt, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, renderGames, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvxacqz5";
-import { setPlaybook } from "./panels.js?v=mvxacqz5";
-import { applyRiskGame, renderRisk } from "./risk.js?v=mvxacqz5";
+import { HELMETS } from "./data/assets.js?v=mvxalloh";
+import { Fan } from "./hosts.js?v=mvxalloh";
+import { $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, curWeek, dayFmt, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, renderGames, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvxalloh";
+import { setPlaybook } from "./panels.js?v=mvxalloh";
+import { applyRiskGame, renderRisk } from "./risk.js?v=mvxalloh";
   Object.assign(later, { setPrices, syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, recordsItems, renderLedger, renderTickets, setTracking, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(last(g.away))} ${pts(g.line.sp)} @ ${n(last(g.home))}`; };
