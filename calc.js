@@ -100,6 +100,13 @@ const Calc = (() => {
 
   // Place's limit: the ticket's price plus what the user will pay up, in whole cents. An immediate-or-cancel order still fills at the best price there is, so this costs nothing unless the market moved.
   const placeLimit = (cents, up) => Math.min(99, cents + Math.max(0, Math.floor(Number(up)) || 0));
+  // What an armed game does about its suggested bet: an order's size and limit, or why it waits. p: size (% of the suggestion), max (contracts per order, 0 for none), up (cents), kind ("any" or "lock").
+  const armDecision = (h, p) => {
+    if (!h) return { wait: "No suggested bet at these prices" };
+    if (p.kind === "lock" && h.kind !== "lock") return { wait: "A hedge is on offer, and this is set to locks only" };
+    const cents = Math.round(h.ask * 100), scaled = Math.max(1, Math.round(h.n * p.size / 100));
+    return { n: p.max > 0 ? Math.min(scaled, p.max) : scaled, ask: placeLimit(cents, p.up) / 100, ticketCents: cents };
+  };
   // A fresh Kalshi read (q, from market_prices) as the fields to change on game g: the ladder's Kalshi columns (Polymarket's kept), and the live prices under way or the line before kickoff
   // (the cheaper of fresh Kalshi and saved Polymarket asks; the total is Kalshi's alone). The closing line is never touched once the game has started.
   function freshPrices(g, q, now) {
@@ -501,6 +508,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, placeLimit, armDecision, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
 })();
 export { Calc };
