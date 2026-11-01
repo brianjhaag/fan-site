@@ -1,17 +1,17 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mvye5dax";
-import "./risk.js?v=mvye5dax";
-import "./panels.js?v=mvye5dax";
-import "./tracker.js?v=mvye5dax";
-import "./trade.js?v=mvye5dax";
-import "./settings.js?v=mvye5dax";
-import { Fan } from "./hosts.js?v=mvye5dax";
-import { WEEK_GAMES } from "./espn.js?v=mvye5dax";
-import { changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mvye5dax";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mvye5dax";
-import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mvye5dax";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mvye5dax";
-import { fillSettings, findConnector } from "./settings.js?v=mvye5dax";
+import "./base.js?v=mvyeiw8y";
+import "./risk.js?v=mvyeiw8y";
+import "./panels.js?v=mvyeiw8y";
+import "./tracker.js?v=mvyeiw8y";
+import "./trade.js?v=mvyeiw8y";
+import "./settings.js?v=mvyeiw8y";
+import { Fan } from "./hosts.js?v=mvyeiw8y";
+import { WEEK_GAMES } from "./espn.js?v=mvyeiw8y";
+import { changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mvyeiw8y";
+import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mvyeiw8y";
+import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mvyeiw8y";
+import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mvyeiw8y";
+import { fillSettings, findConnector } from "./settings.js?v=mvyeiw8y";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };

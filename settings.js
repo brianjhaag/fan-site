@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvye5dax";
-import { Fan } from "./hosts.js?v=mvye5dax";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvye5dax";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvye5dax";
-import { setBet } from "./trade.js?v=mvye5dax";
+import { espnState } from "./espn.js?v=mvyeiw8y";
+import { Fan } from "./hosts.js?v=mvyeiw8y";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyeiw8y";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyeiw8y";
+import { setBet } from "./trade.js?v=mvyeiw8y";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -24,7 +24,7 @@ import { setBet } from "./trade.js?v=mvye5dax";
     // The monitor map: drawn to scale in Windows' arrangement. The selected monitor shows the layout's spots, numbered in the order they fill.
     const screenPicker = () => {
       const box = el("div", "fan-screens");
-      if (!Fan.screens) { box.append(el("p", "fan-note", "Choosing a monitor takes the desktop app. Here a telecast opens as a plain link.")); return box; }
+      if (!Fan.screens) { box.append(el("p", "fan-note", "Choosing a monitor takes the Fan connector. Here a telecast opens as a plain link.")); return box; }
       const draw = ds => {
         const matches = (d, p) => d.label === p.label && d.bounds.width === p.width && d.bounds.height === p.height;
         const same = telecastPref ? ds.filter(d => matches(d, telecastPref)) : [], picked = telecastPref ? same.find(d => d.bounds.x === telecastPref.x && d.bounds.y === telecastPref.y) || same[0] : null;

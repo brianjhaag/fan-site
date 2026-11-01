@@ -2,7 +2,7 @@
 //   Fan.store   a person's own records (wagers, fills, balances). SPEC section 16 has the contract.
 //   Fan.lines   lines and final scores: the same contract as the store, possibly read-only.
 //   Fan.trader  the connector that talks to a venue: call(tool, args) gives its answer, or throws with `code`.
-// Connecting fills them from whichever host this page runs in: the artifact and the desktop app through window.claude, and with no host the store is this browser's own. The connector plugs in here next.
+// Connecting fills them from the connector behind this page's address. With none, the store is this browser's own.
 // What the page has said about refreshes, kept until there's a connector to tell.
 let connectorPrefs = {}, connectorHere = false;
 const tellConnector = what => {
@@ -11,32 +11,17 @@ const tellConnector = what => {
 };
 const Fan = {
   store: null, lines: null, trader: null, reads: null, traderWhy: "",   // reads: the connector before it takes orders: the fill feed and fresh prices, with Place off
-  account: window.fanBridge ? () => window.fanBridge.openKeys() : null,   // opens the host's own key screen, if it has one
-  screens: window.fanBridge ? { list: () => window.fanBridge.displays(), show: pref => window.fanBridge.showSpots(pref) } : null,   // the host's monitors, if it can place windows on them
-  openTelecast: (url, pref) => { if (window.fanBridge) window.fanBridge.openTelecast(url, pref); else window.open(url, "_blank", "noopener"); },   // the desktop app sizes and places its own window; anywhere else it's a plain link
-  setMarket: on => { if (window.fanBridge) window.fanBridge.setMarket(on); else tellConnector({ market: on }); },   // tells a host that refreshes lines whether anyone wants prices
-  startLink: window.fanBridge || window.claude ? null : "fan-connector://start",   // starts an installed connector. Windows runs what the install registered
+  account: null,   // opens the connector's key screen
+  screens: null,   // the computer's monitors, from the connector
+  openTelecast: url => { window.open(url, "_blank", "noopener"); },   // the connector sizes and places its own window; with none it's a plain link
+  setMarket: on => { tellConnector({ market: on }); },   // tells the connector whether anyone wants prices
+  startLink: "fan-connector://start",   // starts an installed connector. Windows runs what the install registered
   localFan: "http://localhost:5180/",   // where it answers. A page on another site can't read it, but can tell a refusal from no answer, which is all it needs
   connectorUp: () => (Fan.hostHello ? Fan.hostHello() : window.fetch(Fan.localFan + "connector/hello", { mode: "no-cors" })),
-  setLeagues: list => { if (window.fanBridge) window.fanBridge.setLeagues(list); else tellConnector({ leagues: list }); }   // tells a host that refreshes lines which leagues to refresh
+  setLeagues: list => { tellConnector({ leagues: list }); }   // tells the connector which leagues to refresh
 };
 
-// The host's database (shaped like Firestore, with snapshots) as the store contract.
-function hostStore(db) {
-  const rowsOf = snap => snap.docs.map(d => ({ id: d.id, data: d.data() }));
-  return {
-    get: async (col, id) => { const d = await db.collection(col).doc(id).get(); return d.exists ? d.data() : null; },
-    list: async col => rowsOf(await db.collection(col).get()),
-    set: (col, id, data) => db.collection(col).doc(id).set(data),
-    add: (col, data) => db.collection(col).doc().set(data),
-    update: (col, id, patch) => db.collection(col).doc(id).update(patch),
-    del: (col, id) => db.collection(col).doc(id).delete(),
-    // fn(rows) now and on every change, with rows [{ id, data }]. A snapshot that's only an empty cache isn't an answer yet.
-    watch: (col, fn, fail) => db.collection(col).onSnapshot(s => { if (!(s.empty && s.metadata && s.metadata.fromCache)) fn(rowsOf(s)); }, fail),
-    watchDoc: (col, id, fn, fail) => db.collection(col).doc(id).onSnapshot(d => fn(d.exists ? d.data() : null), fail)
-  };
-}
-// A person's records in this browser's IndexedDB, for a page with no host. The store contract, plus dump and restore for backups, and kept and keep for this browser's own settings about them.
+// A person's records in this browser's IndexedDB, for a page with no connector. The store contract, plus dump and restore for backups, and kept and keep for this browser's own settings about them.
 function browserStore(idb, name = "fan") {
   const opened = new Promise((ok, no) => {
     const r = idb.open(name, 1);
@@ -156,16 +141,10 @@ const connectorTrader = (ask, hi) => ({
     return r.result;
   }
 });
-const hostTrader = mcp => ({
-  hello: async () => ({ contract: 1, venues: ["kalshi"] }),
-  call: async (tool, args) => (await mcp.callTool("host:kalshi-trader", tool, args, { cache: false })).payload
-});
 
 Fan.connectStore = async () => {
-  const db = await window.claude?.use?.("db");
-  const hi = db || !window.fetch ? null : await window.fetch("/connector/hello").then(r => (r.ok ? r.json() : null)).catch(() => null);
-  if (db) Fan.store = Fan.lines = hostStore(db);
-  else if (hi && hi.store) {
+  const hi = !window.fetch ? null : await window.fetch("/connector/hello").then(r => (r.ok ? r.json() : null)).catch(() => null);
+  if (hi && hi.store) {
     Fan.store = Fan.lines = connectorStore(window.fetch);
     connectorHere = true;
     tellConnector(connectorPrefs);
@@ -192,30 +171,23 @@ Fan.connectStore = async () => {
 };
 Fan.connectTrader = async () => {
   try {
-    const mcp = await window.claude?.use?.("mcp");
-    if (!mcp) {
-      Fan.traderWhy = "no connector here";
-      if (!window.fetch) return null;
-      const answer = await window.fetch("/connector/hello").catch(() => null);
-      const hi = answer && answer.ok ? await answer.json().catch(() => null) : null;
-      if (!hi) return null;
-      Fan.traderWhy = hi.ordersWhy || "";
-      if (window.BroadcastChannel) new window.BroadcastChannel("fan-connector").onmessage = () => window.location.reload();   // a key changed on the connector's key screen
-      if (hi.account) Fan.account = () => window.open("/connector/connect", "_blank");   // its own key screen
-      if (hi.feed) Fan.reads = connectorTrader(window.fetch, hi);
-      if (hi.orders) Fan.trader = Fan.reads;   // until then Place and Execute stay off
-      Fan.keyed = !!hi.env;
-      Fan.env = hi.env || "";
-      Fan.setBet = async on => {   // Bet's checkbox. The connector holds the rule, so off refuses orders whatever the page does
-        const r = await (await window.fetch("/connector/bet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
-        if (!r.ok) throw new Error(r.error);
-        Fan.trader = r.orders ? Fan.reads : null;
-      };
-      return Fan.trader;
-    }
-    const l = await mcp.listTools().catch(e => ({ err: e && e.code }));
-    Fan.traderWhy = l && l.servers ? "servers seen: " + (l.servers.map(s => s.server).join(", ") || "none") : "listTools failed: " + (l && l.err);
-    Fan.trader = hostTrader(mcp);
+    Fan.traderWhy = "no connector here";
+    if (!window.fetch) return null;
+    const answer = await window.fetch("/connector/hello").catch(() => null);
+    const hi = answer && answer.ok ? await answer.json().catch(() => null) : null;
+    if (!hi) return null;
+    Fan.traderWhy = hi.ordersWhy || "";
+    if (window.BroadcastChannel) new window.BroadcastChannel("fan-connector").onmessage = () => window.location.reload();   // a key changed on the connector's key screen
+    if (hi.account) Fan.account = () => window.open("/connector/connect", "_blank");   // its own key screen
+    if (hi.feed) Fan.reads = connectorTrader(window.fetch, hi);
+    if (hi.orders) Fan.trader = Fan.reads;   // until then Place and Execute stay off
+    Fan.keyed = !!hi.env;
+    Fan.env = hi.env || "";
+    Fan.setBet = async on => {   // Bet's checkbox. The connector holds the rule, so off refuses orders whatever the page does
+      const r = await (await window.fetch("/connector/bet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
+      if (!r.ok) throw new Error(r.error);
+      Fan.trader = r.orders ? Fan.reads : null;
+    };
   } catch (e) { Fan.traderWhy = "error: " + (e && e.message); }
   return Fan.trader;
 };

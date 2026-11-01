@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mvye5dax";
-import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvye5dax";
-import { HELMETS } from "./data/assets.js?v=mvye5dax";
-import { Fan } from "./hosts.js?v=mvye5dax";
-import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, lumOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvye5dax";
+import { riskGrid } from "./risk.js?v=mvyeiw8y";
+import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvyeiw8y";
+import { HELMETS } from "./data/assets.js?v=mvyeiw8y";
+import { Fan } from "./hosts.js?v=mvyeiw8y";
+import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, lumOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvyeiw8y";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -45,7 +45,7 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, 
   function renderPlaybook() {
     if (drawStub("playbook")) return;
     if (!playbookWatched && Fan.store) { playbookWatched = true; Fan.store.watchDoc("playbook", "games", d => { if (d) { setPlaybook(d); changed("playbook"); } }, () => {}); }
-    if (!playbookDoc) { $("playbook").replaceChildren(el("div", "pg-stub", "Playbook"), el("p", "pg-stub-t", Fan.screens ? "Its history pulls to this computer with your lines, and shows here when it arrives." : "Its history pulls to your own computer, which takes the desktop app.")); return; }
+    if (!playbookDoc) { $("playbook").replaceChildren(el("div", "pg-stub", "Playbook"), el("p", "pg-stub-t", Fan.screens ? "Its history pulls to this computer with your lines, and shows here when it arrives." : "Its history pulls to your own computer, which takes the Fan connector.")); return; }
     const box = $("playbook"), games = pbGames(), year = Math.max(...games.map(t => t.season)), lastWk = Math.max(...games.filter(t => t.season === year).map(t => t.week));
     const roi = (p, n) => { const v = n ? p / n * 100 : null, td = el("td", v == null ? "dim" : Math.abs(v) < .05 ? "dim" : v > 0 ? "pos" : "neg", v == null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "%"); return td; };
     const rec = (a, b, c) => a + "–" + b + (c ? "–" + c : "");
