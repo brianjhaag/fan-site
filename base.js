@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js";
     return tag;
   }
 
-  const APP_VERSION = "0.5.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.5.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -344,6 +344,9 @@ import { Fan } from "./hosts.js";
     renderGames();
   }
 
+  // A game under way shows ESPN's score on the plain page. With prices on, the card keeps its live prices.
+  const showsNow = g => !g.final && !!g.now && !pricesOn();
+  const scoreOf = g => g.final || (showsNow(g) ? g.now.score : null);
   function teamRow(g, side, over) {
     const L = lineOf(g), away = side === "away", n = away ? 0 : 1;
     const tr = el("tr");
@@ -358,14 +361,14 @@ import { Fan } from "./hosts.js";
     name.append(chip);
     if (over) {
       // final: no badge; helmet, name and score share one cell, the name centered between helmet and score in the scoreboard font
-      const won = g.final && g.final[n] > g.final[1 - n];
+      const shown = scoreOf(g), won = shown && shown[n] > shown[1 - n];
       chip.classList.add("over"); if (won) chip.classList.add("win");
       chip.style.setProperty("--score-cells", leagueOf(g).daily ? 3 : 2);   // the NBA's scores run to three digits
       if (g.final && g.final[n] < g.final[1 - n]) chip.classList.add("lost");   // the losing team's helmet is faded to 25% opacity
-      chip.append(el("span", "sc", g.final ? String(g.final[n]) : "–"));
+      chip.append(el("span", "sc", shown ? String(shown[n]) : "–"));
       name.colSpan = 3;
       tr.append(name);   // no moneyline once the game is over
-      if (away) { const f = el("td", "fin", "F"); f.rowSpan = 2; f.setAttribute("aria-label", "Final"); tr.append(f); }
+      if (away) { const f = el("td", "fin", g.final ? "F" : ""); f.rowSpan = 2; if (g.final) f.setAttribute("aria-label", "Final"); tr.append(f); }
       return tr;
     }
     // The favorite's spread is the underdog's mirrored, so only the underdog's row shows it.
@@ -597,16 +600,17 @@ import { Fan } from "./hosts.js";
       const staked = mine.filter(t => !t.bonus).reduce((s, t) => s + t.amount, 0) + spent.filter(s => !s.t.bonus).reduce((a, s) => a + s.share, 0);
       const bonusStaked = mine.filter(t => t.bonus).reduce((s, t) => s + t.amount, 0) + spent.filter(s => s.t.bonus).reduce((a, s) => a + s.share, 0);
       const [stText, stCls] = status(g);
-      const over = stCls === "final";
+      const over = stCls === "final" || showsNow(g);
 
-      const card = el("article", "game" + (over ? " is-final" : "") + (riskGame === g ? " sel" : ""));
+      const card = el("article", "game" + (over && !showsNow(g) ? " is-final" : "") + (riskGame === g ? " sel" : ""));
       if (trackingOn && g.live && stCls === "live") { const P = g.line, sgn = v => (v > 0 ? "+" : "") + v; card.title = `Live prices (Kalshi). Pre-game: ${last(g.away)} ${pts(P.sp)} @ ${last(g.home)}, total ${P.tot}, moneyline ${sgn(P.ml[0])} / ${sgn(P.ml[1])}`; }   // hover shows the saved pre-game line
 
       // Top: when and where to watch
       const top = el("div", "g-top" + (stCls === "live" ? " live" : "") + (stText === "Upcoming" ? " upcoming" : ""));
       // Under way, the day and time are moot and the status badge sits mid-card, so only the network is left beside it.
       // A game in progress shows only its network, outlined in red like an "on air" button (no In progress badge).
-      if (stCls === "live") top.append(el("span", "g-air", g.tv || "Live"));
+      if (showsNow(g)) top.append(el("span", "g-air", [g.now.clock, g.tv].filter(Boolean).join(" · ")));
+      else if (stCls === "live") top.append(el("span", "g-air", g.tv || "Live"));
       else top.append(el("span", "g-when", `${shortDayFmt.format(new Date(g.t))} · ${timeZoned(new Date(g.t))} · ${g.tv}`));
 
       // Middle: lines, or the score once the game is over
@@ -651,7 +655,7 @@ import { Fan } from "./hosts.js";
       if (g.final) { bot.classList.add("done"); bot.append(pl); }   // a final game: the bottom row is just its P/L, in its usual column
       else bot.append(wagered, risk, pl);
 
-      if (!over) card.append(top);   // a final game has no top line: the F on its board says it
+      if (!over || showsNow(g)) card.append(top);   // a final game has no top line: the F on its board says it
       card.append(mid, bot, cardGutter(g));
       made.push([g, card]);
     });

@@ -31,11 +31,11 @@ function nflRow(e) {
   return {
     ms, t: etIso(e.date), away: A.team.displayName, home: H.team.displayName, aa: A.team.abbreviation, ha: H.team.abbreviation,
     tv: [...new Set((c.broadcasts || []).flatMap(b => b.names))].map(tvName).join(" / "),
-    final: fin ? [Number(A.score), Number(H.score)] : null, note: c.neutralSite && a.city ? a.city : "",
+    final: fin ? [Number(A.score), Number(H.score)] : null, now: e.status.type.state === "in" ? { score: [Number(A.score), Number(H.score)], clock: e.status.type.shortDetail || "" } : null, note: c.neutralSite && a.city ? a.city : "",
     env: [v.fullName || "", [a.city, a.state || a.country].filter(Boolean).join(", "), v.indoor ? 1 : 0, wx ? wx.displayValue : "", wx && typeof wx.temperature === "number" ? wx.temperature : null, wx ? String(wx.conditionId || "") : ""]
   };
 }
-const gameOfRow = r => ({ t: r.t, away: r.away, home: r.home, tv: r.tv, ...(r.note ? { note: r.note } : {}), ...(r.final ? { final: r.final } : { noLine: true }), line: NEUTRAL_LINE() });
+const gameOfRow = r => ({ t: r.t, away: r.away, home: r.home, tv: r.tv, ...(r.note ? { note: r.note } : {}), ...(r.final ? { final: r.final } : { noLine: true }), ...(r.now ? { now: r.now } : {}), line: NEUTRAL_LINE() });
 const lastName = n => n.split(" ").pop();
 const envKey = (w, r) => `${w}|${lastName(r.away)}|${lastName(r.home)}`;
 const pullWeek = async w => {
@@ -68,6 +68,7 @@ async function refreshWeek(w) {
     if (!g) return;
     g.tv = r.tv;
     if (r.final) g.final = r.final;
+    if (r.now) g.now = r.now; else delete g.now;
   });
 }
 const espnWeek = () => 8 + Math.floor((Date.now() - WEEK8) / (7 * 864e5));
@@ -80,7 +81,16 @@ async function refreshStale() {
   try { for (const w of due) await refreshWeek(w); onRefresh(); } catch (e) {}
 }
 setTimeout(refreshStale, 2000);
-setInterval(() => { const w = espnWeek(); if (w >= 1 && w <= NFL_WEEKS) refreshWeek(w).then(() => onRefresh(), () => {}); }, 10 * 60e3);
+// Every 10 minutes, or every minute [C] while a game is on and this tab is showing.
+let lastWeekPull = 0;
+const gameOn = w => (nflRows[w] || []).some(r => r.now || (!r.final && Date.now() >= r.ms && Date.now() - r.ms < 5 * 3600e3));
+setInterval(() => {
+  const w = espnWeek();
+  if (w < 1 || w > NFL_WEEKS || document.hidden) return;
+  if (!gameOn(w) && Date.now() - lastWeekPull < 10 * 60e3) return;
+  lastWeekPull = Date.now();
+  refreshWeek(w).then(() => onRefresh(), () => {});
+}, 60e3);
 
 // Team stats and injuries, for a game detail: standings, one request a team and one large injury report, asked for only when one opens, at most once a day.
 let teamsPull = null;
