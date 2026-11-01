@@ -175,6 +175,10 @@ Fan.connectStore = async () => {
     const r = await (await window.fetch("/connector/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
     if (!r.ok) throw new Error(r.error);
   };
+  if (hi && hi.stop) Fan.stopConnector = async () => {   // the Stop button. It finishes what's under way, saves and ends
+    const r = await (await window.fetch("/connector/stop", { method: "POST" })).json();
+    if (!r.ok) throw new Error(r.error);
+  };
   if (hi && hi.telecast) {
     const send = (path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };

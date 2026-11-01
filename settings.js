@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvy80vh8";
-import { Fan } from "./hosts.js?v=mvy80vh8";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvy80vh8";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvy80vh8";
-import { setBet } from "./trade.js?v=mvy80vh8";
+import { espnState } from "./espn.js?v=mvyafpna";
+import { Fan } from "./hosts.js?v=mvyafpna";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyafpna";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyafpna";
+import { setBet } from "./trade.js?v=mvyafpna";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -119,12 +119,25 @@ import { setBet } from "./trade.js?v=mvy80vh8";
       bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed ? on => setBet(on) : null), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one. Off, Fan sends no orders, and fills you make anywhere else still arrive.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.account && !Fan.keyed ? keysItem() : null]
     });
     // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
+    let stopPressed = false;   // pressed Stop on this page, so its silence is expected
+    const stopItem = box => {
+      const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Stop connector");
+      b.type = "button";
+      b.addEventListener("click", () => {
+        stopPressed = true; b.hidden = true;
+        wrap.append(el("small", null, "Stopping…"));
+        Fan.stopConnector().catch(() => { stopPressed = false; }).then(() => { wrap.remove(); drawStatus(box); });
+      });
+      wrap.append(b);
+      return wrap;
+    };
     const statusRows = async () => {
       let hi = null, away = false;
-      if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
+      if (stopPressed) away = true;
+      else if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
       const espn = espnState(), feed = $("feedNote"), nets = Object.values(networkLinks).filter(u => /^https:\/\//i.test(u)).length, time = at => timeZoned(new Date(at));
       return { hi, away, rows: [
-        ["Connector", away ? ["bad", "Not answering"] : hi ? ["ok", "Running on this computer"] : ["off", "Not on this page"]],
+        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? ["ok", "Running on this computer"] : ["off", "Not on this page"]],
         ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at)] : ["ok", "Using this browser's saved copy"]],
         ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
         ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : ["ok", "Lines from " + time(slateAt)]],
@@ -139,6 +152,7 @@ import { setBet } from "./trade.js?v=mvy80vh8";
       if (box.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
       box.replaceChildren(el("h3", null, "Status"), ...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
       if (away && Fan.startLink) box.append(startItem());
+      if (hi && hi.stop) box.append(stopItem(box));
       if (hi && hi.login != null) {   // an installed connector's own checkbox
         const lab = el("label", "fan-check"), c = el("input");
         c.type = "checkbox"; c.checked = hi.login;
