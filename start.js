@@ -1,15 +1,15 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mvxr57xx";
-import "./risk.js?v=mvxr57xx";
-import "./panels.js?v=mvxr57xx";
-import "./tracker.js?v=mvxr57xx";
-import "./trade.js?v=mvxr57xx";
-import { Fan } from "./hosts.js?v=mvxr57xx";
-import { WEEK_GAMES } from "./espn.js?v=mvxr57xx";
-import { changed, curWeek, definePanels, drawLeagueStub, drawNow, fillSettings, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mvxr57xx";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mvxr57xx";
-import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mvxr57xx";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mvxr57xx";
+import "./base.js?v=mvxtj25y";
+import "./risk.js?v=mvxtj25y";
+import "./panels.js?v=mvxtj25y";
+import "./tracker.js?v=mvxtj25y";
+import "./trade.js?v=mvxtj25y";
+import { Fan } from "./hosts.js?v=mvxtj25y";
+import { WEEK_GAMES } from "./espn.js?v=mvxtj25y";
+import { changed, curWeek, definePanels, drawLeagueStub, drawNow, fillSettings, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mvxtj25y";
+import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mvxtj25y";
+import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mvxtj25y";
+import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mvxtj25y";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };

@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxr57xx";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxr57xx";
-import { Calc } from "./calc.js?v=mvxr57xx";
-import { Fan } from "./hosts.js?v=mvxr57xx";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxtj25y";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxtj25y";
+import { Calc } from "./calc.js?v=mvxtj25y";
+import { Fan } from "./hosts.js?v=mvxtj25y";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -92,6 +92,7 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
   function setNetworkLink(n, url) {
     if (url.trim()) networkLinks[n] = url.trim(); else delete networkLinks[n];
     try { localStorage.setItem("fan.networks", JSON.stringify(networkLinks)); } catch (e) {}
+    changed("cards");
   }
   // Which monitor and layout telecasts use, picked in the settings window. Null: Fan's suggestion. Kept per browser.
   const TELECAST_LAYOUTS = [["1", 1, 1], ["2 stacked", 2, 1], ["3 stacked", 3, 1], ["2 across", 1, 2], ["2x2", 2, 2]];
@@ -102,11 +103,9 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
     try { if (p) localStorage.setItem("fan.telecast", JSON.stringify(p)); else localStorage.removeItem("fan.telecast"); } catch (e) {}
   }
   // Where a game's Live telecast button goes: the first of its networks with a pasted https link ("ESPN / ABC" is two), or else YouTube TV's site.
-  function telecastLink(g) {
-    const link = String(g.tv || "").split("/").map(n => networkLinks[n.trim()]).find(u => /^https:\/\//i.test(u || ""));
-    return link || "https://tv.youtube.com/";
-  }
-  const LEAGUES = ["nhl", "mlb", "ncaafb"];   // the league picker's leagues that are still stubs
+  const pastedLink = g => String(g.tv || "").split("/").map(n => networkLinks[n.trim()]).find(u => /^https:\/\//i.test(u || ""));
+  const telecastLink = g => pastedLink(g) || "https://tv.youtube.com/";
+  const LEAGUES = ["nhl", "mlb"];   // the league picker's leagues that are still stubs. NCAA FB's list (drawNcaafb) is off, on the user's word: adding "ncaafb" here and to LEAGUE_ORDER brings it back
   const leagueNames = () => ({ ...Object.fromEntries(Object.entries(Calc.RULES.leagues).map(([k, r]) => [k, r.code])), ...Object.fromEntries(LEAGUES.map(k => [k, SECTIONS[k][0].h])) });
   // The games the Graphs panel plots: those of the selected week still to kick off.
   const graphGames = () => GAMES.filter(g => !g.final && status(g)[0] === "Upcoming");
@@ -169,7 +168,7 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
     return tag;
   }
 
-  const APP_VERSION = "0.6.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.6.11";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -201,7 +200,7 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
   const pricesOn = () => marketWanted() && !!Fan.lines;
   document.documentElement.classList.toggle("prices-off", !trackingOn || !pricesWanted);   // until the sockets answer: a plain page never flashes the price columns
   // A league's checkbox in the settings window is the same kind of yes or no: off, the page and the refreshes do nothing for it. NFL is on until the user says otherwise. At least one stays on.
-  const LEAGUE_ORDER = ["nfl", "nba", "nhl", "mlb", "ncaafb"];
+  const LEAGUE_ORDER = ["nfl", "nba", "nhl", "mlb"];
   let leaguesOn = new Set(["nfl"]);
   try { const v = JSON.parse(localStorage.getItem("fan.leagues")); if (Array.isArray(v) && v.some(k => LEAGUE_ORDER.includes(k))) leaguesOn = new Set(v.filter(k => LEAGUE_ORDER.includes(k))); } catch (e) {}
   // Which league a ticket belongs to, from its week: an NBA day is yyyymmdd, week 0 is a market in no league.
@@ -321,9 +320,11 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
   function cardGutter(g) {
     const box = el("div", "g-gut");
     box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
-    CARD_ACTIONS.filter(([name]) => trackingOn || (name !== "Tape" && name !== "Risk detail")).forEach(([name, icon]) => {
-      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? status(g)[1] === "live" : name === "Risk detail" && trackingOn;
+    const st = status(g)[1];   // Tape and Live telecast share a spot: a final has its tape, any other game its telecast. Tape stays dim until there are nfl.com sign-ins to use
+    CARD_ACTIONS.filter(([name]) => name !== (st === "final" ? "Live telecast" : "Tape")).forEach(([name, icon]) => {
+      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? !!pastedLink(g) : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
+      if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
       if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { Fan.openTelecast(telecastLink(g), telecastPref); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
       box.append(b);
@@ -383,13 +384,15 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
       if (away) { const f = el("td", "fin", g.final ? "F" : ""); f.rowSpan = 2; if (g.final) f.setAttribute("aria-label", "Final"); tr.append(f); }
       return tr;
     }
-    // The favorite's spread is the underdog's mirrored, so only the underdog's row shows it.
+    // The favorite's spread is the underdog's mirrored, so only the underdog's row shows it. The favorite's row shows its chance to win there instead.
     const sp = away ? L.sp : -L.sp;
     const nl = !!g.noLine;   // no market yet (a far-off week): dashes instead of the placeholder numbers
     const ml = el("td", "ml", !pricesOn() ? "" : nl ? "—" : odds(L.ml[n]));   // tracking off: no prices anywhere, not dashes
     ml.style.color = brighterOf(g, side);
     if (!nl && pricesOn() && trackingOn) { ml.classList.add("ml-go"); ml.addEventListener("click", e => { e.stopPropagation(); later.fillMoneyline(g, n); }); }   // a moneyline click fills the wager ticket instead of selecting the card
-    const spc = el("td", "sp", !pricesOn() || nl || sp < 0 ? "" : pts(sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1)));   // one decimal always: +4.0, +3.5
+    const spc = el("td", "sp", !pricesOn() || nl ? "" : sp < 0 ? Calc.winPct(L.ml, away) + "%" : pts(sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1)));   // one decimal always: +4.0, +3.5
+    spc.style.color = brighterOf(g, side);
+    if (spc.textContent.endsWith("%")) spc.classList.add("wp");
     if (!nl && sp >= 0 && pricesOn() && trackingOn) { spc.classList.add("ml-go"); spc.addEventListener("click", e => { e.stopPropagation(); later.fillSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
     tr.append(ml, name, spc);
     // The total is the same for both teams: one cell on the first row spanning both, centered between them.
@@ -437,7 +440,6 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
     later.syncPlace();   // new slate data can bring the ticket's Kalshi market
     if (view === "xy" && !graphsOK()) { showView("week"); return; }
     const other = !!SECTIONS[view], rowsEl = [$("sectiontabs1"), $("sectiontabs2")];
-    document.querySelector(".strip-row2").style.display = other ? "none" : "";
     document.querySelector(".weektabs.grf").style.display = !other && graphsOK() ? "" : "none";
     if (other) {
       document.querySelector(".bye-box").style.display = "none";
@@ -486,16 +488,6 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
   // The week view must not scroll vertically: if the page is taller than the window, the games area (and the card height) shrinks by the overflow. It always tries the full size
   // first, so a window that grows later gets the room back at the next render; nothing is sized from the window directly, which is what made an auto-sized frame run away before.
   const PHONE = "(max-width: 760px)";
-  // With no ticket column there's room to show every game with no scrolling sideways: the cards give up width, down to 240px [C].
-  function fitCardWidth() {
-    const g = $("games");
-    g.style.removeProperty("--cw");
-    if (trackingOn || !g.classList.contains("strip") || g.classList.contains("flat") || g.classList.contains("bd") || matchMedia(PHONE).matches) return;
-    const over = g.scrollWidth - g.clientWidth;
-    if (over <= 0) return;
-    const cols = [...g.querySelectorAll(".slot-cards")].reduce((s, c) => s + Number(c.style.getPropertyValue("--cols") || 1), 0);
-    g.style.setProperty("--cw", Math.max(240, Math.floor(376 - over / cols)) + "px");
-  }
   // On a phone the week tabs scroll sideways, so the open week is brought into view.
   function showOpenWeek() { if (matchMedia(PHONE).matches) document.querySelectorAll(".weektabs.wk2 [aria-selected=true]").forEach(b => { const r = b.closest(".tabrows"); r.scrollLeft = b.getBoundingClientRect().left - r.getBoundingClientRect().left + r.scrollLeft - 40; }); }
   function fitViewportHeight() {
@@ -534,7 +526,7 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
     const h = bottom - (r.top + window.scrollY);
     if (h > 0 && h < r.height - 1) { col.style.alignSelf = "start"; col.style.height = Math.max(300, h) + "px"; }
   }
-  window.addEventListener("resize", () => { fitCardWidth(); fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); });
+  window.addEventListener("resize", () => { fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); });
   window.addEventListener("load", () => fitTicketColumn());
   window.addEventListener("resize", () => fitSectionTabs());
   document.addEventListener("dragstart", e => { if (e.target.closest && e.target.closest(".tabrows")) e.preventDefault(); });   // the bottom strip tabs are fixed in place (no dragging)
@@ -653,7 +645,7 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
       wagered.append(el("span", "lbl", mine.length + spent.length ? `Wagers (${mine.length + spent.length})` : "Wagers"), wb);
       const maxRisk = (mine.length ? extremes(g, mine).maxRisk : 0) + shareRisk(shares);
       const rv = el("span", "rk-val"); rv.append(el("b", !g.final && maxRisk >= 500 ? "dlo" : null, noBets ? "—" : nd(money(maxRisk))), ...(tb ? [tb] : []));
-      risk.append(el("span", "lbl", "Max risk"), rv);   // red highlight from $500 of risk on a game still to be played
+      risk.append(el("span", "lbl", "Risk"), rv);   // red highlight from $500 of risk on a game still to be played
       // A final game with a score is settled: grade every wager against the final margin and total, and double-underline the result.
       let plText = "—", plCls = "dim";
       const settled = gameSettledPL(g);
@@ -671,7 +663,6 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
       made.push([g, card]);
     });
     windowColumns(box, made);
-    fitCardWidth();
     renderSectionTabs();
     fitViewportHeight();
     fitSectionTabs();
@@ -818,7 +809,6 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
   syncLeaguePick();
   // Fan's button opens the settings window.
   let fillSettings = () => {};
-  const aboutOnStart = () => { try { return localStorage.getItem("fan.about") !== "off"; } catch (e) { return true; } };
   { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
     const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) win.close(); };
     let tab = "leagues";
@@ -879,24 +869,22 @@ import { Fan } from "./hosts.js?v=mvxr57xx";
     const keysItem = () => { const b = el("button", null, "Connect Kalshi"); b.type = "button"; b.addEventListener("click", () => { open(false); Fan.account(); }); return b; };
     const badgeItem = () => { const b = el("button", null, "Badges: " + BADGE_STYLES[badgeStyle].label), names = Object.keys(BADGE_STYLES); b.type = "button"; b.addEventListener("click", () => { setBadgeStyle(names[(names.indexOf(badgeStyle) + 1) % names.length]); b.textContent = "Badges: " + BADGE_STYLES[badgeStyle].label; }); return b; };
     // What Fan is, opened on launch until the user ticks the box: the four layers, each with what it takes.
-const switchFor = (on, change) => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, "On"); return lab; };
-    const ABOUT = () => [
-      ["Watch", "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up.", el("span", "fan-on", "On")],
-      ["Track", "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them.", switchFor(trackingOn, on => later.setTracking(on))],
-      ["Price", "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? "Free. Uses the Fan connector, running on your computer." : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", Fan.lines ? switchFor(pricesWanted, on => later.setPrices(on)) : el("span", "fan-off", "Not yet")],
-      ["Bet", "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.trader ? el("span", "fan-on", "On") : Fan.account ? keysItem() : el("span", "fan-off", "Not yet")]
-    ];
+    // The Fan tab: left what's built in, right what the connector adds. A box's checkbox is its part's own switch, and greyed where the part can't be changed from here.
+    const partCheck = (name, on, change) => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.disabled = !change; if (change) c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, name); return lab; };
+    const ABOUT = () => ({
+      watch: [partCheck("Watch", true), "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up."],
+      track: [partCheck("Track", trackingOn, on => later.setTracking(on)), "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them."],
+      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines ? on => later.setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? "Free. Uses the Fan connector, running on your computer." : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection."],
+      bet: [partCheck("Bet", !!Fan.trader), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", !Fan.trader && Fan.account ? keysItem() : null]
+    });
     const aboutRows = () => {
-      const lab = el("label", "fan-check"), c = el("input");
-      c.type = "checkbox"; c.checked = !aboutOnStart();
-      c.addEventListener("change", () => { try { localStorage.setItem("fan.about", c.checked ? "off" : "on"); } catch (e) {} });
-      lab.append(c, "Don't show on startup");
-      const box = el("div", "fan-about");
-      ABOUT().forEach(([name, what, needs, control]) => { control.classList.add("fan-ctl"); box.append(el("b", null, name), control, el("p", null, what), el("small", null, needs)); });
-      return [box, lab];
+      const box = el("div", "fan-about"), parts = ABOUT();
+      const cell = k => { const [toggle, what, needs, extra] = parts[k], d = el("div", "fan-part"); d.dataset.part = k; d.append(toggle, el("p", null, what), el("small", null, needs)); if (extra) d.append(extra); return d; };
+      box.append(el("span"), el("h3", null, "Built in"), el("h3", null, "With the Fan connector"), el("b", null, "Watching games"), cell("watch"), cell("price"), el("b", null, "Tracking and betting"), cell("track"), cell("bet"));
+      return [box];
     };
     const SETTINGS_TABS = [
-      ["about", "About Fan", aboutRows],
+      ["about", "Fan", aboutRows],
       ["leagues", "Leagues", leagueRows],
       ["telecasts", "Telecasts", telecastRows],
       ["sportsbooks", "Sportsbooks", () => [trackItem(), ...pricesItem(), ...(Fan.account ? [keysItem()] : [])]],
@@ -916,7 +904,7 @@ const switchFor = (on, change) => { const lab = el("label", "fan-check"), c = el
     };
     btn.addEventListener("click", () => { fill(); open(!win.open); });
     $("fanClose").addEventListener("click", () => open(false));
-    if (aboutOnStart()) setTimeout(() => { tab = "about"; fill(); open(true); win.addEventListener("close", () => { tab = "leagues"; }, { once: true }); }, 0);
+    setTimeout(() => { tab = "about"; fill(); open(true); win.addEventListener("close", () => { tab = "leagues"; }, { once: true }); }, 0);
     fillSettings = () => { if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
   // Onto the first league that's on, if the one on screen isn't.
   function leaveOffLeague() {
