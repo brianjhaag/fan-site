@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvybuyas";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvybuyas";
-import { Calc } from "./calc.js?v=mvybuyas";
-import { Fan } from "./hosts.js?v=mvybuyas";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvybz8li";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvybz8li";
+import { Calc } from "./calc.js?v=mvybz8li";
+import { Fan } from "./hosts.js?v=mvybz8li";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -168,7 +168,7 @@ import { Fan } from "./hosts.js?v=mvybuyas";
     return tag;
   }
 
-  const APP_VERSION = "0.16.5";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.16.6";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -310,9 +310,10 @@ import { Fan } from "./hosts.js?v=mvybuyas";
     return img;
   }
 
-  // The game card's gutter: one button per thing a game can open. Game preview, Live telecast on a game under way and, with tracking on, Risk detail work; the rest are dim.
+  // The game card's gutter: one button per thing a game can open, always all five. Game preview, Live telecast before a game ends and, with tracking on, Risk detail work; the rest are dim. Which are dim when is Claude's guess, for now.
   const CARD_ACTIONS = [
     ["Game preview", '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3.500l5 5M8 3.500l-5 5"/><circle cx="5.500" cy="18" r="3"/><circle cx="18.500" cy="18.500" r="2.500"/><path d="M10.500 6c5 0 8 2.500 8 8"/><path d="M15.500 12l3 2.500 2.500-3"/></svg>'],
+    ["Box score", '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.500" width="18" height="15" rx="1.500"/><path d="M3 9.500h18M3 14.500h18M9.500 4.500v15M15.250 4.500v15"/></svg>'],
     ["Live telecast", '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7.500" width="18" height="12.500" rx="2"/><path d="M8.500 3l3.500 4.500L15.500 3"/></svg>'],
     ["Tape", '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.500"/><circle cx="12" cy="6.500" r="1.500"/><circle cx="12" cy="17.500" r="1.500"/><circle cx="6.500" cy="12" r="1.500"/><circle cx="17.500" cy="12" r="1.500"/></svg>'],
     ["Risk detail", '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 13.5c3 0 3.8-1.6 4.8-4.8C6.6 6 7 3 8 3s1.400 3 2.200 5.700c1 3.200 1.800 4.800 4.800 4.800"/></svg>']
@@ -320,9 +321,9 @@ import { Fan } from "./hosts.js?v=mvybuyas";
   function cardGutter(g) {
     const box = el("div", "g-gut");
     box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
-    const st = status(g)[1];   // Tape and Live telecast share a spot: a final has its tape, any other game its telecast. Tape stays dim until there are nfl.com sign-ins to use
-    CARD_ACTIONS.filter(([name]) => name !== (st === "final" ? "Live telecast" : "Tape")).forEach(([name, icon]) => {
-      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? !!pastedLink(g) : name === "Risk detail" && trackingOn;
+    const st = status(g)[1];   // Box score has nothing to open yet, and Tape stays dim until there are nfl.com sign-ins to use
+    CARD_ACTIONS.forEach(([name, icon]) => {
+      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!pastedLink(g) : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
