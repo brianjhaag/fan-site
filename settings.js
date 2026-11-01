@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvygpkxp";
-import { Fan } from "./hosts.js?v=mvygpkxp";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvygpkxp";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvygpkxp";
-import { setBet } from "./trade.js?v=mvygpkxp";
+import { espnState } from "./espn.js?v=mvygt301";
+import { Fan } from "./hosts.js?v=mvygt301";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvygt301";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvygt301";
+import { setBet } from "./trade.js?v=mvygt301";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -90,14 +90,9 @@ import { setBet } from "./trade.js?v=mvygpkxp";
     // What a first-time user does, on a page with no connector.
     const connectorRows = () => {
       const box = el("div", "fan-connector"), steps = el("ol"), step = (...parts) => { const li = el("li"); li.append(...parts); steps.append(li); };
-      const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, get = el("a", "fan-start", mac ? "Download for Mac" : "Download for Windows");
-      get.href = mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe"; get.setAttribute("download", ""); get.addEventListener("click", knowConnector);
-      window.fetch("connector-version.txt", { cache: "no-store" }).then(r => (r.ok ? r.text() : "")).then(t => {   // the program's own version, which a page release doesn't change. The Windows file still starts fan-connector-setup, which is how it knows to install itself
-        const v = t.trim();
-        if (!/^\d+\.\d+\.\d+$/.test(v)) return;
-        get.setAttribute("download", mac ? `fan-connector-mac-${v}.zip` : `fan-connector-setup-${v}.exe`);
-        get.textContent += " (" + v + ")";
-      }).catch(() => {});
+      const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, get = el("a", "fan-start", (mac ? "Download for Mac " : "Download for Windows ") + APP_VERSION);
+      get.href = mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe"; get.setAttribute("download", mac ? `fan-connector-mac-${APP_VERSION}.zip` : `fan-connector-setup-${APP_VERSION}.exe`);   // one number for Fan. The Windows file still starts fan-connector-setup, which is how it knows to install itself
+      get.addEventListener("click", knowConnector);
       box.append(el("h3", null, "Why it's needed"), el("p", null, "Watch and Track work right here. Price and Bet need the Fan connector: a small program on your computer that pulls prices over your own connection and holds your own Kalshi key. Nothing about your bets or your key leaves your computer for this site."));
       if (!windows && !mac) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector runs on a Windows or Mac computer.")); return [box]; }
       step(el("b", null, "Download it. "), get, el("small", null, "It's new and isn't signed yet, so your browser may call it suspicious. To keep it, open the browser's downloads list and choose Keep."));
