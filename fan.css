@@ -272,7 +272,7 @@
   .board .tname.plate .pl-st.long { font-size: 8px; letter-spacing: 0; }   /* a long state name still fits beside the helmet */
   .board .tname.plate .pl-no { font: 700 1.14em/.92 var(--font-display); letter-spacing: .06em; text-shadow: 0 1px 0 rgb(255 255 255 / .22), 0 -1px 0 rgb(0 0 0 / .4); }
   /* A game under way: a black plate with the final's team and score, sized to fit its width beside a smaller helmet */
-  .board .tname.live { position: relative; container-type: inline-size; background-color: #000 !important; }
+  .board .tname.live { position: relative; container-type: inline-size; background-color: #000 !important; border-color: #000 !important; }
   .board .tname.live .tn-txt.live-sc { position: absolute; inset: 0 4cqw 0 34cqw; z-index: 2; display: flex; flex-direction: row; justify-content: space-between; align-items: center; height: auto; font: 800 19cqw/1 "Doto", var(--font-mono); letter-spacing: 0; color: #8f6a1c; text-shadow: 0 0 2px #000, 0 0 2px #000; }
   .board .tname.live.lead .tn-txt.live-sc { color: #ffb52e; text-shadow: 0 0 2px #000, 0 0 6px rgba(255, 170, 30, .45); }
   .board .tname.live:not(.has-helm) .tn-txt.live-sc { left: 4cqw; }
