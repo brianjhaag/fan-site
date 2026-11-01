@@ -201,6 +201,7 @@ Fan.connectTrader = async () => {
       if (hi.feed) Fan.reads = connectorTrader(window.fetch, hi);
       if (hi.orders) Fan.trader = Fan.reads;   // until then Place and Execute stay off
       Fan.keyed = !!hi.env;
+      Fan.env = hi.env || "";
       Fan.setBet = async on => {   // Bet's checkbox. The connector holds the rule, so off refuses orders whatever the page does
         const r = await (await window.fetch("/connector/bet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
         if (!r.ok) throw new Error(r.error);

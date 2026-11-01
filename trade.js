@@ -1,18 +1,27 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy7uihh";
-import { Fan } from "./hosts.js?v=mvy7uihh";
-import { Calc } from "./calc.js?v=mvy7uihh";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy7uihh";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy80vh8";
+import { Fan } from "./hosts.js?v=mvy80vh8";
+import { Calc } from "./calc.js?v=mvy80vh8";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy80vh8";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
   (async () => {
     await Fan.connectTrader();
+    showDemo();
     changed("settings");
     if (riskGame) changed("exec");
     syncPlace();
     if (reader()) { pendingFills().catch(() => {}); feedLoop(); }
   })();
+  // A demo key says so everywhere orders are: a badge on every view, the tab's title and the buttons that send.
+  function showDemo() {
+    if (Fan.env !== "demo") return;
+    document.documentElement.classList.add("demo");
+    document.title = "DEMO " + document.title;
+    const b = el("div", "demo-badge", "DEMO: Kalshi's demo, fake money");
+    b.id = "demoBadge"; document.body.append(b);
+  }
   let feedWaiting = Date.now();   // when the feed last stopped being connected
   const reader = () => Fan.trader || Fan.reads;   // what can read the venue, whether or not it takes orders
   async function setBet(on) {
@@ -134,7 +143,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
   // The suggested bet's Execute button and its size slider.
   function execControls(h, sig) {
     const hx = el("div", "hx"), btn = el("button", "hxbtn"), sl = el("input", "hxsl");
-    const cnt = () => Math.max(1, Math.round(h.n * execPct / 100)), lab = () => { btn.textContent = execBusy ? "Sending…" : `Execute ${execPct}%`; btn.title = Fan.trader ? `Buy ${cnt()} ${h.side.toUpperCase()} on ${h.tk} at ${Math.round(h.ask * 100)}¢ or better, immediate-or-cancel` : "Needs the connector (" + (Fan.traderWhy || "still checking") + ")"; };
+    const cnt = () => Math.max(1, Math.round(h.n * execPct / 100)), lab = () => { btn.textContent = execBusy ? "Sending…" : `Execute ${execPct}%${Fan.env === "demo" ? " (demo)" : ""}`; btn.title = Fan.trader ? `Buy ${cnt()} ${h.side.toUpperCase()} on ${h.tk} at ${Math.round(h.ask * 100)}¢ or better, immediate-or-cancel` : "Needs the connector (" + (Fan.traderWhy || "still checking") + ")"; };
     btn.type = "button"; btn.disabled = execBusy || !Fan.trader;
     sl.type = "range"; sl.min = "10"; sl.max = "100"; sl.step = "10"; sl.value = String(execPct); sl.disabled = execBusy; sl.title = "Share of the suggested size to send";   // the slider scales the suggestion: the label shows the share, the order sends that share of the contracts
     sl.addEventListener("input", () => { execPct = Number(sl.value); lab(); });
@@ -251,7 +260,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
   function armControls(g) {
     // With no way to send yet, the settings still work and the suggestion follows them; the switch says what it's waiting for.
     const blocked = Fan.trader ? "" : !Fan.lines ? "Needs the Fan connector" : !Fan.keyed ? "Needs a Kalshi key: Connect Kalshi in the settings window" : "Tick Bet in the settings window to arm";
-    const a = armOf(g), box = el("div", "rk-arm" + (a.on ? " on" : "")), row = el("div", "ar"), btn = el("button", "arbtn", a.on ? "Armed: disarm" : "Arm");
+    const a = armOf(g), box = el("div", "rk-arm" + (a.on ? " on" : "")), row = el("div", "ar"), btn = el("button", "arbtn", (a.on ? "Armed: disarm" : "Arm") + (Fan.env === "demo" ? " (demo)" : ""));
     btn.type = "button"; btn.disabled = !!blocked && !a.on; btn.setAttribute("aria-pressed", String(a.on));
     btn.addEventListener("click", () => { if (a.on) { disarm(a, "you turned it off"); } else armOn(g); });
     row.append(btn);
@@ -317,7 +326,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     try {
       $("payupBox").hidden = !isKalshi();
       const b = $("placeBtn"), s = placeSpec(), ok = !!s.h && !!Fan.trader && !execBusy;
-      b.disabled = !ok; b.classList.toggle("ready", ok); b.textContent = execBusy ? "Sending…" : "Place";
+      b.disabled = !ok; b.classList.toggle("ready", ok); b.textContent = execBusy ? "Sending…" : Fan.env === "demo" ? "Place (demo)" : "Place";
       b.title = ok ? `Buy ${s.h.n} ${s.h.side.toUpperCase()} on ${s.h.tk} at ${Math.round(s.h.ask * 100)}¢ or better, immediate-or-cancel` : s.h ? "Needs the connector (" + (Fan.traderWhy || "still checking") + ")" : s.why;
     } catch (e) {}   // the first renders run before the ticket's state exists
   }
@@ -331,4 +340,4 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     if (lastExec.cls === "ok") clearTicket();
     syncPlace();
   });
-export { armControls, armOf, armOn, armStep, pendingFills, execControls, handleFill, placeSpec, refreshPrices, renderKalshiCheck, setBet, syncPlace };
+export { armControls, armOf, armOn, armStep, showDemo, pendingFills, execControls, handleFill, placeSpec, refreshPrices, renderKalshiCheck, setBet, syncPlace };
