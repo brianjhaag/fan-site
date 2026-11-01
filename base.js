@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxalloh";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxalloh";
-import { Calc } from "./calc.js?v=mvxalloh";
-import { Fan } from "./hosts.js?v=mvxalloh";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxat2k7";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxat2k7";
+import { Calc } from "./calc.js?v=mvxat2k7";
+import { Fan } from "./hosts.js?v=mvxat2k7";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // The page shows one week at a time: GAMES and tickets always hold the selected week's games and wagers.
@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js?v=mvxalloh";
     return tag;
   }
 
-  const APP_VERSION = "0.5.6";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.5.7";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -869,10 +869,10 @@ import { Fan } from "./hosts.js?v=mvxalloh";
     // What Fan is, opened on launch until the user ticks the box: the four layers, each with what it takes.
 const switchFor = (on, change) => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, "On"); return lab; };
     const ABOUT = () => [
-      ["Watch", "Every game on one page: live scores, injuries, what's at stake, and the telecast a click away.", "Needs nothing.", el("span", "fan-on", "On")],
-      ["Track", "Log your bets from any book and see what's riding on each game as you watch.", "Needs nothing. Your bets stay with you.", switchFor(trackingOn, on => later.setTracking(on))],
-      ["Price", "Live market prices on every game, and whether your bets were good ones.", Fan.lines ? "Needs Track." : "Needs Track and the Fan connector, a small program on your computer.", Fan.lines && trackingOn ? switchFor(pricesWanted, on => later.setPrices(on)) : el("span", "fan-off", "Not yet")],
-      ["Bet", "Trade on Kalshi from the game card in one click.", "Needs the Fan connector and your own Kalshi account.", Fan.trader ? el("span", "fan-on", "On") : Fan.account ? keysItem() : el("span", "fan-off", "Not yet")]
+      ["Watch", "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up.", el("span", "fan-on", "On")],
+      ["Track", "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them.", switchFor(trackingOn, on => later.setTracking(on))],
+      ["Price", "Live prices from Kalshi and Polymarket on every game, moving as the game does. See what your bets are worth right now, and whether you paid more or less than a fair price. Graphs and the Playbook's past results open up too.", Fan.lines ? "Free. Uses Track and the Fan connector, running on your computer." : "Free. Uses Track and the Fan connector, a small program on your computer that pulls prices over your own connection.", Fan.lines && trackingOn ? switchFor(pricesWanted, on => later.setPrices(on)) : el("span", "fan-off", "Not yet")],
+      ["Bet", "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.trader ? el("span", "fan-on", "On") : Fan.account ? keysItem() : el("span", "fan-off", "Not yet")]
     ];
     const aboutRows = () => {
       const lab = el("label", "fan-check"), c = el("input");
@@ -880,7 +880,7 @@ const switchFor = (on, change) => { const lab = el("label", "fan-check"), c = el
       c.addEventListener("change", () => { try { localStorage.setItem("fan.about", c.checked ? "off" : "on"); } catch (e) {} });
       lab.append(c, "Don't show on startup");
       const box = el("div", "fan-about");
-      ABOUT().forEach(([name, what, needs, control]) => { control.classList.add("fan-ctl"); box.append(el("b", null, name), el("p", null, what), control, el("small", null, needs)); });
+      ABOUT().forEach(([name, what, needs, control]) => { control.classList.add("fan-ctl"); box.append(el("b", null, name), control, el("p", null, what), el("small", null, needs)); });
       return [box, lab];
     };
     const SETTINGS_TABS = [
