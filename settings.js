@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvyafpna";
-import { Fan } from "./hosts.js?v=mvyafpna";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyafpna";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyafpna";
-import { setBet } from "./trade.js?v=mvyafpna";
+import { espnState } from "./espn.js?v=mvyaz1lr";
+import { Fan } from "./hosts.js?v=mvyaz1lr";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyaz1lr";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyaz1lr";
+import { setBet } from "./trade.js?v=mvyaz1lr";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -115,11 +115,12 @@ import { setBet } from "./trade.js?v=mvyafpna";
     const ABOUT = () => ({
       watch: [partCheck("Watch", true), "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up."],
       track: [partCheck("Track", trackingOn, on => setTracking(on)), "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them."],
-      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines ? on => setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? (pricesWanted ? "On, and that's all it takes: no key or account. Prices reach the game cards within a minute, and the status list says how old they are." : "Free. Uses the Fan connector, running on your computer. Tick the box and that's all it takes: no key or account.") : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", !Fan.lines && Fan.startLink ? getOrStart() : null],
-      bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed ? on => setBet(on) : null), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one. Off, Fan sends no orders, and fills you make anywhere else still arrive.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.account && !Fan.keyed ? keysItem() : null]
+      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines && !connectorAway ? on => setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", connectorAway ? "The connector isn't running, so prices aren't updating. Your choice stays, and they resume when it starts." : Fan.lines ? (pricesWanted ? "On, and that's all it takes: no key or account. Prices reach the game cards within a minute, and the status list says how old they are." : "Free. Uses the Fan connector, running on your computer. Tick the box and that's all it takes: no key or account.") : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", !Fan.lines && Fan.startLink ? getOrStart() : null],
+      bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed && !connectorAway ? on => setBet(on) : null), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one. Off, Fan sends no orders, and fills you make anywhere else still arrive.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.account && !Fan.keyed ? keysItem() : null]
     });
     // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
     let stopPressed = false;   // pressed Stop on this page, so its silence is expected
+    let connectorAway = false;   // this page's connector isn't answering: Price and Bet keep their ticks, greyed
     const stopItem = box => {
       const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Stop connector");
       b.type = "button";
@@ -139,8 +140,8 @@ import { setBet } from "./trade.js?v=mvyafpna";
       return { hi, away, rows: [
         ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? ["ok", "Running on this computer"] : ["off", "Not on this page"]],
         ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at)] : ["ok", "Using this browser's saved copy"]],
-        ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
-        ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : ["ok", "Lines from " + time(slateAt)]],
+        ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : away && Fan.lines === Fan.store ? ["off", "Kept by the connector, which isn't running"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
+        ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : ["ok", "Lines from " + time(slateAt)]],
         ["Kalshi", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "No key connected"] : ["ok", `Connected${hi.env === "demo" ? " to demo, fake money" : ""}, orders ${hi.orders ? "on" : "off"}`]],
         ["Fill feed", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "Waits for a Kalshi key"] : !feed.textContent || feed.classList.contains("wait") ? ["wait", "Starting"] : feed.classList.contains("on") ? ["ok", "Live"] : ["bad", feed.textContent]],
         ["Telecasts", nets ? ["ok", nets + (nets === 1 ? " network linked" : " networks linked")] : ["off", "No links pasted"]],
@@ -150,6 +151,7 @@ import { setBet } from "./trade.js?v=mvyafpna";
     const drawStatus = async box => {
       const { hi, away, rows } = await statusRows();
       if (box.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
+      if (away !== connectorAway) { connectorAway = away; fill(); return; }   // the boxes above change too, and this list is drawn again with them
       box.replaceChildren(el("h3", null, "Status"), ...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
       if (away && Fan.startLink) box.append(startItem());
       if (hi && hi.stop) box.append(stopItem(box));
