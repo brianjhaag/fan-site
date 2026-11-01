@@ -171,6 +171,10 @@
   .fan-list .fan-lay button:disabled, .fan-list .fan-show:disabled { color: var(--ink-dim); cursor: default; }
   .fan-list .fan-show { margin: 0 12px 4px; border: 1px solid var(--accent); color: var(--accent); }
   .fan-records { display: flex; flex-direction: column; align-items: flex-start; }
+  .fan-about { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 16px; padding: 8px 12px 12px; }
+  .fan-about b { grid-row: span 2; font: 400 24px/1.1 "Saira Stencil One", var(--font-display); color: var(--accent); }
+  .fan-about p { margin: 0; font: 400 17px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .fan-about small { margin: 2px 0 16px; font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-note { margin: 0; padding: 8px 12px; font-size: 14px; line-height: 1.3; color: var(--ink-dim); }
   .fan-net { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: 8px; padding: 4px 12px; font: 400 16px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink); }
   .fan-net input { box-sizing: border-box; width: 100%; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); border-radius: 2px; color: var(--ink); font: 400 13px var(--font-mono); }

@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js";
     return tag;
   }
 
-  const APP_VERSION = "0.5.4";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.5.5";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -865,13 +865,21 @@ import { Fan } from "./hosts.js";
     };
     const keysItem = () => { const b = el("button", null, "Kalshi account"); b.type = "button"; b.addEventListener("click", () => { open(false); Fan.account(); }); return b; };
     const badgeItem = () => { const b = el("button", null, "Badges: " + BADGE_STYLES[badgeStyle].label), names = Object.keys(BADGE_STYLES); b.type = "button"; b.addEventListener("click", () => { setBadgeStyle(names[(names.indexOf(badgeStyle) + 1) % names.length]); b.textContent = "Badges: " + BADGE_STYLES[badgeStyle].label; }); return b; };
-    // A tour and reminder, opened on launch until the user ticks the box. Stubbed for now.
+    // What Fan is, opened on launch until the user ticks the box: the four layers, each with what it takes.
+    const ABOUT = [
+      ["Watch", "Every game on one page: live scores, injuries, what's at stake, and the telecast a click away.", "Needs nothing."],
+      ["Track", "Log your bets from any book and see what's riding on each game as you watch.", "Needs nothing. Your bets stay with you."],
+      ["Price", "Live market prices on every game, and whether your bets were good ones.", "Needs the Fan connector, a small program on your computer."],
+      ["Bet", "Trade on Kalshi from the game card in one click.", "Needs the connector and your own Kalshi account."]
+    ];
     const aboutRows = () => {
       const lab = el("label", "fan-check"), c = el("input");
       c.type = "checkbox"; c.checked = !aboutOnStart();
       c.addEventListener("change", () => { try { localStorage.setItem("fan.about", c.checked ? "off" : "on"); } catch (e) {} });
       lab.append(c, "Don't show on startup");
-      return [el("p", "fan-note", "The tour goes here."), lab];
+      const box = el("div", "fan-about");
+      ABOUT.forEach(([name, what, needs]) => box.append(el("b", null, name), el("p", null, what), el("small", null, needs)));
+      return [box, lab];
     };
     const SETTINGS_TABS = [
       ["about", "About Fan", aboutRows],
