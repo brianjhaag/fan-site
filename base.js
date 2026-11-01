@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxat2k7";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxat2k7";
-import { Calc } from "./calc.js?v=mvxat2k7";
-import { Fan } from "./hosts.js?v=mvxat2k7";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxazkso";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxazkso";
+import { Calc } from "./calc.js?v=mvxazkso";
+import { Fan } from "./hosts.js?v=mvxazkso";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // The page shows one week at a time: GAMES and tickets always hold the selected week's games and wagers.
@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js?v=mvxat2k7";
     return tag;
   }
 
-  const APP_VERSION = "0.5.7";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.5.8";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on

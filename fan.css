@@ -859,6 +859,11 @@
   .prices-off .board .tname.plate .pl-no { font-size: 27px; }
   .prices-off .g-top.upcoming .g-when, .prices-off .g-air, .prices-off .g-top.live .g-st { left: 50%; }
 
+  /* One plain font across the settings window: the stencil belongs to football. */
+  #fanWindow, #fanWindow * { font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif !important; letter-spacing: normal !important; }
+  #fanTabs button, #fanWindow .fan-check, #fanWindow .fan-list button, #fanWindow .fan-on, #fanWindow .fan-off { font-weight: 600 !important; }
+  #fanWindow .fan-about b, #fanWindow h3 { font-weight: 700 !important; }
+
   /* ===== Phones ===== */
   @media (max-width: 760px) {
     html, body { height: auto !important; overflow-x: hidden; }

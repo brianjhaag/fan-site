@@ -1,15 +1,15 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mvxat2k7";
-import "./risk.js?v=mvxat2k7";
-import "./panels.js?v=mvxat2k7";
-import "./tracker.js?v=mvxat2k7";
-import "./trade.js?v=mvxat2k7";
-import { Fan } from "./hosts.js?v=mvxat2k7";
-import { WEEK_GAMES } from "./espn.js?v=mvxat2k7";
-import { curWeek, fillSettings, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, switchWeek, view, weekNow } from "./base.js?v=mvxat2k7";
-import { renderRisk } from "./risk.js?v=mvxat2k7";
-import { renderSeason, renderXY } from "./panels.js?v=mvxat2k7";
-import { renderPick, renderTickets, startRecords } from "./tracker.js?v=mvxat2k7";
+import "./base.js?v=mvxazkso";
+import "./risk.js?v=mvxazkso";
+import "./panels.js?v=mvxazkso";
+import "./tracker.js?v=mvxazkso";
+import "./trade.js?v=mvxazkso";
+import { Fan } from "./hosts.js?v=mvxazkso";
+import { WEEK_GAMES } from "./espn.js?v=mvxazkso";
+import { curWeek, fillSettings, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, switchWeek, view, weekNow } from "./base.js?v=mvxazkso";
+import { renderRisk } from "./risk.js?v=mvxazkso";
+import { renderSeason, renderXY } from "./panels.js?v=mvxazkso";
+import { renderPick, renderTickets, startRecords } from "./tracker.js?v=mvxazkso";
   Fan.setMarket(marketWanted());
   // the page opens on the CURRENT week: NFL weeks run Wednesday to Tuesday, and Week 8 starts Wed Oct 28 2026 (the same window the lines script uses)
   { const w0 = weekNow(); document.querySelectorAll(".weektabs [data-week]").forEach(b => b.classList.toggle("now", Number(b.dataset.week) === w0)); if (WEEK_GAMES[w0] && w0 !== curWeek) switchWeek(w0); }

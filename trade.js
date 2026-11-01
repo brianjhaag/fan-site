@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvxat2k7";
-import { Fan } from "./hosts.js?v=mvxat2k7";
-import { fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, renderGames, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxat2k7";
-import { renderRisk } from "./risk.js?v=mvxat2k7";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvxazkso";
+import { Fan } from "./hosts.js?v=mvxazkso";
+import { fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, renderGames, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxazkso";
+import { renderRisk } from "./risk.js?v=mvxazkso";
   Object.assign(later, { execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
