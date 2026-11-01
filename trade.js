@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvyfn833";
-import { Fan } from "./hosts.js?v=mvyfn833";
-import { Calc } from "./calc.js?v=mvyfn833";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvyfn833";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvygdaza";
+import { Fan } from "./hosts.js?v=mvygdaza";
+import { Calc } from "./calc.js?v=mvygdaza";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvygdaza";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -205,13 +205,24 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
   }
   // ARMED GAMES. The risk detail's switch has Fan send the game's suggested bet by itself while this page stays open: read the market, work out the suggestion, send one order, wait. Everything it does goes in the panel's log.
   // Being armed lasts until a reload. A result it can't be sure of disarms it, since the next order would be sized on a position it doesn't know.
-  const ARM_DEFAULTS = { up: 0, size: 100, max: 1, every: 10, kind: "any", lift: RULES.hedge.LIFT, capital: RULES.hedge.CAPITAL * 100 };   // Claude's defaults, apart from lift and capital, which are RULES'
+  const ARM_DEFAULTS = { up: 0, size: 100, max: 1, every: 10, trigger: "every", kind: "any", lift: RULES.hedge.LIFT, capital: RULES.hedge.CAPITAL * 100 };   // Claude's defaults, apart from lift and capital, which are RULES'
   let armSet = { ...ARM_DEFAULTS };
   try { armSet = { ...ARM_DEFAULTS, ...JSON.parse(localStorage.getItem("fan.arm") || "{}") }; } catch (e) {}
   const applyHedgeRules = () => { RULES.hedge.LIFT = armSet.lift; RULES.hedge.CAPITAL = armSet.capital / 100; };
   applyHedgeRules();
   const arms = new Map();   // game key -> { g, on, log, next, busy, sent }
   const armOf = g => { const k = gameKey(g); if (!arms.has(k)) arms.set(k, { g, on: false, log: [], next: 0, busy: false, sent: null, lastWait: "" }); return arms.get(k); };
+  // With a connector that runs triggers and responses, it holds the game's arm: the page sets them in its config and shows what it wrote to the records' auto collection.
+  const autoDocs = new Map();
+  let autoCfg = null;
+  function watchAuto() { if (Fan.auto && Fan.store && Fan.store.watch) Fan.store.watch("auto", rows => { autoDocs.clear(); rows.forEach(r => autoDocs.set(r.id, r.data)); changed("exec"); }, () => {}); }
+  const autoGames = () => ALL_GAMES.map(g => ({ ...Object.fromEntries(["t", "away", "home", "week", "league"].map(k => [k, g[k]])), id: slateId(g), when: dayFmt.format(new Date(g.t)) + ", " + timeZoned(new Date(g.t)) }));
+  async function autoSet(g, on) {
+    autoCfg = (await Fan.auto.get()) || autoCfg || { set: {} };
+    const key = gameKey(g), s = armSet;
+    autoCfg = { ...autoCfg, "abbr": ABBR, games: autoGames(), set: { ...autoCfg.set, [key]: { stamp: Date.now(), on, trigger: s.trigger === "fill" ? { kind: "fill" } : { kind: "every", seconds: s.every }, response: { kind: "hedge", up: s.up, size: s.size, max: s.max, send: s.kind, lift: s.lift, capital: s.capital } } } };
+    await Fan.auto.set(autoCfg);
+  }
   const armLog = (a, text, cls) => { a.log.unshift({ at: Date.now(), text, cls: cls || "" }); a.log.length = Math.min(a.log.length, 20); changed("exec"); };
   const disarm = (a, why) => { if (!a.on) return; a.on = false; a.sent = null; armLog(a, "Disarmed: " + why, "err"); };
   const armOn = g => { const a = armOf(g); a.on = true; a.next = 0; a.sent = null; a.lastWait = ""; armLog(a, "Armed"); return a; };
@@ -261,9 +272,12 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
   function armControls(g) {
     // With no way to send yet, the settings still work and the suggestion follows them; the switch says what it's waiting for.
     const blocked = Fan.trader ? "" : !Fan.lines ? "Needs the Fan connector" : !Fan.keyed ? "Needs a Kalshi key: Connect Kalshi in the settings window" : "Tick Bet in the settings window to arm";
-    const a = armOf(g), box = el("div", "rk-arm" + (a.on ? " on" : "")), row = el("div", "ar"), btn = el("button", "arbtn", (a.on ? "Armed: disarm" : "Arm") + (Fan.env === "demo" ? " (demo)" : ""));
+    const inPage = armOf(g), doc = Fan.auto ? autoDocs.get(gameKey(g)) : null, a = Fan.auto ? { on: !!(doc && doc.on), log: (doc && doc.log) || [] } : inPage, box = el("div", "rk-arm" + (a.on ? " on" : "")), row = el("div", "ar"), btn = el("button", "arbtn", (a.on ? "Armed: disarm" : "Arm") + (Fan.env === "demo" ? " (demo)" : ""));
     btn.type = "button"; btn.disabled = !!blocked && !a.on; btn.setAttribute("aria-pressed", String(a.on));
-    btn.addEventListener("click", () => { if (a.on) { disarm(a, "you turned it off"); } else armOn(g); });
+    btn.addEventListener("click", () => {
+      if (Fan.auto) { btn.disabled = true; autoSet(g, !a.on).catch(e => { box.append(el("small", "arwhy", "Couldn't tell the connector: " + e.message)); }); return; }
+      if (a.on) { disarm(a, "you turned it off"); } else armOn(g);
+    });
     row.append(btn);
     const save = () => { try { localStorage.setItem("fan.arm", JSON.stringify(armSet)); } catch (e) {} };
     const field = (name, key, title, step) => {
@@ -276,8 +290,13 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     [["any", "Lock or hedge"], ["lock", "Locks only"]].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; kind.append(o); });
     kind.value = armSet.kind; kind.disabled = a.on; kind.addEventListener("change", () => { armSet.kind = kind.value; save(); });
     kindLab.append(kind);
+    const when = el("select"), whenLab = el("label", null, "When");
+    [["every", "Every few seconds"], ["fill", "On a fill"]].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; when.append(o); });
+    when.value = armSet.trigger; when.disabled = a.on; when.addEventListener("change", () => { armSet.trigger = when.value; save(); });
+    whenLab.append(when);
+    if (Fan.auto) row.append(whenLab);
     row.append(kindLab, field("Max", "max", "Contracts per order at most. 0 sends the whole suggestion"), field("Size %", "size", "Share of the suggestion to send"), field("Up ¢", "up", "Cents above the ask the order may pay"), field("Every s", "every", "Seconds between checks"), field("Lift $", "lift", "How much a hedge has to raise the worst case", "0.5"), field("Capital ¢", "capital", "Charge per dollar put down, for hedges", "0.5"));
-    const note = el("small", blocked ? "arwhy" : null, blocked || a.on ? (blocked || "Fan is sending this game's suggested bet by itself while this page stays open. A reload disarms it.") : "Armed, Fan sends this game's suggested bet by itself while this page stays open. A reload disarms it.");
+    const note = el("small", blocked ? "arwhy" : null, blocked || (Fan.auto ? (a.on ? "The connector is sending this game's suggested bet by itself, with this page open or closed." : "Armed, the connector sends this game's suggested bet by itself, with this page open or closed, until you disarm it.") : a.on ? "Fan is sending this game's suggested bet by itself while this page stays open. A reload disarms it." : "Armed, Fan sends this game's suggested bet by itself while this page stays open. A reload disarms it."));
     box.append(row, note);
     if (a.log.length) { const log = el("div", "arlog"); a.log.slice(0, 4).forEach(l => log.append(el("div", l.cls, `${timeZoned(new Date(l.at))} ${l.text}`))); box.append(log); }
     return box;
@@ -341,4 +360,4 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     if (lastExec.cls === "ok") clearTicket();
     syncPlace();
   });
-export { armControls, armOf, armOn, armStep, showDemo, pendingFills, execControls, handleFill, placeSpec, refreshPrices, renderKalshiCheck, setBet, syncPlace };
+export { watchAuto, armControls, armOf, armOn, armStep, showDemo, pendingFills, execControls, handleFill, placeSpec, refreshPrices, renderKalshiCheck, setBet, syncPlace };
