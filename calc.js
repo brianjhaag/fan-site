@@ -26,16 +26,23 @@ const Calc = (() => {
   const last = n => n.split(" ").pop();
   const gameLabel = g => `${last(g.away)} at ${last(g.home)}`;
   const gameKey = g => g.t + "|" + gameLabel(g);
-  const odds = n => (n > 0 ? "+" : "−") + Math.abs(n);
-  const profitOf = (amt, od) => od > 0 ? amt * od / 100 : amt * 100 / -od;
-  const decimalOf = od => od > 0 ? 1 + od / 100 : 1 + 100 / -od;
+  // A market at 100¢ has no American odds: its price is infinite, and it reaches here as that or, after being saved, as nothing.
+  const atFull = od => !od || !Number.isFinite(od);
+  const odds = n => (atFull(n) ? "−∞" : (n > 0 ? "+" : "−") + Math.abs(n));
+  const profitOf = (amt, od) => atFull(od) ? 0 : od > 0 ? amt * od / 100 : amt * 100 / -od;
+  const decimalOf = od => atFull(od) ? 1 : od > 0 ? 1 + od / 100 : 1 + 100 / -od;
   const ticketPrice = t => t.parlay ? t.odds : t.type === "Moneyline" ? t.line : (t.odds ?? D.spreadPrice);
   // American odds from a price that pays $1: exact, and rounded the way a quote is.
   const americanOf = p => (p > 0.5 ? -100 * p / (1 - p) : 100 * (1 - p) / p);
   const quoteOf = p => (p > 0.5 ? -Math.round(100 * p / (1 - p)) : Math.round(100 * (1 - p) / p));
   const centsOf = am => Math.min(99, Math.max(1, Math.round(100 / decimalOf(am))));
   // A side's chance from a two-way moneyline, the vig taken out.
-  const noVig = (ml, away) => { const qa = 1 / decimalOf(ml[0]), qh = 1 / decimalOf(ml[1]); return (away ? qa : qh) / (qa + qh); };
+  const noVig = (ml, away) => {
+    const [fa, fh] = ml.map(atFull);
+    if (fa !== fh) return (away ? fa : fh) ? 1 : 0;   // one side at 100¢: that's the market's whole say, not something to take vig out of
+    const qa = 1 / decimalOf(ml[0]), qh = 1 / decimalOf(ml[1]);
+    return (away ? qa : qh) / (qa + qh);
+  };
   const winPct = (ml, away) => Math.round(noVig(ml, away) * 100);   // a team's chance to win from the moneyline, no vig, as a whole percent
   // What the fill feed says: a venue that simply hasn't connected yet is starting, for its first minute [C]. An error, or a minute of no connection, is a problem.
   const feedState = (venues, waitedMs) => {
@@ -44,7 +51,7 @@ const Calc = (() => {
     if (waitedMs < 60000 && off.every(([, v]) => !v.error && !v.reloadError)) return { text: "Feed starting", cls: "wait" };
     return { text: "Feed off, " + off.map(([n, v]) => `${n}: ${v.reloadError ? "new code failed, old running: " + v.reloadError : v.error || "off"}`).join("; "), cls: "off" };
   };
-  const noVigHome = ml => { const p = o => (o < 0 ? -o / (100 - o) : 100 / (100 + o)), a = p(ml[0]), h = p(ml[1]); return h / (a + h) * 100; };
+  const noVigHome = ml => noVig(ml, false) * 100;
 
   /* ==== Bonus bets ==== */
   // A bonus bet risks none of your cash, but spending it forfeits its value: what a hedge at fair odds would lock in,
