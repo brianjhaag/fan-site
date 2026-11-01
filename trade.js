@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy2ozfp";
-import { Fan } from "./hosts.js?v=mvy2ozfp";
-import { Calc } from "./calc.js?v=mvy2ozfp";
-import { changed, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy2ozfp";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy6ryxw";
+import { Fan } from "./hosts.js?v=mvy6ryxw";
+import { Calc } from "./calc.js?v=mvy6ryxw";
+import { changed, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy6ryxw";
   Object.assign(later, { execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -176,7 +176,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, e
             });
           } catch (e) {}
         }
-        const px = avgPx != null ? ` at ${(avgPx * 100).toFixed(1)}¢` : "", fee = o.average_fee_paid ? `, fee ${(o.average_fee_paid * 100).toFixed(1)}¢ each` : "";
+        const paidUp = h.ticketCents != null && Math.round(h.ask * 100) !== h.ticketCents ? ` (ticket ${h.ticketCents}¢, limit ${Math.round(h.ask * 100)}¢)` : "", px = avgPx != null ? ` at ${(avgPx * 100).toFixed(1)}¢${paidUp}` : "", fee = o.average_fee_paid ? `, fee ${(o.average_fee_paid * 100).toFixed(1)}¢ each` : "";
         const moved = (o.funded || []).map(f => `moved $${f.dollars.toFixed(2)} to shard ${f.to}`).join(", "), movedNote = moved ? `; ${moved}` : "";   // cash the order needed on its market's shard stays there
         lastExec = { at: Date.now(), sig, cls: o.filled > 0 ? "ok" : "err", text: (o.filled > 0 ? `Filled ${o.filled} of ${o.requested}${px}${fee}${o.unfilled ? `; ${o.unfilled} not filled at ${Math.round(h.ask * 100)}¢ or better (canceled)` : ""}${env}` : `Nothing filled at ${Math.round(h.ask * 100)}¢ or better (canceled)${env}`) + movedNote };
       }
@@ -224,15 +224,19 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, e
     if ($("bonus").checked) return { why: "A bonus bet cannot be placed" };
     const l = readLeg(), a = parseFloat($("amount").value);
     if (!l || !(a > 0) || !centsOk(l.cents)) return { why: "Fill in the ticket" };
-    const g = GAMES[gameSel.value], p = l.cents / 100, m = kalshiMarket(g, l);
+    const limit = Calc.placeLimit(l.cents, $("payup").value), g = GAMES[gameSel.value], p = limit / 100, m = kalshiMarket(g, l);
     if (m.why) return { why: m.why };
     const { tk, side } = m, txt = l.type === "Moneyline" ? `${l.side} to win` : `${l.side} ${lineShown(l.type, l.line)}`;
     const n = contractsFor(a, p);
     if (n < 1) return { why: "Not enough for one contract with the fee" };
-    return { h: { tk, side, n, ask: p, txt, gk: l.key, gn: l.game, gt: l.kickoff, tkt: { type: l.type, side: l.side, ...(l.type !== "Moneyline" ? { line: l.line } : {}) } } };
+    return { h: { tk, side, n, ask: p, ticketCents: l.cents, txt, gk: l.key, gn: l.game, gt: l.kickoff, tkt: { type: l.type, side: l.side, ...(l.type !== "Moneyline" ? { line: l.line } : {}) } } };
   }
+  // What Place may pay above the ticket's price, kept per browser. 0 until the user sets it: Claude's default, and the order is as it always was.
+  try { const v = localStorage.getItem("fan.payup"); if (v != null) $("payup").value = v; } catch (e) {}
+  $("payup").addEventListener("input", e => { try { localStorage.setItem("fan.payup", e.target.value); } catch (err) {} syncPlace(); });
   function syncPlace() {
     try {
+      $("payupBox").hidden = !isKalshi();
       const b = $("placeBtn"), s = placeSpec(), ok = !!s.h && !!Fan.trader && !execBusy;
       b.disabled = !ok; b.classList.toggle("ready", ok); b.textContent = execBusy ? "Sending…" : "Place";
       b.title = ok ? `Buy ${s.h.n} ${s.h.side.toUpperCase()} on ${s.h.tk} at ${Math.round(s.h.ask * 100)}¢ or better, immediate-or-cancel` : s.h ? "Needs the connector (" + (Fan.traderWhy || "still checking") + ")" : s.why;
@@ -248,4 +252,4 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, e
     if (lastExec.cls === "ok") clearTicket();
     syncPlace();
   });
-export { pendingFills, execControls, handleFill, refreshPrices, renderKalshiCheck, setBet, syncPlace };
+export { pendingFills, execControls, handleFill, placeSpec, refreshPrices, renderKalshiCheck, setBet, syncPlace };

@@ -98,6 +98,8 @@ const Calc = (() => {
     return { avg, contracts, amount: Math.round(total * 100) / 100, american: dec >= 2 ? Math.round((dec - 1) * 100) : -Math.round(100 / (dec - 1)), cents: Math.round(price * 1000) / 10, fee: Math.round(contracts * feeEach * 100) / 100 };
   }
 
+  // Place's limit: the ticket's price plus what the user will pay up, in whole cents. An immediate-or-cancel order still fills at the best price there is, so this costs nothing unless the market moved.
+  const placeLimit = (cents, up) => Math.min(99, cents + Math.max(0, Math.floor(Number(up)) || 0));
   // A fresh Kalshi read (q, from market_prices) as the fields to change on game g: the ladder's Kalshi columns (Polymarket's kept), and the live prices under way or the line before kickoff
   // (the cheaper of fresh Kalshi and saved Polymarket asks; the total is Kalshi's alone). The closing line is never touched once the game has started.
   function freshPrices(g, q, now) {
@@ -499,6 +501,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
 })();
 export { Calc };
