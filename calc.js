@@ -37,6 +37,13 @@ const Calc = (() => {
   // A side's chance from a two-way moneyline, the vig taken out.
   const noVig = (ml, away) => { const qa = 1 / decimalOf(ml[0]), qh = 1 / decimalOf(ml[1]); return (away ? qa : qh) / (qa + qh); };
   const winPct = (ml, away) => Math.round(noVig(ml, away) * 100);   // a team's chance to win from the moneyline, no vig, as a whole percent
+  // What the fill feed says: a venue that simply hasn't connected yet is starting, for its first minute [C]. An error, or a minute of no connection, is a problem.
+  const feedState = (venues, waitedMs) => {
+    const off = Object.entries(venues || {}).filter(([, v]) => !v.connected || v.error || v.reloadError);
+    if (!off.length) return { text: "Feed live", cls: "on" };
+    if (waitedMs < 60000 && off.every(([, v]) => !v.error && !v.reloadError)) return { text: "Feed starting", cls: "wait" };
+    return { text: "Feed off, " + off.map(([n, v]) => `${n}: ${v.reloadError ? "new code failed, old running: " + v.reloadError : v.error || "off"}`).join("; "), cls: "off" };
+  };
   const noVigHome = ml => { const p = o => (o < 0 ? -o / (100 - o) : 100 / (100 + o)), a = p(ml[0]), h = p(ml[1]); return h / (a + h) * 100; };
 
   /* ==== Bonus bets ==== */
@@ -492,6 +499,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, noVigHome, kalshiFee, contractsFor, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
 })();
 export { Calc };

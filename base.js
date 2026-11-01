@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxtj25y";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxtj25y";
-import { Calc } from "./calc.js?v=mvxtj25y";
-import { Fan } from "./hosts.js?v=mvxtj25y";
+import { espnState, NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxuitv8";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxuitv8";
+import { Calc } from "./calc.js?v=mvxuitv8";
+import { Fan } from "./hosts.js?v=mvxuitv8";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -168,7 +168,7 @@ import { Fan } from "./hosts.js?v=mvxtj25y";
     return tag;
   }
 
-  const APP_VERSION = "0.6.11";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.8.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -193,8 +193,8 @@ import { Fan } from "./hosts.js?v=mvxtj25y";
   try { trackingOn = localStorage.getItem("fan.tracking") === "on"; } catch (e) {}
   document.documentElement.classList.toggle("tracking-off", !trackingOn);
   // Prices are the step past Bet tracking: wagers typed by hand need no market data, and a browser with no connector has none. The settings window's checkbox sets it, on unless turned off. Tracking off means no prices either.
-  let pricesWanted = true;
-  try { pricesWanted = localStorage.getItem("fan.prices") !== "off"; } catch (e) {}
+  let pricesWanted = false;   // only Watch starts on. A browser already tracking from before this default keeps its prices
+  try { const p = localStorage.getItem("fan.prices"); pricesWanted = p === "on" || (p == null && trackingOn); } catch (e) {}
   const setPricesWanted = on => { pricesWanted = on; };
   const marketWanted = () => pricesWanted;
   const pricesOn = () => marketWanted() && !!Fan.lines;
@@ -202,7 +202,7 @@ import { Fan } from "./hosts.js?v=mvxtj25y";
   // A league's checkbox in the settings window is the same kind of yes or no: off, the page and the refreshes do nothing for it. NFL is on until the user says otherwise. At least one stays on.
   const LEAGUE_ORDER = ["nfl", "nba", "nhl", "mlb"];
   let leaguesOn = new Set(["nfl"]);
-  try { const v = JSON.parse(localStorage.getItem("fan.leagues")); if (Array.isArray(v) && v.some(k => LEAGUE_ORDER.includes(k))) leaguesOn = new Set(v.filter(k => LEAGUE_ORDER.includes(k))); } catch (e) {}
+  const LEAGUES_READY = ["nfl"];   // the rest show in the Leagues tab, off and disabled, on the user's word
   // Which league a ticket belongs to, from its week: an NBA day is yyyymmdd, week 0 is a market in no league.
   const ticketLeagueOn = t => { const w = weekOf(t); return !w || leaguesOn.has(w > 1e7 ? "nba" : "nfl"); };
   const weekTickets = () => (trackingOn ? allTickets.filter(t => weekOf(t) === curWeek) : []);
@@ -811,10 +811,10 @@ import { Fan } from "./hosts.js?v=mvxtj25y";
   let fillSettings = () => {};
   { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
     const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) win.close(); };
-    let tab = "leagues";
+    let tab = "about";
     const leagueRows = () => Object.entries(leagueNames()).map(([k, h]) => {
       const row = el("label", "fan-lg"), c = el("input");
-      c.type = "checkbox"; c.checked = leaguesOn.has(k); c.disabled = c.checked && leaguesOn.size === 1; c.setAttribute("aria-label", "Use " + h);
+      c.type = "checkbox"; c.checked = leaguesOn.has(k); c.disabled = !LEAGUES_READY.includes(k) || (c.checked && leaguesOn.size === 1); c.setAttribute("aria-label", "Use " + h);
       c.addEventListener("change", () => { setLeagueOn(k, c.checked); fill(); });
       row.append(c, h);
       return row;
@@ -875,13 +875,36 @@ import { Fan } from "./hosts.js?v=mvxtj25y";
       watch: [partCheck("Watch", true), "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up."],
       track: [partCheck("Track", trackingOn, on => later.setTracking(on)), "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them."],
       price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines ? on => later.setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? "Free. Uses the Fan connector, running on your computer." : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection."],
-      bet: [partCheck("Bet", !!Fan.trader), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", !Fan.trader && Fan.account ? keysItem() : null]
+      bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed ? on => later.setBet(on) : null), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one. Off, Fan sends no orders, and fills you make anywhere else still arrive.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.account && !Fan.keyed ? keysItem() : null]
     });
+    // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
+    const statusRows = async () => {
+      let hi = null, away = false;
+      if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
+      const espn = espnState(), feed = $("feedNote"), nets = Object.values(networkLinks).filter(u => /^https:\/\//i.test(u)).length, time = at => timeZoned(new Date(at));
+      return [
+        ["Connector", away ? ["bad", "Not answering"] : hi ? ["ok", "Running on this computer"] : ["off", "Not on this page"]],
+        ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at)] : ["ok", "Using this browser's saved copy"]],
+        ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
+        ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : ["ok", "Lines from " + time(slateAt)]],
+        ["Kalshi", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "No key connected"] : hi.orders ? ["ok", "Connected, orders on"] : ["ok", "Connected, orders off"]],
+        ["Fill feed", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "Waits for a Kalshi key"] : !feed.textContent || feed.classList.contains("wait") ? ["wait", "Starting"] : feed.classList.contains("on") ? ["ok", "Live"] : ["bad", feed.textContent]],
+        ["Telecasts", nets ? ["ok", nets + (nets === 1 ? " network linked" : " networks linked")] : ["off", "No links pasted"]],
+        ["Leagues", ["ok", [...leaguesOn].map(k => leagueNames()[k]).join(", ")]]
+      ];
+    };
+    const drawStatus = async box => {
+      const rows = await statusRows();
+      box.replaceChildren(el("h3", null, "Status"), ...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
+    };
+    setInterval(() => { const box = document.querySelector(".fan-status"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
     const aboutRows = () => {
       const box = el("div", "fan-about"), parts = ABOUT();
       const cell = k => { const [toggle, what, needs, extra] = parts[k], d = el("div", "fan-part"); d.dataset.part = k; d.append(toggle, el("p", null, what), el("small", null, needs)); if (extra) d.append(extra); return d; };
       box.append(el("span"), el("h3", null, "Built in"), el("h3", null, "With the Fan connector"), el("b", null, "Watching games"), cell("watch"), cell("price"), el("b", null, "Tracking and betting"), cell("track"), cell("bet"));
-      return [box];
+      const status = el("div", "fan-status");
+      drawStatus(status);
+      return [box, status];
     };
     const SETTINGS_TABS = [
       ["about", "Fan", aboutRows],
@@ -904,7 +927,7 @@ import { Fan } from "./hosts.js?v=mvxtj25y";
     };
     btn.addEventListener("click", () => { fill(); open(!win.open); });
     $("fanClose").addEventListener("click", () => open(false));
-    setTimeout(() => { tab = "about"; fill(); open(true); win.addEventListener("close", () => { tab = "leagues"; }, { once: true }); }, 0);
+    setTimeout(() => { fill(); open(true); }, 0);
     fillSettings = () => { if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
   // Onto the first league that's on, if the one on screen isn't.
   function leaveOffLeague() {

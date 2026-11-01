@@ -182,6 +182,16 @@
   .fan-part p { margin: 0; font: 400 16px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
   .fan-part small { font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-part button { appearance: none; padding: 6px 10px; background: none; border: 1px solid var(--accent); border-radius: 2px; color: var(--accent); cursor: pointer; }
+  .fan-status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 16px; padding: 8px 12px 8px 130px; }   /* under the grid's boxes, not its row names */
+  .fan-status h3 { grid-column: 1 / -1; margin: 0 0 2px; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
+  .fan-st { display: grid; grid-template-columns: 8px minmax(0, 1fr); column-gap: 6px; align-items: center; font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
+  .fan-st i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .fan-st b { color: var(--ink); font-weight: 600; }
+  .fan-st span { grid-column: 2; }
+  .fan-st.ok i { color: var(--accent); }
+  .fan-st.wait i { box-sizing: border-box; background: none; border: 1.5px solid var(--accent); }
+  .fan-st.warn i, .fan-st.warn span { color: var(--live); }
+  .fan-st.bad i, .fan-st.bad span { color: #ff6b5e; }
   .fan-note { margin: 0; padding: 8px 12px; font-size: 14px; line-height: 1.3; color: var(--ink-dim); }
   .fan-net { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: 8px; padding: 4px 12px; font: 400 16px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink); }
   .fan-net input { box-sizing: border-box; width: 100%; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); border-radius: 2px; color: var(--ink); font: 400 13px var(--font-mono); }
@@ -873,6 +883,7 @@
     .garrow { display: none !important; }
     .fan-about { grid-template-columns: minmax(0, 1fr); }
     .fan-about h3, .fan-about > span { display: none; }
+    .fan-status { grid-template-columns: minmax(0, 1fr); padding-left: 12px; }
     .top { display: block; }
     .games, .games.strip { display: block; height: auto; overflow: visible; }
     .games.strip .slot { margin-bottom: 12px; }

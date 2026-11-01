@@ -1,8 +1,9 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvxtj25y";
-import { Fan } from "./hosts.js?v=mvxtj25y";
-import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxtj25y";
-  Object.assign(later, { execControls, renderKalshiCheck, syncPlace });
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvxuitv8";
+import { Fan } from "./hosts.js?v=mvxuitv8";
+import { Calc } from "./calc.js?v=mvxuitv8";
+import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxuitv8";
+  Object.assign(later, { execControls, renderKalshiCheck, setBet, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
   (async () => {
@@ -12,7 +13,12 @@ import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contracts
     syncPlace();
     if (reader()) { pendingFills().catch(() => {}); feedLoop(); }
   })();
+  let feedWaiting = Date.now();   // when the feed last stopped being connected
   const reader = () => Fan.trader || Fan.reads;   // what can read the venue, whether or not it takes orders
+  async function setBet(on) {
+    try { await Fan.setBet(on); } catch (e) {}
+    syncPlace(); changed("exec"); fillSettings();
+  }
   // FILL FEED. wait_fill stays open until a fill arrives. Every fill is logged to the fills collection
   // (doc feed-<trade_id>, so a repeat overwrites itself) and shown with its delay. It does not save tickets yet: Execute saves its own from the order's reply.
   const feedShow = (text, cls) => { const n = document.getElementById("feedNote"); if (n) { n.textContent = text; n.className = cls || ""; } };
@@ -114,8 +120,9 @@ import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contracts
           handleFill(x, Date.now() - x.ts_ms);
           if (!x.catchup) refreshPrices(x.ticker, x.venue);
         });
-        const off = Object.entries(r.venues || {}).filter(([, v]) => !v.connected || v.error || v.reloadError).map(([n, v]) => `${n}: ${v.reloadError ? "new code failed, old running: " + v.reloadError : v.error || "off"}`);
-        feedShow(off.length ? "Feed off, " + off.join("; ") : "Feed live", off.length ? "off" : "on");
+        const fs = Calc.feedState(r.venues, Date.now() - (feedWaiting || (feedWaiting = Date.now())));
+        if (fs.cls === "on") feedWaiting = 0;
+        if (Fan.keyed === false) feedShow("", ""); else feedShow(fs.text, fs.cls);   // with no key there's nothing for it to connect to, and the settings window says so
       } catch (e) {
         const c = e && e.code;
         if (!(e && e.retryable) || (++tries > 3 && !e.keepTrying)) { feedShow(c === "server_not_connected" ? "" : "Feed off: " + (c || "error"), "off"); return; }
@@ -190,10 +197,10 @@ import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contracts
   let checkRun = 0;
   async function renderKalshiCheck() {
     const box = $("ledger"), run = ++checkRun;
-    box.replaceChildren(el("div", "pg-stub", "Kalshi check"), el("p", "pg-stub-t", Fan.trader ? "Reading Kalshi's fills…" : Fan.account ? "Connect Kalshi first: settings, Sportsbooks, Kalshi account." : "Needs the connector."));
-    if (!Fan.trader) return;
+    box.replaceChildren(el("div", "pg-stub", "Kalshi check"), el("p", "pg-stub-t", Fan.trader || Fan.keyed ? "Reading Kalshi's fills…" : Fan.account ? "Connect Kalshi first: settings, Sportsbooks, Kalshi account." : "Needs the connector."));
+    if (!Fan.trader && !Fan.keyed) return;
     let fills;
-    try { fills = (await Fan.trader.call("run", { venue: "kalshi", name: "fills_list", args: { ms: Date.UTC(2026, 0, 1) } })).fills; }
+    try { fills = (await reader().call("run", { venue: "kalshi", name: "fills_list", args: { ms: Date.UTC(2026, 0, 1) } })).fills; }
     catch (e) { if (run === checkRun) box.replaceChildren(el("div", "pg-stub", "Kalshi check"), el("p", "pg-stub-t", "Could not read Kalshi: " + ((e && (e.message || e.code)) || "error"))); return; }
     if (run !== checkRun || view !== "ledger" || subView.ledger !== "check") return;
     const r = kalshiCheck(fills, allTickets), cents = v => "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }), count = v => v.toLocaleString("en-US", { maximumFractionDigits: 2 });

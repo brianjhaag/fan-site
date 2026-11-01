@@ -5,11 +5,14 @@ const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = Date.UTC(2026, 9, 28, 6), NFL_WEEKS = 18;
 let stopped = false;
+let pullAt = 0, pullFailed = "";
 async function getJson(url) {
   if (stopped) throw new Error("ESPN pulls stopped");
-  const r = await fetch(url, { signal: AbortSignal.timeout(30000) });
+  let r;
+  try { r = await fetch(url, { signal: AbortSignal.timeout(30000) }); } catch (e) { pullFailed = "Couldn't reach ESPN"; throw e; }
   if (r.status === 429 || r.status >= 500) stopped = true;
-  if (!r.ok) throw new Error("ESPN answered " + r.status);
+  if (!r.ok) { pullFailed = "ESPN answered " + r.status; throw new Error(pullFailed); }
+  pullAt = Date.now(); pullFailed = "";
   return r.json();
 }
 const keptPull = key => { try { return JSON.parse(localStorage.getItem("fan.espn." + key)); } catch (e) { return null; } };
@@ -48,6 +51,7 @@ const WEEK_GAMES = {}, GAME_ENV = {}, TEAM_INFO = {}, NBA_INFO = {}, nflRows = {
 let pullProblem = "", onRefresh = () => {};
 const setRefresh = fn => { onRefresh = fn; };
 const pullStatus = () => pullProblem;
+const espnState = () => ({ at: pullAt, problem: pullFailed || pullProblem });   // for the status monitor
 
 // Blocks the page only for a week this browser has never seen.
 for (let w = 1; w <= NFL_WEEKS; w++) {
@@ -162,9 +166,7 @@ async function pullNba() {
   rows.forEach(r => { NBA_INFO[r.a] = r.an; NBA_INFO[r.h] = r.hn; });
   return rows;
 }
-let nbaLeagueOn = false;
-try { const v = JSON.parse(localStorage.getItem("fan.leagues")); nbaLeagueOn = Array.isArray(v) && v.includes("nba"); } catch (e) {}
-const NBA_SCHEDULE = nbaLeagueOn ? (await pullNba()).map(r => [r.t, r.a, r.h, r.tv]) : [];
+const NBA_SCHEDULE = [];   // only the NFL can be turned on for now
 
 // NCAA FB's list: today's games involving a top 25 team, asked for when its page opens.
 async function pullNcaafb() {
@@ -176,4 +178,4 @@ async function pullNcaafb() {
   }).filter(g => g.away.rank || g.home.rank).sort((a, b) => a.t.localeCompare(b.t));
   return { asOf: Date.now(), games };
 }
-export { GAME_ENV, NBA_INFO, NBA_SCHEDULE, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullNba, pullNcaafb, pullStatus, setRefresh, teamSchedule };
+export { espnState, GAME_ENV, NBA_INFO, NBA_SCHEDULE, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullNba, pullNcaafb, pullStatus, setRefresh, teamSchedule };
