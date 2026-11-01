@@ -1,10 +1,21 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxazkso";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxazkso";
-import { Calc } from "./calc.js?v=mvxazkso";
-import { Fan } from "./hosts.js?v=mvxazkso";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvxr57xx";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvxr57xx";
+import { Calc } from "./calc.js?v=mvxr57xx";
+import { Fan } from "./hosts.js?v=mvxr57xx";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
+  // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
+  let panels = [], changeQueued = false;
+  const dirtyTopics = new Set();
+  const definePanels = list => { panels = list; };
+  function drawNow() {
+    changeQueued = false;
+    const topics = [...dirtyTopics];
+    dirtyTopics.clear();
+    panels.forEach(([draw, on]) => { if (on.some(t => topics.includes(t))) { try { draw(); } catch (e) { console.error(e); } } });
+  }
+  const changed = (...topics) => { topics.forEach(t => dirtyTopics.add(t)); if (!changeQueued) { changeQueued = true; queueMicrotask(() => { if (changeQueued) drawNow(); }); } };
   // The page shows one week at a time: GAMES and tickets always hold the selected week's games and wagers.
   // NBA: a slate is one Eastern-time day, its "week" number is that day as yyyymmdd (so tickets and slate docs work as in the NFL: slate/w20261030-DEN-PHX). Codes are Kalshi's.
   const addNbaGame = ([t, a, h, tv]) => {
@@ -21,7 +32,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
   const nbaDay = (add = 0) => Number(new Date(Date.now() + add * 864e5).toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, ""));
   // The Risk detail icon FILTERS the totals and the saved tickets to that game and draws its graph over the wager ticket.
   let riskGame = null;
-  const setRiskGame = g => { riskGame = g; };
+  const setRiskGame = g => { riskGame = g; changed("selection"); };
   let detailGame = null;   // the game whose detail replaces the cards (null = the cards)
   const setDetailGame = g => { detailGame = g; };
   let lastSavedTabKey = "";
@@ -158,7 +169,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     return tag;
   }
 
-  const APP_VERSION = "0.5.8";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.6.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -186,8 +197,9 @@ import { Fan } from "./hosts.js?v=mvxazkso";
   let pricesWanted = true;
   try { pricesWanted = localStorage.getItem("fan.prices") !== "off"; } catch (e) {}
   const setPricesWanted = on => { pricesWanted = on; };
-  const marketWanted = () => trackingOn && pricesWanted;
+  const marketWanted = () => pricesWanted;
   const pricesOn = () => marketWanted() && !!Fan.lines;
+  document.documentElement.classList.toggle("prices-off", !trackingOn || !pricesWanted);   // until the sockets answer: a plain page never flashes the price columns
   // A league's checkbox in the settings window is the same kind of yes or no: off, the page and the refreshes do nothing for it. NFL is on until the user says otherwise. At least one stays on.
   const LEAGUE_ORDER = ["nfl", "nba", "nhl", "mlb", "ncaafb"];
   let leaguesOn = new Set(["nfl"]);
@@ -201,7 +213,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     const cut = k.indexOf("|"), at = Date.parse(k.slice(0, cut)), label = k.slice(cut + 1), g = ALL_GAMES.find(x => gameLabel(x) === label && Math.abs(Date.parse(x.t) - at) < 8 * 864e5);
     return g ? gameKey(g) : k;
   };
-  const setTickets = all => { all.forEach(t => { if (t.key) t.key = rekey(t.key); (t.legs || []).forEach(l => { if (l.key) l.key = rekey(l.key); }); }); allTickets = all; tickets = weekTickets(); };
+  const setTickets = all => { all.forEach(t => { if (t.key) t.key = rekey(t.key); (t.legs || []).forEach(l => { if (l.key) l.key = rekey(l.key); }); }); allTickets = all; tickets = weekTickets(); changed("tickets"); };
   const setTrackingOn = on => { trackingOn = on; setTickets(allTickets); };
   // Puts a week's games and wagers in view, with nothing redrawn.
   const selectSlate = w => { curWeek = w; GAMES = WEEK_GAMES[w] || (WEEK_GAMES[w] = []); setTickets(allTickets); };
@@ -259,7 +271,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     });
     slateNote(meta ? `Lines ${meta.at ? `${new Date(meta.at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: tz })}, ${timeZoned(new Date(meta.at))}` : String(meta.asOf).replace(/, \d{4}/, "")}` : "No lines yet");
     slateAt = meta && Number(meta.at) || 0; staleCheck();
-    renderGames(); later.renderRisk();
+    changed("lines");
   }
   function watchSlate() {
     Fan.lines.watch("slate", rows => {
@@ -267,7 +279,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     }, () => slateNote("Connection lost: reload the page"));
   }
   const initLines = () => { later.syncPrices(); if (Fan.lines) watchSlate(); };
-  setRefresh(() => { renderGames(); });
+  setRefresh(() => changed("cards"));
 
   function el(tag, cls, text) {
     const n = document.createElement(tag);
@@ -313,7 +325,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
       const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? status(g)[1] === "live" : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
-      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { Fan.openTelecast(telecastLink(g), telecastPref); } : () => { riskGame = riskGame === g ? null : g; if (riskGame) riskKey = gameKey(g); later.applyRiskGame(); });
+      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { Fan.openTelecast(telecastLink(g), telecastPref); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
       box.append(b);
     });
     return box;
@@ -341,7 +353,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
   function setBadgeStyle(s) {
     badgeStyle = s;
     try { localStorage.setItem("fan.badges", s); } catch (e) {}
-    renderGames();
+    changed("cards");
   }
 
   // A game under way shows ESPN's score on the plain page. With prices on, the card keeps its live prices.
@@ -376,14 +388,14 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     const nl = !!g.noLine;   // no market yet (a far-off week): dashes instead of the placeholder numbers
     const ml = el("td", "ml", !pricesOn() ? "" : nl ? "—" : odds(L.ml[n]));   // tracking off: no prices anywhere, not dashes
     ml.style.color = brighterOf(g, side);
-    if (!nl && pricesOn()) { ml.classList.add("ml-go"); ml.addEventListener("click", e => { e.stopPropagation(); later.fillMoneyline(g, n); }); }   // a moneyline click fills the wager ticket instead of selecting the card
+    if (!nl && pricesOn() && trackingOn) { ml.classList.add("ml-go"); ml.addEventListener("click", e => { e.stopPropagation(); later.fillMoneyline(g, n); }); }   // a moneyline click fills the wager ticket instead of selecting the card
     const spc = el("td", "sp", !pricesOn() || nl || sp < 0 ? "" : pts(sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1)));   // one decimal always: +4.0, +3.5
-    if (!nl && sp >= 0 && pricesOn()) { spc.classList.add("ml-go"); spc.addEventListener("click", e => { e.stopPropagation(); later.fillSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
+    if (!nl && sp >= 0 && pricesOn() && trackingOn) { spc.classList.add("ml-go"); spc.addEventListener("click", e => { e.stopPropagation(); later.fillSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
     tr.append(ml, name, spc);
     // The total is the same for both teams: one cell on the first row spanning both, centered between them.
     if (away) {
       const tot = el("td", "tot", !pricesOn() ? "" : nl ? "—" : Number(L.tot).toFixed(1)); tot.rowSpan = 2;
-      if (!nl && pricesOn()) { tot.classList.add("ml-go"); tot.title = "Top half: over. Bottom half: under."; tot.addEventListener("click", e => { e.stopPropagation(); const r = tot.getBoundingClientRect(); later.fillTotal(g, e.clientY < r.top + r.height / 2 ? 0 : 1); }); }   // a total click fills the wager ticket
+      if (!nl && pricesOn() && trackingOn) { tot.classList.add("ml-go"); tot.title = "Top half: over. Bottom half: under."; tot.addEventListener("click", e => { e.stopPropagation(); const r = tot.getBoundingClientRect(); later.fillTotal(g, e.clientY < r.top + r.height / 2 ? 0 : 1); }); }   // a total click fills the wager ticket
       tr.append(tot);
     }
     return tr;
@@ -572,13 +584,10 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     tip.style.left = Math.max(8, Math.min(window.innerWidth - t.width - 8, a.left + a.width / 2 - t.width / 2)) + "px";
     tip.style.top = (a.top - t.height - 8 >= 8 ? a.top - t.height - 8 : a.bottom + 8) + "px";
   }
+  let cardsScroll = null;
   function renderGames() {
     hideTradeTip();
     const box = $("games");
-    later.renderTotals();
-    if (view === "ledger") later.renderLedger();
-    if (view === "xy") later.renderXY();
-    if (view === "season") later.renderSeason();
     // A week whose games are all final has no wager ticket; the saved tickets card shows its Summary tab by default (set once per week, and when the week becomes final).
     const allFinal = GAMES.length > 0 && GAMES.every(g => g.final);
     document.querySelector(".col.left").classList.toggle("all-final", allFinal);
@@ -586,6 +595,8 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     fitSlateLine();
     if (curWeek + ":" + allFinal !== lastSavedTabKey) { lastSavedTabKey = curWeek + ":" + allFinal; later.showSaved(allFinal ? "summary" : "tickets"); }
     const shownDetail = detailGame && GAMES.includes(detailGame) ? detailGame : null;
+    const wasDetail = box.classList.contains("bd");
+    if (shownDetail && !wasDetail) cardsScroll = { week: curWeek, league, x: box.scrollLeft, y: window.scrollY };   // closing the preview puts the cards back where they were
     box.classList.toggle("bd", !!shownDetail);
     // a game preview takes over the ticket column's room: the totals, saved tickets and wager ticket are hidden (their space stays) and the preview card widens across it
     { const topEl = document.querySelector(".top"), cl = document.querySelector(".col.left"); topEl.classList.toggle("bd-open", !!shownDetail); topEl.style.setProperty("--bdx", (cl.getBoundingClientRect().width + 20) + "px"); }
@@ -603,7 +614,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
       const over = stCls === "final" || showsNow(g);
 
       const card = el("article", "game" + (over && !showsNow(g) ? " is-final" : "") + (riskGame === g ? " sel" : ""));
-      if (trackingOn && g.live && stCls === "live") { const P = g.line, sgn = v => (v > 0 ? "+" : "") + v; card.title = `Live prices (Kalshi). Pre-game: ${last(g.away)} ${pts(P.sp)} @ ${last(g.home)}, total ${P.tot}, moneyline ${sgn(P.ml[0])} / ${sgn(P.ml[1])}`; }   // hover shows the saved pre-game line
+      if (pricesOn() && g.live && stCls === "live") { const P = g.line, sgn = v => (v > 0 ? "+" : "") + v; card.title = `Live prices (Kalshi). Pre-game: ${last(g.away)} ${pts(P.sp)} @ ${last(g.home)}, total ${P.tot}, moneyline ${sgn(P.ml[0])} / ${sgn(P.ml[1])}`; }   // hover shows the saved pre-game line
 
       // Top: when and where to watch
       const top = el("div", "g-top" + (stCls === "live" ? " live" : "") + (stText === "Upcoming" ? " upcoming" : ""));
@@ -665,6 +676,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     fitViewportHeight();
     fitSectionTabs();
     fitTicketColumn();
+    if (wasDetail && cardsScroll && cardsScroll.week === curWeek && cardsScroll.league === league) { box.scrollLeft = cardsScroll.x; window.scrollTo(window.scrollX, cardsScroll.y); }
     updateGameArrows();
   }
 
@@ -731,7 +743,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     grid.style.setProperty("--cols", best.cols);
     grid.style.setProperty("zoom", best.scale);
   }
-  window.addEventListener("resize", () => { const b = $("games"); if (b && b.classList.contains("flat")) renderGames(); });
+  window.addEventListener("resize", () => { const b = $("games"); if (b && b.classList.contains("flat")) changed("cards"); });
 
 
   // The teams not playing this week: every team in the color table that is on no game of the selected week.
@@ -763,14 +775,14 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     const open = graphGames();
     return open.length > 0 && open.every(g => !g.noLine);
   }
+  const drawLeagueStub = () => { if (LEAGUES.includes(view)) drawStub(view); };
   function showView(v) {
     view = v;
     $("ledger").hidden = v !== "ledger"; $("xy").hidden = v !== "xy"; $("season").hidden = v !== "season"; $("playbook").hidden = v !== "playbook"; $("panel").hidden = v !== "week";
     LEAGUES.forEach(k => { $(k).hidden = v !== k; });
     ["ledger", "xy", "season", "playbook"].forEach(k => $("tab-" + k).setAttribute("aria-selected", String(v === k)));
     document.querySelectorAll(".weektabs [data-week]").forEach(b => { const w = Number(b.dataset.week); b.classList.toggle("now", w === weekNow()); b.setAttribute("aria-selected", String(!SECTIONS[v] && w === curWeek)); });   // Graphs belongs to the selected week; one top tab is active at a time
-    if (v === "ledger") later.renderLedger(); else if (v === "xy") later.renderXY(); else if (v === "season") later.renderSeason(); else if (v === "playbook") later.renderPlaybook(); else if (LEAGUES.includes(v)) drawStub(v); else { renderGames(); later.renderRisk(); }
-    if (view === v) renderSectionTabs();
+    changed("view", "view:" + v);
     syncLeaguePick();
   }
   $("tab-xy").addEventListener("click", () => { detailGame = null; if (view === "xy") { showView("week"); } else showView("xy"); });   // clicking Graphs again goes back to the cards
@@ -861,7 +873,7 @@ import { Fan } from "./hosts.js?v=mvxazkso";
     })];
     const trackItem = () => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = trackingOn; c.addEventListener("change", () => { later.setTracking(c.checked); fill(); }); lab.append(c, "Track"); return lab; };
     const pricesItem = () => {
-      if (!Fan.lines) return [el("p", "fan-note", "Your bets stay in this browser. Prices need the Fan connector on this computer.")];
+      if (!Fan.lines) return [el("p", "fan-note", (trackingOn ? "Your bets stay in this browser. " : "") + "Prices need the Fan connector on this computer.")];
       const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = pricesWanted; c.addEventListener("change", () => later.setPrices(c.checked)); lab.append(c, "Price"); return [lab];
     };
     const keysItem = () => { const b = el("button", null, "Connect Kalshi"); b.type = "button"; b.addEventListener("click", () => { open(false); Fan.account(); }); return b; };
@@ -871,7 +883,7 @@ const switchFor = (on, change) => { const lab = el("label", "fan-check"), c = el
     const ABOUT = () => [
       ["Watch", "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up.", el("span", "fan-on", "On")],
       ["Track", "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them.", switchFor(trackingOn, on => later.setTracking(on))],
-      ["Price", "Live prices from Kalshi and Polymarket on every game, moving as the game does. See what your bets are worth right now, and whether you paid more or less than a fair price. Graphs and the Playbook's past results open up too.", Fan.lines ? "Free. Uses Track and the Fan connector, running on your computer." : "Free. Uses Track and the Fan connector, a small program on your computer that pulls prices over your own connection.", Fan.lines && trackingOn ? switchFor(pricesWanted, on => later.setPrices(on)) : el("span", "fan-off", "Not yet")],
+      ["Price", "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? "Free. Uses the Fan connector, running on your computer." : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", Fan.lines ? switchFor(pricesWanted, on => later.setPrices(on)) : el("span", "fan-off", "Not yet")],
       ["Bet", "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.trader ? el("span", "fan-on", "On") : Fan.account ? keysItem() : el("span", "fan-off", "Not yet")]
     ];
     const aboutRows = () => {
@@ -887,7 +899,7 @@ const switchFor = (on, change) => { const lab = el("label", "fan-check"), c = el
       ["about", "About Fan", aboutRows],
       ["leagues", "Leagues", leagueRows],
       ["telecasts", "Telecasts", telecastRows],
-      ["sportsbooks", "Sportsbooks", () => [trackItem(), ...(trackingOn ? pricesItem() : []), ...(Fan.account ? [keysItem()] : [])]],
+      ["sportsbooks", "Sportsbooks", () => [trackItem(), ...pricesItem(), ...(Fan.account ? [keysItem()] : [])]],
       ["look", "Look/feel", () => [badgeItem()]],
       ["records", "Records", () => later.recordsItems()]
     ];
@@ -927,7 +939,7 @@ const switchFor = (on, change) => { const lab = el("label", "fan-check"), c = el
     Fan.setLeagues([...leaguesOn]);
     leaveOffLeague();
     syncLeaguePick();
-    if (view === "ledger") later.renderLedger();
+    changed("leagues");
   }
   document.addEventListener("keydown", e => { if (e.key === "Escape" && detailGame) { detailGame = null; showView("week"); } });   // back from a game preview to the cards
   function clearRiskQuietly() { const col = document.querySelector(".col.left"), rc = $("riskCard"); col.classList.remove("has-sel"); rc.classList.add("rk-off"); rc.classList.remove("rk-over"); rc.setAttribute("aria-hidden", "true"); }
@@ -939,7 +951,7 @@ const switchFor = (on, change) => { const lab = el("label", "fan-check"), c = el
     $("panel").setAttribute("aria-labelledby", "tab-w" + w);
     $("slateTitle").textContent = "Week " + w; renderByes();
     later.weekChanged();
-    applySlate(); later.renderTickets(); showView("week");
+    applySlate(); showView("week");
   }
-  document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) { renderGames(); showView("week"); } else switchWeek(w); }));
-export { fillSettings, $, ABBR, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, HELM_PAD, LG, RULES, abbr, allTickets, americanOf, applySlate, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, lumOf, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, telecastLink, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateId, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+  document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
+export { changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, fillSettings, $, ABBR, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, HELM_PAD, LG, RULES, abbr, allTickets, americanOf, applySlate, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, lumOf, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, telecastLink, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateId, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };

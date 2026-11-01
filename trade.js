@@ -1,15 +1,14 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvxazkso";
-import { Fan } from "./hosts.js?v=mvxazkso";
-import { fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, renderGames, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxazkso";
-import { renderRisk } from "./risk.js?v=mvxazkso";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvxr57xx";
+import { Fan } from "./hosts.js?v=mvxr57xx";
+import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxr57xx";
   Object.assign(later, { execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
   (async () => {
     await Fan.connectTrader();
     fillSettings();
-    if (riskGame) renderRisk();
+    if (riskGame) changed("exec");
     syncPlace();
     if (reader()) { pendingFills().catch(() => {}); feedLoop(); }
   })();
@@ -27,7 +26,7 @@ import { renderRisk } from "./risk.js?v=mvxazkso";
     if (!g || g.final) return;
     const patch = freshPrices(g, q, Date.now());
     Object.assign(g, patch);
-    renderGames(); renderRisk();
+    changed("lines");
     if (Fan.lines) Fan.lines.update("slate", slateId(g), patch).catch(() => {});
   }
   async function refreshPrices(ticker, venue) {
@@ -139,7 +138,7 @@ import { renderRisk } from "./risk.js?v=mvxazkso";
   }
   async function runExec(h, sig) {
     if (execBusy || !Fan.trader) return;
-    execBusy = true; lastExec = { at: Date.now(), sig, text: "Sending to Kalshi…", cls: "" }; renderRisk();
+    execBusy = true; lastExec = { at: Date.now(), sig, text: "Sending to Kalshi…", cls: "" }; changed("exec");
     const id = (crypto.randomUUID ? crypto.randomUUID() : "fan-" + Date.now() + "-" + Math.random().toString(36).slice(2));
     ownOrders.set(id, []);
     try {
@@ -185,7 +184,7 @@ import { renderRisk } from "./risk.js?v=mvxazkso";
         : c === "server_unavailable" || c === "upstream_error" ? "No answer: check Kalshi before sending again, the order may have gone through."
         : `${c || "error"}: ${m || ""}` };
     }
-    execBusy = false; renderRisk();
+    execBusy = false; changed("exec");
   }
   // The Ledger's Kalshi check: every fill on the account against the saved tickets, read when opened. Reads only.
   let checkRun = 0;

@@ -1,6 +1,5 @@
 // The risk detail and the totals: the payoff grid, the selected game's card, the week's sums.
-import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitTicketColumn, gameBets, gameKey, gameLabel, gamesInView, hedgeFor, last, later, leagueOf, legResult, legText, money, odds, parlayShares, profitOf, projectedPL, pts, renderGames, resultCell, riskGame, riskKey, riskOf, setRiskGame, shareRisk, shareTerm, shortDayFmt, signedMoney, spentShares, status, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, updateGameArrows } from "./base.js?v=mvxazkso";
-  Object.assign(later, { applyRiskGame, renderRisk, renderTotals });
+import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitTicketColumn, gameBets, gameKey, gameLabel, gamesInView, hedgeFor, last, later, leagueOf, legResult, legText, money, odds, parlayShares, profitOf, projectedPL, pts, resultCell, riskGame, riskKey, riskOf, setRiskGame, shareRisk, shareTerm, shortDayFmt, signedMoney, spentShares, status, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, updateGameArrows } from "./base.js?v=mvxr57xx";
   // extLegs: legs on this game from parlays that also span other games, as { t, l }. Their win zones are shaded over the grid
   // (they say nothing about profit, since a parlay needs its other legs too), and where every wager here wins is outlined.
   function riskGrid(g, bets, W, extLegs = [], shares = [], minHX = 0, shrink = 0, lfs = 18) {   // lfs: the figures' font size (13 over the wager ticket), for spacing them apart   // shrink takes that many px off the plot height (the Graphs popup is shorter)   // minHX widens the margin axis (the Graphs popup needs its band and blowout regions in view)
@@ -208,7 +207,8 @@ import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitT
     return { el: w, comps: comps.sort((a, b) => a.v - b.v), winComps, maxRisk: ex.maxRisk, maxWin: ex.maxWin, pc: (PL + PR) / 2 / W * 100 };
   }
   // show / clear the selection: the game's risk detail takes the wager ticket's place (same height), the totals and saved tickets filter
-  function applyRiskGame() {
+  let keptSizes = [];
+  function selectionBefore() {
     const col = document.querySelector(".col.left"), rc = $("riskCard"), tk = $("ticket");
     if (riskGame && !col.classList.contains("has-sel")) {   // the ticket's height and the room under it, kept by the graph card
       const done = col.classList.contains("all-final");
@@ -220,12 +220,13 @@ import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitT
     col.classList.toggle("has-sel", !!riskGame);
     rc.classList.toggle("rk-off", !riskGame); rc.classList.toggle("rk-over", !!riskGame); rc.setAttribute("aria-hidden", String(!riskGame));
     // selecting never resizes the game cards: keep the card / games-area sizes the page had and put them back after the redraw
-    const root = document.documentElement, keep = ["--games-h", "--card-h"].map(v => root.style.getPropertyValue(v));
-    renderGames(); later.renderTickets(); renderRisk();
-    ["--games-h", "--card-h"].forEach((v, i) => { if (keep[i]) root.style.setProperty(v, keep[i]); });
+    keptSizes = ["--games-h", "--card-h"].map(v => document.documentElement.style.getPropertyValue(v));
+  }
+  function selectionAfter() {
+    ["--games-h", "--card-h"].forEach((v, i) => { if (keptSizes[i]) document.documentElement.style.setProperty(v, keptSizes[i]); });
     fitTicketColumn(); updateGameArrows();
   }
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && riskGame && $("gameList").hidden && $("bookList").hidden) { setRiskGame(null); applyRiskGame(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && riskGame && $("gameList").hidden && $("bookList").hidden) setRiskGame(null); });
   function renderRisk() {
     const box = $("riskCard");
     box.replaceChildren();
@@ -313,7 +314,7 @@ import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitT
       }
     }
     box.append(head, top, grid.el, ...(hedgeEl ? [hedgeEl] : []), ...(overlay ? [stats] : []), ul);
-    if (overlay) { const x = el("button", "bd-close", "×"); x.type = "button"; x.title = "Close"; x.setAttribute("aria-label", "Close risk detail"); x.addEventListener("click", () => { setRiskGame(null); applyRiskGame(); }); box.append(x); }
+    if (overlay) { const x = el("button", "bd-close", "×"); x.type = "button"; x.title = "Close"; x.setAttribute("aria-label", "Close risk detail"); x.addEventListener("click", () => setRiskGame(null)); box.append(x); }
   }
 
   // Games are independent, so the worst and best cases across all games are the sums of each game's.
@@ -334,4 +335,4 @@ import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitT
     box.append(row);
     $("sum").replaceChildren(later.bookReport(shown));
   }
-export { applyRiskGame, renderRisk, renderTotals, riskGrid };
+export { selectionBefore, selectionAfter, renderRisk, renderTotals, riskGrid };

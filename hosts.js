@@ -14,7 +14,7 @@ const Fan = {
   account: window.fanBridge ? () => window.fanBridge.openKeys() : null,   // opens the host's own key screen, if it has one
   screens: window.fanBridge ? { list: () => window.fanBridge.displays(), show: pref => window.fanBridge.showSpots(pref) } : null,   // the host's monitors, if it can place windows on them
   openTelecast: (url, pref) => { if (window.fanBridge) window.fanBridge.openTelecast(url, pref); else window.open(url, "_blank", "noopener"); },   // the desktop app sizes and places its own window; anywhere else it's a plain link
-  setMarket: on => { if (window.fanBridge) window.fanBridge.setMarket(on); else tellConnector({ market: on }); },   // tells a host that refreshes lines whether anyone wants prices: Bet tracking and Prices both on
+  setMarket: on => { if (window.fanBridge) window.fanBridge.setMarket(on); else tellConnector({ market: on }); },   // tells a host that refreshes lines whether anyone wants prices
   setLeagues: list => { if (window.fanBridge) window.fanBridge.setLeagues(list); else tellConnector({ leagues: list }); }   // tells a host that refreshes lines which leagues to refresh
 };
 

@@ -1,10 +1,9 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { HELMETS } from "./data/assets.js?v=mvxazkso";
-import { Fan } from "./hosts.js?v=mvxazkso";
-import { $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, curWeek, dayFmt, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, renderGames, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvxazkso";
-import { setPlaybook } from "./panels.js?v=mvxazkso";
-import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
-  Object.assign(later, { setPrices, syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, recordsItems, renderLedger, renderTickets, setTracking, showSaved, weekChanged });
+import { HELMETS } from "./data/assets.js?v=mvxr57xx";
+import { Fan } from "./hosts.js?v=mvxr57xx";
+import { $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvxr57xx";
+import { setPlaybook } from "./panels.js?v=mvxr57xx";
+  Object.assign(later, { setPrices, syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, recordsItems, setTracking, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(last(g.away))} ${pts(g.line.sp)} @ ${n(last(g.home))}`; };
   const vigText = v => v < -0.5 ? "−" + money(-v) : money(Math.max(0, v));
@@ -22,11 +21,10 @@ import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
         if (has || tickets.length) await store.set("meta", "migration", { done: true, at: Date.now(), migrated: has ? 0 : tickets.length });
       }
       inStore = true;
-      try { store.watchDoc("meta", "balances", v => { if (v && v.books) { setBalances(v); if (view === "ledger") renderLedger(); } }); } catch (e) {}
+      try { store.watchDoc("meta", "balances", v => { if (v && v.books) { setBalances(v); changed("balances"); } }); } catch (e) {}
       store.watch("wagers", rows => {
         setTickets(rows.map(r => ({ id: r.id, ...r.data })).sort((p, q) => (p.createdAt > q.createdAt ? 1 : p.createdAt < q.createdAt ? -1 : 0)));
         ticketsLoaded();
-        renderTickets(); renderGames(); renderRisk();
       }, () => { inStore = false; });
       await startBackups();
     } catch (e) { inStore = false; }
@@ -132,7 +130,7 @@ import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
   let ticketsLoaded, ticketsReady = new Promise(res => { ticketsLoaded = res; });
   function addTicket(t) {
     t.week = curWeek;
-    if (inStore) { Fan.store.add("wagers", t).catch(() => { setTickets([...allTickets, t]); persist(); renderTickets(); renderGames(); renderRisk(); }); return; }
+    if (inStore) { Fan.store.add("wagers", t).catch(() => { setTickets([...allTickets, t]); persist(); }); return; }
     setTickets([...allTickets, t]); persist();
   }
   // Saved tickets grid: each wager parsed into columns, sortable by clicking a header.
@@ -171,7 +169,6 @@ import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
   function deleteTicket(t) {
     if (inStore && t.id) { Fan.store.del("wagers", t.id).catch(() => editMsg("Couldn't delete that ticket.")); return; }
     setTickets(allTickets.filter(x => x !== t)); persist();
-    renderTickets(); renderGames(); renderRisk();
   }
 
   // In-place editing: click a cell in the grid, type, press Enter. Everything that depends on it is recalculated and saved.
@@ -254,7 +251,7 @@ import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
       if (done) return; done = true;
       const err = save ? applyEdit(t, col.k, field.value) : null;
       editMsg(err || "");
-      renderTickets(); renderGames(); renderRisk();
+      changed("tickets");
     };
     field.addEventListener("keydown", e => { if (e.key === "Enter") finish(true); else if (e.key === "Escape") finish(false); });
     field.addEventListener(col.k === "book" ? "change" : "blur", () => finish(true));
@@ -509,7 +506,7 @@ import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
     fillTicket(g, "Total", n, L.tot, row ? Math.round(row[n + 1] * 100) : centsOf(L.toj[n]));
   }
   function fillTicket(g, type, n, line, cents) {
-    if (riskGame) { setRiskGame(null); applyRiskGame(); }   // the risk detail covers the ticket while a game is selected
+    if (riskGame) setRiskGame(null);   // the risk detail covers the ticket while a game is selected
     if (mode !== "straight") setMode("straight");
     bookSel.value = "Kalshi"; bookSel.dispatchEvent(new Event("input", { bubbles: true }));
     gameSel.value = String(GAMES.indexOf(g)); gameSel.dispatchEvent(new Event("input", { bubbles: true }));
@@ -753,7 +750,7 @@ import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
     pendingLegs = []; parlayEdited = false; $("parlayOdds").value = "";
     bookSel.value = ""; syncBook(); wasKalshi = false; $("amount").value = ""; $("bonus").checked = false; document.querySelectorAll("input[name=btype]").forEach(r => r.checked = false); renderPick();
     ["game", "book", "amount", "type", "pick", "parlayRow"].forEach(k => { $(k).classList.remove("invalid"); $(k + "Err").hidden = true; });
-    renderLegs(); renderTickets(); renderGames(); renderRisk();
+    renderLegs(); changed("tickets");
   }
   // Prices follow Bet tracking and their own checkbox, and need a source. Off, the page holds no prices, and Graphs and Playbook, which are drawn from them, go.
   function syncPrices() {
@@ -761,8 +758,9 @@ import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
     document.documentElement.classList.toggle("prices-off", !on);
     Fan.setMarket(marketWanted());
     if (!on) { clearPrices(); setPlaybook(null); }
-    if (Fan.lines) applySlate(); else { renderGames(); renderRisk(); }
+    if (Fan.lines) applySlate(); else changed("lines");
     if (!on && (view === "xy" || view === "playbook")) switchWeek(weekNow());
+    drawNow();
     window.dispatchEvent(new Event("resize"));
   }
   function setPrices(on) {
@@ -778,9 +776,9 @@ import { applyRiskGame, renderRisk } from "./risk.js?v=mvxazkso";
     syncPrices();
     if (view === "ncaafb") showView(view);
     if (!on && view === "ledger") switchWeek(weekNow());
-    if (!on && riskGame) { setRiskGame(null); applyRiskGame(); }   // the risk detail's column is gone
-    renderTickets(); renderGames(); renderRisk();
+    if (!on && riskGame) setRiskGame(null);   // the risk detail's column is gone
     backupDue();
+    drawNow();
     window.dispatchEvent(new Event("resize"));   // the page refits as it does for a new window size
   }
-export { addTicket, balances, bookReport, centsOk, clearTicket, fillMoneyline, fillSpread, fillTotal, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, renderLedger, renderPick, renderTickets, setBalances, setTracking, showSaved, startRecords, ticketsReady, updateTicket, weekChanged };
+export { addTicket, balances, bookReport, centsOk, clearTicket, fillMoneyline, fillSpread, fillTotal, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, renderLedger, renderPick, renderTickets, setBalances, setPrices, setTracking, showSaved, startRecords, ticketsReady, updateTicket, weekChanged };

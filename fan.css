@@ -842,7 +842,7 @@
 
   /* ===== Bet tracking off ===== */
   /* The Fan. menu's Bet tracking checkbox, off */
-  .tracking-off .col.left, .tracking-off #tab-ledger, .tracking-off #tab-xy, .tracking-off #tab-playbook, .tracking-off #playbook, .tracking-off #slateNote { display: none !important; }
+  .tracking-off .col.left, .tracking-off #tab-ledger { display: none !important; }
   .one-line #slateNote.problem, #slateNote.problem { color: #ff6b6b; font-weight: 700; }
   .prices-off #tab-xy, .prices-off #tab-playbook, .prices-off #playbook, .prices-off #slateNote { display: none !important; }
   .tracking-off .top { grid-template-columns: minmax(0, 1fr) !important; }   /* the game cards run to the right edge */

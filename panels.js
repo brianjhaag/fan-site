@@ -1,10 +1,10 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mvxazkso";
-import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvxazkso";
-import { HELMETS } from "./data/assets.js?v=mvxazkso";
-import { Fan } from "./hosts.js?v=mvxazkso";
-import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, lumOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, renderGames, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxazkso";
-  Object.assign(later, { renderGameDetail, renderPlaybook, renderSeason, renderXY });
+import { riskGrid } from "./risk.js?v=mvxr57xx";
+import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvxr57xx";
+import { HELMETS } from "./data/assets.js?v=mvxr57xx";
+import { Fan } from "./hosts.js?v=mvxr57xx";
+import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, lumOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxr57xx";
+  Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
   // The history is the user's own pull (playbook.js through app/ingest.js), kept in their records: nothing ships with the page.
@@ -44,7 +44,7 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, curWeek, decimalOf
   }
   function renderPlaybook() {
     if (drawStub("playbook")) return;
-    if (!playbookWatched && Fan.store) { playbookWatched = true; Fan.store.watchDoc("playbook", "games", d => { if (d) { setPlaybook(d); if (view === "playbook") renderPlaybook(); } }, () => {}); }
+    if (!playbookWatched && Fan.store) { playbookWatched = true; Fan.store.watchDoc("playbook", "games", d => { if (d) { setPlaybook(d); changed("playbook"); } }, () => {}); }
     if (!playbookDoc) { $("playbook").replaceChildren(el("div", "pg-stub", "Playbook"), el("p", "pg-stub-t", Fan.screens ? "Its history pulls to this computer with your lines, and shows here when it arrives." : "Its history pulls to your own computer, which takes the desktop app.")); return; }
     const box = $("playbook"), games = pbGames(), year = Math.max(...games.map(t => t.season)), lastWk = Math.max(...games.filter(t => t.season === year).map(t => t.week));
     const roi = (p, n) => { const v = n ? p / n * 100 : null, td = el("td", v == null ? "dim" : Math.abs(v) < .05 ? "dim" : v > 0 ? "pos" : "neg", v == null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "%"); return td; };
@@ -494,7 +494,7 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, curWeek, decimalOf
     if (!leagueOf(g).gameDetails) { box.replaceChildren(el("div", "pg-stub", `${abbr(last(g.away))} @ ${abbr(last(g.home))}`), el("p", "pg-stub-t", `${leagueOf(g).code} game details are not built yet.`)); return; }
     if (!TEAM_INFO[last(g.away)] || !TEAM_INFO[last(g.home)]) {   // this browser's own pull, the first time a game detail opens
       box.replaceChildren(el("div", "pg-stub", `${abbr(last(g.away))} @ ${abbr(last(g.home))}`), el("p", "pg-stub-t", "Asking ESPN for team stats and injuries…"));
-      ensureTeams().then(ok => { if (detailGame !== g) return; if (ok && TEAM_INFO[last(g.away)]) renderGames(); else box.replaceChildren(el("div", "pg-stub", `${abbr(last(g.away))} @ ${abbr(last(g.home))}`), el("p", "pg-stub-t", "Couldn't reach ESPN for team stats.")); });
+      ensureTeams().then(ok => { if (detailGame !== g) return; if (ok && TEAM_INFO[last(g.away)]) changed("cards"); else box.replaceChildren(el("div", "pg-stub", `${abbr(last(g.away))} @ ${abbr(last(g.home))}`), el("p", "pg-stub-t", "Couldn't reach ESPN for team stats.")); });
       return;
     }
     ensureTeams();
