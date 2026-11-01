@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvybkdyy";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvybkdyy";
-import { Calc } from "./calc.js?v=mvybkdyy";
-import { Fan } from "./hosts.js?v=mvybkdyy";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvybpcor";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvybpcor";
+import { Calc } from "./calc.js?v=mvybpcor";
+import { Fan } from "./hosts.js?v=mvybpcor";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -168,7 +168,7 @@ import { Fan } from "./hosts.js?v=mvybkdyy";
     return tag;
   }
 
-  const APP_VERSION = "0.16.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.16.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -371,11 +371,11 @@ import { Fan } from "./hosts.js?v=mvybkdyy";
       chip.replaceChildren(img, el("span", "tn-txt", abbr(last(g[side])))); chip.classList.add("has-helm");
     }
     BADGE_STYLES[over ? "plain" : badgeStyle].draw(chip, g, side);
-    if (!over && showsNow(g)) {   // the score takes the place of the team and state, in scoreboard type. With no helmet to say who it is, the team stays above it
-      const box = el("span", "tn-txt live-sc"), old = chip.querySelector(".tn-txt");
-      if (!HELMETS[last(g[side])]) box.append(el("small", null, abbr(last(g[side]))));
-      box.append(el("b", "pl-sc", String(g.now.score[n])));
+    if (!over && showsNow(g)) {   // a black plate holding what a final's card shows: team and score in scoreboard type, the leader lit
+      const box = el("span", "tn-txt live-sc"), old = chip.querySelector(".tn-txt"), s = g.now.score;
+      box.append(el("span", null, abbr(last(g[side]))), el("span", null, String(s[n])));
       if (old) old.replaceWith(box); else chip.replaceChildren(box);
+      chip.classList.add("live"); if (s[n] > s[1 - n]) chip.classList.add("lead");
     }
     name.append(chip);
     if (over) {
