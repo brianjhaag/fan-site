@@ -1,0 +1,166 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Every NFL game on one page: live scores, injuries, edges, schedules and telecasts. Nothing to install."><meta property="og:title" content="Fan"><meta property="og:description" content="Every NFL game on one page: live scores, injuries, edges, schedules and telecasts. Nothing to install."><meta property="og:type" content="website"><title>Fan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Saira+Stencil+One&family=Sofia+Sans+Extra+Condensed:wght@700&family=Sofia+Sans+Condensed:wght@600&family=Doto:wght@800&family=Chivo+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&family=Montserrat:wght@300;400;500;700&family=Archivo+Black&display=swap">
+<link rel="stylesheet" href="data/images.css">
+<link rel="stylesheet" href="fan.css">
+
+<main>
+  <div class="tabrows">
+    <div class="weektabs pinned wk2" role="tablist" aria-label="Weeks 1-9">
+      <button type="button" role="tab" id="tab-w1" aria-controls="panel" aria-selected="false" data-week="1">Week 1</button>
+      <button type="button" role="tab" id="tab-w2" aria-controls="panel" aria-selected="false" data-week="2">Week 2</button>
+      <button type="button" role="tab" id="tab-w3" aria-controls="panel" aria-selected="false" data-week="3">Week 3</button>
+      <button type="button" role="tab" id="tab-w4" aria-controls="panel" aria-selected="false" data-week="4">Week 4</button>
+      <button type="button" role="tab" id="tab-w5" aria-controls="panel" aria-selected="false" data-week="5">Week 5</button>
+      <button type="button" role="tab" id="tab-w6" aria-controls="panel" aria-selected="false" data-week="6">Week 6</button>
+      <button type="button" role="tab" id="tab-w7" aria-controls="panel" aria-selected="true" data-week="7">Week 7</button>
+      <button type="button" role="tab" id="tab-w8" aria-controls="panel" aria-selected="false" data-week="8">Week 8</button>
+      <button type="button" role="tab" id="tab-w9" aria-controls="panel" aria-selected="false" data-week="9">Week 9</button>
+    </div>
+    <div class="weektabs pinned wk2" role="tablist" aria-label="Weeks 10-17">
+      <button type="button" role="tab" id="tab-w10" aria-controls="panel" aria-selected="false" data-week="10">Week 10</button>
+      <button type="button" role="tab" id="tab-w11" aria-controls="panel" aria-selected="false" data-week="11">Week 11</button>
+      <button type="button" role="tab" id="tab-w12" aria-controls="panel" aria-selected="false" data-week="12">Week 12</button>
+      <button type="button" role="tab" id="tab-w13" aria-controls="panel" aria-selected="false" data-week="13">Week 13</button>
+      <button type="button" role="tab" id="tab-w14" aria-controls="panel" aria-selected="false" data-week="14">Week 14</button>
+      <button type="button" role="tab" id="tab-w15" aria-controls="panel" aria-selected="false" data-week="15">Week 15</button>
+      <button type="button" role="tab" id="tab-w16" aria-controls="panel" aria-selected="false" data-week="16">Week 16</button>
+      <button type="button" role="tab" id="tab-w17" aria-controls="panel" aria-selected="false" data-week="17">Week 17</button>
+      <button type="button" role="tab" id="tab-season" aria-controls="season" aria-selected="false">Season stats</button>
+      <button type="button" role="tab" id="tab-playbook" aria-controls="playbook" aria-selected="false">Playbook</button>
+      <button type="button" role="tab" id="tab-ledger" aria-controls="ledger" aria-selected="false">Ledger</button>
+    </div>
+    <div class="fan-menu" id="fanMenu">
+      <button type="button" id="fanBtn" aria-haspopup="dialog" aria-label="Fan, settings">Fan<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
+      <select id="leaguePick" aria-label="League"></select>
+      <dialog class="fan-window" id="fanWindow" aria-labelledby="fanWinTitle">
+        <div class="fan-win-head"><h2 id="fanWinTitle">Settings</h2><span id="appName"></span><button type="button" id="fanClose" aria-label="Close">&times;</button></div>
+        <div class="fan-tabs" id="fanTabs" role="tablist" aria-label="Settings"></div>
+        <div id="fanList"></div>
+      </dialog>
+    </div>
+  </div>
+  <section class="ledger bare" role="tabpanel" id="ledger" aria-labelledby="tab-ledger" hidden></section>
+  <section class="ledger xy bare" role="tabpanel" id="xy" aria-labelledby="tab-xy" hidden></section>
+  <section class="ledger" role="tabpanel" id="playbook" aria-labelledby="tab-playbook" hidden></section>
+  <section class="ledger" id="nhl" hidden></section>
+  <section class="ledger" id="mlb" hidden></section>
+  <section class="ledger" id="ncaafb" hidden></section>
+  <section class="ledger xy" role="tabpanel" id="season" aria-labelledby="tab-season" hidden></section>
+  <div class="layout" role="tabpanel" id="panel" aria-labelledby="tab-w7">
+   <div class="top">
+    <div class="col left">
+      <section class="totals" id="totals" aria-label="Totals for all games"></section>
+
+      <section class="saved" aria-label="Saved tickets">
+        <div class="ls-bar">
+          <div class="ls-tabs" role="tablist" aria-label="Saved tickets">
+            <button type="button" role="tab" id="tabTickets" aria-selected="true">Wagers <span id="count"></span></button>
+            <button type="button" role="tab" id="tabSummary" aria-selected="false">Summary</button>
+          </div>
+          <input id="search" type="search" placeholder="Search" aria-label="Search saved tickets" autocomplete="off">
+        </div>
+        <div class="ls-heads" id="heads"></div>
+        <div class="ed-msg" id="edMsg" role="status" hidden></div>
+        <ul id="list" aria-live="polite"></ul>
+        <div class="sum" id="sum"></div>
+      </section>
+
+      <form class="ticket" id="ticket" novalidate>
+        <div class="ticket-body">
+          <div class="group">
+            <label for="book">
+              <select id="book" required hidden></select>
+              <span class="bsel" id="bookBox">
+                <button type="button" class="bsel-btn" id="bookBtn" aria-haspopup="listbox" aria-expanded="false"></button>
+                <ul class="bsel-list" id="bookList" role="listbox" aria-label="Sportsbook" hidden></ul>
+              </span>
+              <span class="err" id="bookErr" hidden>Pick the sportsbook.</span>
+            </label>
+
+            <div class="amt-row">
+              <label for="amount">
+                <span class="money"><b>$</b><input id="amount" aria-label="Amount wagered" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0" required></span>
+                <span class="help" id="amountHelp"></span>
+                <span class="err" id="amountErr" hidden>Enter an amount greater than zero.</span>
+              </label>
+              <label class="check" for="bonus">
+                <input id="bonus" type="checkbox">
+                <span>Bonus</span>
+              </label>
+            <div class="tabs" role="tablist" aria-label="Wager kind">
+              <button type="button" role="tab" id="tabStraight" aria-selected="true">Straight</button>
+              <button type="button" role="tab" id="tabParlay" aria-selected="false">Parlay</button>
+            </div>
+            </div>
+          </div>
+
+          <div class="group bet">
+            <div class="legs" id="legs" hidden></div>
+            <label for="game">
+              <select id="game" aria-label="Game" required hidden></select>
+              <span class="gsel" id="gameBox">
+                <button type="button" class="gsel-btn" id="gameBtn" aria-haspopup="listbox" aria-expanded="false"></button>
+                <ul class="gsel-list" id="gameList" role="listbox" aria-label="Game" hidden></ul>
+              </span>
+              <span class="err" id="gameErr" hidden>Pick the game you bet on.</span>
+            </label>
+            <fieldset class="types" id="type" aria-label="Bet type">
+              <div class="seg">
+                <label><input type="radio" name="btype" value="Moneyline"><span>Moneyline</span></label>
+                <label><input type="radio" name="btype" value="Spread"><span>Spread</span></label>
+                <label><input type="radio" name="btype" value="Total"><span>Total</span></label>
+              </div>
+              <span class="err" id="typeErr" hidden>Pick a bet type.</span>
+            </fieldset>
+
+            <div class="pick" id="pick" role="group" aria-label="Bet detail"></div>
+            <span class="err" id="pickErr" hidden>Pick a side and enter the line and price you got.</span>
+            <button type="button" class="addleg" id="addLeg" hidden>+ Add leg</button>
+            <div class="parlay-row" id="parlayRow" hidden>
+              <label for="parlayOdds">
+                <span class="lbl" id="parlayLbl">Parlay odds</span>
+                <input id="parlayOdds" type="text" inputmode="decimal" autocomplete="off" placeholder="+264">
+              </label>
+              <span class="calc" id="parlayCalc"></span>
+            </div>
+            <span class="err" id="parlayRowErr" hidden>Enter the parlay odds from your book, 100 or more in either direction.</span>
+          </div>
+        </div>
+
+        <div class="tear" aria-hidden="true"></div>
+
+        <div class="stub">
+          <span id="placeMsg" role="status"></span>
+          <button class="place bookit" type="submit" title="Record a bet you already made">Book</button>
+          <button class="place sendit" id="placeBtn" type="button" disabled>Place</button>
+        </div>
+      </form>
+      <section class="riskcard rk-off" id="riskCard" aria-hidden="true"></section>
+    </div>
+
+    <section class="col" aria-label="Week 7 slate">
+      <div>
+        <div class="games" id="games"></div>
+      </div>
+    </section>
+   </div>
+  </div>
+</main>
+<div class="tabrows bottom" aria-label="Bottom tab strip">
+  <div class="sec-title one-line">
+    <h2 id="slateHead"><span id="slateTitle" hidden>Week 7</span></h2>
+    <small id="feedNote"></small>
+    <small id="slateNote"></small>
+    <span class="bye-box"><b class="byeLabel" id="byeLabel">Byes:</b><span class="byes" id="byes"></span></span>
+  </div>
+  <div class="weektabs pinned sectiontabs" id="sectiontabs1" aria-label="Games, first half"></div>
+  <div class="weektabs pinned sectiontabs" id="sectiontabs2" aria-label="Games, second half"></div>
+  <div class="strip-row2">
+    <div class="weektabs pinned sectiontabs grf" role="tablist" aria-label="Graphs">
+      <button type="button" role="tab" id="tab-xy" aria-controls="xy" aria-selected="false">Graphs</button>
+    </div>
+  </div></div>
+
+<script type="module" src="start.js"></script>

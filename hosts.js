@@ -1,0 +1,204 @@
+// The sockets: what the page plugs into for records, lines and trading. Each is empty until something fills it, and the page works without any of them.
+//   Fan.store   a person's own records (wagers, fills, balances). SPEC section 16 has the contract.
+//   Fan.lines   lines and final scores: the same contract as the store, possibly read-only.
+//   Fan.trader  the connector that talks to a venue: call(tool, args) gives its answer, or throws with `code`.
+// Connecting fills them from whichever host this page runs in: the artifact and the desktop app through window.claude, and with no host the store is this browser's own. The connector plugs in here next.
+// What the page has said about refreshes, kept until there's a connector to tell.
+let connectorPrefs = {}, connectorHere = false;
+const tellConnector = what => {
+  Object.assign(connectorPrefs, what);
+  if (connectorHere) window.fetch("/connector/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(what) }).catch(() => {});
+};
+const Fan = {
+  store: null, lines: null, trader: null, reads: null, traderWhy: "",   // reads: the connector before it takes orders: the fill feed and fresh prices, with Place off
+  account: window.fanBridge ? () => window.fanBridge.openKeys() : null,   // opens the host's own key screen, if it has one
+  screens: window.fanBridge ? { list: () => window.fanBridge.displays(), show: pref => window.fanBridge.showSpots(pref) } : null,   // the host's monitors, if it can place windows on them
+  openTelecast: (url, pref) => { if (window.fanBridge) window.fanBridge.openTelecast(url, pref); else window.open(url, "_blank", "noopener"); },   // the desktop app sizes and places its own window; anywhere else it's a plain link
+  setMarket: on => { if (window.fanBridge) window.fanBridge.setMarket(on); else tellConnector({ market: on }); },   // tells a host that refreshes lines whether anyone wants prices: Bet tracking and Prices both on
+  setLeagues: list => { if (window.fanBridge) window.fanBridge.setLeagues(list); else tellConnector({ leagues: list }); }   // tells a host that refreshes lines which leagues to refresh
+};
+
+// The host's database (shaped like Firestore, with snapshots) as the store contract.
+function hostStore(db) {
+  const rowsOf = snap => snap.docs.map(d => ({ id: d.id, data: d.data() }));
+  return {
+    get: async (col, id) => { const d = await db.collection(col).doc(id).get(); return d.exists ? d.data() : null; },
+    list: async col => rowsOf(await db.collection(col).get()),
+    set: (col, id, data) => db.collection(col).doc(id).set(data),
+    add: (col, data) => db.collection(col).doc().set(data),
+    update: (col, id, patch) => db.collection(col).doc(id).update(patch),
+    del: (col, id) => db.collection(col).doc(id).delete(),
+    // fn(rows) now and on every change, with rows [{ id, data }]. A snapshot that's only an empty cache isn't an answer yet.
+    watch: (col, fn, fail) => db.collection(col).onSnapshot(s => { if (!(s.empty && s.metadata && s.metadata.fromCache)) fn(rowsOf(s)); }, fail),
+    watchDoc: (col, id, fn, fail) => db.collection(col).doc(id).onSnapshot(d => fn(d.exists ? d.data() : null), fail)
+  };
+}
+// A person's records in this browser's IndexedDB, for a page with no host. The store contract, plus dump and restore for backups, and kept and keep for this browser's own settings about them.
+function browserStore(idb, name = "fan") {
+  const opened = new Promise((ok, no) => {
+    const r = idb.open(name, 1);
+    r.onupgradeneeded = () => { r.result.createObjectStore("records"); r.result.createObjectStore("local"); };
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => no(r.error);
+  });
+  const watchers = new Set(), changes = new Set();   // watchers: { col, fire }. changes: anything that wants to hear of every change, as backups do
+  const heard = col => { watchers.forEach(w => { if (w.col === col) w.fire(); }); changes.forEach(fn => fn(col)); };
+  const channel = window.BroadcastChannel ? new window.BroadcastChannel(name + "-records") : null;   // another tab's saves
+  if (channel) channel.onmessage = e => heard(e.data);
+  const changed = cols => cols.forEach(c => { heard(c); if (channel) channel.postMessage(c); });
+  const plain = v => JSON.parse(JSON.stringify(v));
+  const asked = q => new Promise((ok, no) => { q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
+  // work(objectStore) runs in one transaction. Its answer counts once the transaction has finished, so a saved record is really saved.
+  const inTx = async (store, access, work) => {
+    const tx = (await opened).transaction(store, access);
+    let out;
+    return new Promise((ok, no) => {
+      tx.oncomplete = () => ok(out);
+      tx.onabort = tx.onerror = () => no(tx.error || new Error("not saved"));
+      Promise.resolve(work(tx.objectStore(store), tx)).then(v => { out = v; }, e => { try { tx.abort(); } catch (x) {} no(e); });
+    });
+  };
+  const inCol = col => window.IDBKeyRange.bound([col], [col, []]);
+  const rowsOf = col => inTx("records", "readonly", s => new Promise((ok, no) => {
+    const rows = [], q = s.openCursor(inCol(col));
+    q.onsuccess = () => { const c = q.result; if (!c) return ok(rows); rows.push({ id: c.key[1], data: c.value }); c.continue(); };
+    q.onerror = () => no(q.error);
+  }));
+  const get = async (col, id) => { const d = await inTx("records", "readonly", s => asked(s.get([col, id]))); return d === undefined ? null : d; };
+  const set = async (col, id, data) => { const d = plain(data); await inTx("records", "readwrite", s => { s.put(d, [col, id]); }); changed([col]); };
+  const newId = () => Array.from(window.crypto.getRandomValues(new Uint8Array(20)), b => (b % 36).toString(36)).join("");
+  const follow = (col, tell, fail) => { const w = { col, fire: () => tell().catch(e => { if (fail) fail(e); }) }; watchers.add(w); w.fire(); return () => watchers.delete(w); };
+  return {
+    get, set,
+    list: rowsOf,
+    add: (col, data) => set(col, newId(), data),
+    update: async (col, id, patch) => {
+      const p = plain(patch);
+      await inTx("records", "readwrite", async s => {
+        const q = s.get([col, id]);
+        await new Promise((ok, no) => {
+          q.onerror = () => no(q.error);
+          q.onsuccess = () => { if (q.result === undefined) return no(new Error("not found")); s.put({ ...q.result, ...p }, [col, id]); ok(); };
+        });
+      });
+      changed([col]);
+    },
+    del: async (col, id) => { await inTx("records", "readwrite", s => { s.delete([col, id]); }); changed([col]); },
+    watch: (col, fn, fail) => follow(col, async () => { const r = await rowsOf(col); fn(r); }, fail),
+    watchDoc: (col, id, fn, fail) => follow(col, async () => { const r = await get(col, id); fn(r); }, fail),
+    onChange: fn => { changes.add(fn); return () => changes.delete(fn); },
+    dump: async () => ({ fan: 1, at: Date.now(), records: await inTx("records", "readonly", s => new Promise((ok, no) => {
+      const rows = [], q = s.openCursor();
+      q.onsuccess = () => { const c = q.result; if (!c) return ok(rows); rows.push({ col: c.key[0], id: c.key[1], data: c.value }); c.continue(); };
+      q.onerror = () => no(q.error);
+    })) }),
+    // All of a file or none of it. Records with the same id take the file's copy, and nothing else is removed.
+    restore: async file => {
+      const rows = file && file.fan === 1 && file.records;
+      if (!Array.isArray(rows) || rows.some(r => !r || typeof r.col !== "string" || typeof r.id !== "string" || r.data === undefined)) throw new Error("not a Fan export");
+      await inTx("records", "readwrite", s => { rows.forEach(r => s.put(plain(r.data), [r.col, r.id])); });
+      changed([...new Set(rows.map(r => r.col))]);
+      return rows.length;
+    },
+    kept: async key => { const v = await inTx("local", "readonly", s => asked(s.get(key))); return v === undefined ? null : v; },
+    keep: (key, value) => inTx("local", "readwrite", s => { if (value == null) s.delete(key); else s.put(value, key); })   // file handles can't go through JSON, so this is stored as it is
+  };
+}
+// The connector's records, over its web address. One long request at a time asks what changed, and each watcher re-reads what it follows.
+function connectorStore(ask) {
+  const call = async (op, col, id, data) => {
+    const r = await (await ask("/connector/store", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ op, col, id, data }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    return r.result;
+  };
+  const watchers = new Set();
+  let after = null, polling = false;
+  const poll = async () => {
+    while (watchers.size) {
+      try {
+        const c = await (await ask("/connector/changes" + (after == null ? "" : "?after=" + after))).json();
+        const hadNone = after == null;
+        after = c.seq;
+        if (!hadNone) watchers.forEach(w => { if (c.all || c.cols.includes(w.col)) w.fire(); });
+      } catch (e) { await new Promise(r => setTimeout(r, 5000)); }   // the connector is away: ask again when it may be back
+    }
+    polling = false;
+  };
+  const follow = (col, tell, fail) => {
+    const w = { col, fire: () => tell().catch(e => { if (fail) fail(e); }) };
+    watchers.add(w);
+    if (!polling) { polling = true; poll(); }
+    w.fire();
+    return () => watchers.delete(w);
+  };
+  return {
+    get: (col, id) => call("get", col, id),
+    list: col => call("list", col),
+    set: (col, id, data) => call("set", col, id, data),
+    add: (col, data) => call("add", col, "", data),
+    update: (col, id, patch) => call("update", col, id, patch),
+    del: (col, id) => call("del", col, id),
+    watch: (col, fn, fail) => follow(col, async () => fn(await call("list", col)), fail),
+    watchDoc: (col, id, fn, fail) => follow(col, async () => fn(await call("get", col, id)), fail)
+  };
+}
+// The connector, when it serves this page: the same address that gave us the page.
+const connectorTrader = (ask, hi) => ({
+  hello: async () => hi,
+  call: async (tool, args) => {
+    let r;
+    try { r = await (await ask("/connector/call", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tool, args }) })).json(); }
+    catch (e) { throw Object.assign(new Error("The connector isn't answering"), { code: "server_unavailable", retryable: true, keepTrying: true }); }   // it can restart at any time, and comes back
+    if (!r.ok) throw Object.assign(new Error(r.error), { code: r.error });
+    return r.result;
+  }
+});
+const hostTrader = mcp => ({
+  hello: async () => ({ contract: 1, venues: ["kalshi"] }),
+  call: async (tool, args) => (await mcp.callTool("host:kalshi-trader", tool, args, { cache: false })).payload
+});
+
+Fan.connectStore = async () => {
+  const db = await window.claude?.use?.("db");
+  const hi = db || !window.fetch ? null : await window.fetch("/connector/hello").then(r => (r.ok ? r.json() : null)).catch(() => null);
+  if (db) Fan.store = Fan.lines = hostStore(db);
+  else if (hi && hi.store) {
+    Fan.store = Fan.lines = connectorStore(window.fetch);
+    connectorHere = true;
+    tellConnector(connectorPrefs);
+  }
+  if (hi) Fan.hostHello = () => window.fetch("/connector/hello").then(r => r.json());
+  if (hi && hi.telecast) {
+    const send = (path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+    Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };
+    if (hi.screens) Fan.screens = { list: () => window.fetch("/connector/screens").then(r => r.json()), show: pref => send("/connector/spots", { pref }) };
+  }
+  else if (window.indexedDB) {   // no lines here: this browser holds only the person's own records
+    Fan.store = browserStore(window.indexedDB);
+    if (window.navigator && window.navigator.storage && window.navigator.storage.persist) window.navigator.storage.persist().catch(() => {});   // asks the browser not to clear them when space runs low
+  }
+  return Fan.store;
+};
+Fan.connectTrader = async () => {
+  try {
+    const mcp = await window.claude?.use?.("mcp");
+    if (!mcp) {
+      Fan.traderWhy = "no connector here";
+      if (!window.fetch) return null;
+      const answer = await window.fetch("/connector/hello").catch(() => null);
+      const hi = answer && answer.ok ? await answer.json().catch(() => null) : null;
+      if (!hi) return null;
+      Fan.traderWhy = hi.ordersWhy || "";
+      if (window.BroadcastChannel) new window.BroadcastChannel("fan-connector").onmessage = () => window.location.reload();   // a key changed on the connector's key screen
+      if (hi.account) Fan.account = () => window.open("/connector/connect", "_blank");   // its own key screen
+      if (hi.feed) Fan.reads = connectorTrader(window.fetch, hi);
+      if (hi.orders) Fan.trader = Fan.reads;   // until then Place and Execute stay off
+      return Fan.trader;
+    }
+    const l = await mcp.listTools().catch(e => ({ err: e && e.code }));
+    Fan.traderWhy = l && l.servers ? "servers seen: " + (l.servers.map(s => s.server).join(", ") || "none") : "listTools failed: " + (l && l.err);
+    Fan.trader = hostTrader(mcp);
+  } catch (e) { Fan.traderWhy = "error: " + (e && e.message); }
+  return Fan.trader;
+};
+export { Fan };

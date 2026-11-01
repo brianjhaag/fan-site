@@ -1,0 +1,871 @@
+  /* ===== Foundation: variables, the page, form controls ===== */
+  /* fan.css, one section per part of the page. Sections keep their order for a reason: rules of equal weight on one element let the later one win. Single dark theme. */
+  /* Tiny caps labels (column heads, card labels, section and slot headings, axis captions) use Sofia Sans Extra Condensed, a few
+     px bigger since it is a condensed face; tabs, buttons and numbers keep their own fonts. */
+  :root {
+    --bg: #0f1216;
+    --paper: #1a1f26;
+    --paper-edge: #2a313b;
+    --card-rule: #363f4b;
+    --ink: #e8ebef;
+    --ink-dim: #8c96a3;
+    --accent: #5fd0a6;
+    --accent-ink: #07110d;
+    --danger: #ff7a70;
+    --live: #f2b84b;
+    --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --font-mono: "Chivo Mono", ui-monospace, Consolas, monospace;
+    color-scheme: dark;
+    --font-label: "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-field) center top / cover no-repeat, color-mix(in srgb, #2c6b3c 40%, var(--bg)); color: var(--ink); font: 400 14px/1.4 var(--font-mono); margin: 0; padding-block: 0; padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+  main { margin: 0 auto; display: grid; gap: 8px; padding-bottom: 122px; }   /* room under the page for the pinned bottom tab strip (82px) */
+  label { display: grid; gap: 3px; min-width: 0; }
+  .lbl { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+  select, input[type="text"], input[type="number"] { width: 100%; min-width: 0; font: 500 14px var(--font-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--paper-edge); border-radius: 6px; padding: 6px 10px; }
+  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-dim) 50%), linear-gradient(135deg, var(--ink-dim) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 34px; }
+  #game { font-size: 12px; }
+  select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .invalid { border-color: var(--danger); }
+  .err { color: var(--danger); font-size: 12px; }
+  .help { color: var(--ink-dim); font-size: 11px; }
+  .help:empty { display: none; }
+  #game.invalid + .gsel .gsel-btn { border-color: var(--danger); }
+  .bk { display: inline-flex; align-items: center; gap: 6px; min-width: 0; vertical-align: middle; }
+  .bico { width: 16px; height: 16px; border-radius: 3px; object-fit: contain; flex: none; }
+  .sec-title { display: flex; justify-content: space-between; align-items: baseline; gap: 1px 12px; line-height: 1.15; flex-wrap: wrap; margin: 0 0 6px; }
+  .sec-title h2 { margin: 0; font: 500 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+  .sec-title small { color: var(--ink-dim); font-size: 11px; }
+  /* the slate header is one line: title, refresh and the note together at the left, the byes pinned to the right */
+  /* Every week: the cards sit in one column per kickoff window, side by side, each card 376 x 165, a scrollbar along the bottom */
+  html, body { overscroll-behavior: none; }   /* no rubber-band bounce at the ends of a scroll */
+  .tchip { display: inline-block; border: 2px solid transparent; border-radius: 4px; padding: 1px 8px 2px; font: 700 20px/1.1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+  html.nohover body * { pointer-events: none !important; }   /* until the first real mouse move, nothing reacts to the pointer */
+  main:has(#xy:not([hidden])) { padding-bottom: 82px; }   /* the graphs end at the bottom strip: no vertical scroll */
+
+  /* ===== Page layout ===== */
+  [role="tabpanel"][hidden] { display: none; }
+  .layout { display: grid; gap: 10px; }
+  .top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 620px); row-gap: 10px; column-gap: 20px; align-items: stretch; }
+  .col { display: grid; gap: 10px; min-width: 0; align-content: start; }
+  /* The left column spans the height of the game cards; the saved list fills the space above the wager ticket, which sits at the bottom of the cards. */
+  .col.left { position: relative; display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }   /* PINNED: the totals card top sits level with the live-line game cards (20px under the column headings); nothing adjusts it */ /* positioned so the game picker can cover the whole stack */
+  .col.left .ticket { flex: none; }
+  .col.left.all-final .ticket { display: none; }   /* every game of the week is final: no wagers to place, the saved tickets card takes the room */
+  .col.left .saved, .col.left .ticket { border-top-color: var(--paper-edge); }   /* a faint rule at each join of the totals / wagers / wager stack */
+  @media (min-width: 921px) { .col.left { order: 2; } }   /* the game cards run on the left, the totals/wagers stack on the right */
+  @media (max-width: 920px) { .top { grid-template-columns: minmax(0, 1fr); } .saved { flex: none; max-height: 320px; } }
+  .col:has(#games.strip) { grid-template-columns: minmax(0, 1fr); }   /* the strip scrolls inside its column instead of widening the page */
+  /* the selected game's risk detail sits where the wager ticket was (same height); the ticket steps aside */
+  .col.left.has-sel .ticket { display: none; }
+
+  /* ===== Tab strips and the slate line ===== */
+  .tabrows.bottom { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: 0; z-index: 30; }   /* pinned to the viewport bottom */
+  .tabrows { display: grid; gap: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .28 0 0 0 0 .22 0 0 0 1.3 -.38'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .42 0 0 0 0 .34 0 0 0 1.6 -.62'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .25' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .42 0 0 0 1.5 -.62'/%3E%3C/filter%3E%3Crect width='360' height='360' filter='url(%23n)'/%3E%3C/svg%3E"), #eceae0; border-radius: 3px; position: relative; }   /* the tab strip is turf green with white paint (stencil type, a white line along the top of each row) */ /* a white painted line along the top of each row (inset, so the row keeps its height) */
+  .weektabs { display: grid; grid-template-columns: repeat(auto-fill, 20px); grid-auto-rows: 41px; min-height: 41px; }   /* tabs snap to a coarse grid of 20px steps, each as wide as its title and can be dragged between slots and rows (tabGrid) */
+  /* the selected tab: a thick orange bar at each edge that ends in a point at the bottom */
+  .weektabs button { appearance: none; background: none; border: 0; border-top: 5px solid transparent; margin-bottom: -1px; padding: 4.75px 14px 9.25px; font: 400 20px/1.1 "Saira Stencil One", var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: rgb(31 90 46 / .85); cursor: pointer; position: relative; justify-self: start; grid-row: 1; white-space: nowrap; user-select: none; -webkit-user-select: none; }
+  .weektabs button[aria-selected="true"]::before, .weektabs button[aria-selected="true"]::after { content: ""; position: absolute; top: 1px; z-index: 1; width: 24px; height: 35px; background: #ff8c1a; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); pointer-events: none; }
+  .weektabs button[aria-selected="true"]::before { left: -14px; }
+  .weektabs button[aria-selected="true"]::after { right: -14px; }
+  /* the weeks row (Weeks 1-17): 17 equal cells, pinned (not draggable); the font shrinks with the width so "Week 12" fits a cell */
+  .weektabs.pinned { grid-template-columns: repeat(17, minmax(0, 1fr)); }
+  .weektabs.pinned button { grid-column: auto !important; justify-self: stretch; text-align: center; padding-inline: 4px; font-size: min(20px, calc(((100vw - 16px) / 17 - 8px) / 4.9)); letter-spacing: .04em; touch-action: auto; }
+  /* Weeks 1-17 in two rows of nine equal cells (the second row holds eight), the same overall width as before */
+  .weektabs.pinned.wk2 { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+  /* Graphs, Season stats and Ledger live in the region left over above the tickets (the wager ticket column's width), three equal cells on row 2, Ledger at the far right */
+  /* The active top tab: a faint orange between its two bars */
+  .tabrows:not(.bottom) .weektabs button[aria-selected="true"] { background: rgb(255 140 26 / .14); }
+  /* Season stats, Playbook and Ledger: Season stats gets the most room so its name clears the selected tab's bars */
+  #tab-season, #tab-playbook, #tab-ledger { position: absolute !important; grid-column: auto !important; top: 41px; height: 41px; box-sizing: border-box; text-align: center; width: calc((var(--rw, 628px) - var(--pick, 100px)) * .29); }   /* --pick: the league picker under Fan, wider while it shows a long name */
+  #tab-season { left: var(--rx, 1066px); width: calc((var(--rw, 628px) - var(--pick, 100px)) * .42); }
+  #tab-playbook { left: calc(var(--rx, 1066px) + (var(--rw, 628px) - var(--pick, 100px)) * .42); }
+  #tab-ledger { left: calc(var(--rx, 1066px) + (var(--rw, 628px) - var(--pick, 100px)) * .71); }   /* the right end of row 2 */
+  .weektabs.pinned.wk2 button { font-size: min(20px, calc((var(--cell, 180px) - 8px) / 4.9)); }
+  .weektabs.pinned button:disabled { color: rgb(44 107 60 / .25); cursor: default; }
+  .weektabs.pinned button[aria-selected="true"]::before, .weektabs.pinned button[aria-selected="true"]::after { width: 8px; }   /* the dividers (orange bars) are 8px, were 12px */
+  .weektabs.pinned button[aria-selected="true"]::before { left: -4px; }
+  .weektabs.pinned button[aria-selected="true"]::after { right: -4px; }
+  /* on the bottom strip the bars are upside down: flat at the bottom, pointing up */
+  .tabrows.bottom .weektabs button[aria-selected="true"]::before, .tabrows.bottom .weektabs button[aria-selected="true"]::after { top: auto; bottom: 7px; clip-path: polygon(0 100%, 100% 100%, 100% 30%, 50% 0, 0 30%); }
+  /* the bottom strip: a section's buttons, in two rows of equal cells (--n columns) */
+  .weektabs.sectiontabs button { -webkit-user-drag: none; user-select: none; font-size: min(20px, calc((var(--cell, 200px) - 8px) / 6.4)); letter-spacing: .04em; }
+  .weektabs.sectiontabs { grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); }
+  .weektabs button:hover { color: #12361b; }
+  .weektabs button[aria-selected="true"] { color: #1f5a2e; }
+  .weektabs button:focus-visible { outline: 2px solid #2c6b3c; outline-offset: -2px; }
+  .refresh { margin-left: 0; font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); background: transparent; border: 1px solid var(--paper-edge); border-radius: 5px; padding: 2px 10px; cursor: pointer; }
+  .games + .sec-title.one-line { margin: 4px 0 0; }
+  /* the bottom text uses the same type as the game cards column headers (.slot-h): label font, 700, spaced caps, 16px */
+  .one-line #slateNote, .bye-box, .byeLabel { font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .tabrows.bottom .sec-title.one-line { position: absolute; left: 0; right: auto; bottom: calc(100% + 2px); top: auto; margin: 0; height: 36px; overflow: visible; }   /* the byes / update row belongs to the bottom strip: it rides on its top edge, never behind it */ /* the slate line (Refresh, note, byes) sits under the game cards */
+  .sec-title.one-line { flex-wrap: nowrap; align-items: center; gap: 0 24px; height: 28px; overflow: hidden; position: relative; top: 8px; }   /* byes at the left, the update text at the right: the row hugs the top edge of the bottom tab strip, the text above Refresh */
+  .one-line #slateHead { flex: none; display: flex; align-items: baseline; gap: .6em; }
+  .one-line #feedNote { order: 3; margin-left: 14px; align-self: flex-end; padding-bottom: 2px; flex: none; font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; color: var(--ink-dim); }
+  .one-line #feedNote.on { color: #19e37a; }
+  .one-line #feedNote.off { color: #ffb52e; }
+  .one-line #slateNote.stale { color: #ffb52e; }   /* lines older than an hour */
+  .one-line #slateNote { order: 2; margin-left: auto; text-align: right; align-self: flex-end; padding-bottom: 2px; flex: none; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; }   /* 2x (was 11px): the week update text on its own line, the byes under it */
+  .one-line #slateHead { display: none; }
+  .bye-box { order: 1; margin-left: 14px; margin-bottom: 5px; align-self: flex-end; flex: none; display: flex; align-items: baseline; gap: .6em; font-size: var(--slate-fs, 16px); line-height: 26px; }   /* up to 2x (was 11px); fitSlateLine shrinks both to fit the width */
+  .byes { display: flex; align-items: center; gap: 4px; letter-spacing: .08em; white-space: nowrap; }
+  .bye-chip { position: relative; display: inline-flex; align-items: center; height: 25px; padding: 0 10px 0 30px; margin-left: 17px; border-radius: 5px; line-height: 1; letter-spacing: .06em; font-size: calc(var(--slate-fs, 16px) * 1.25); }   /* 25% bigger than v423 */
+  .bye-helm { position: absolute; left: -15px; top: 50%; height: 35px; width: auto; transform: translateY(-50%); }
+  .byeLabel { font-weight: 700; letter-spacing: .08em; color: var(--ink-dim); }
+  .byes i { font-style: normal; color: var(--ink); }
+  .tabrows.bottom .refresh { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 2; appearance: none; background: none; border: 0; border-radius: 0; padding: 4.75px 14px 9.25px; font: 400 20px/1.1 "Saira Stencil One", var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: rgb(44 107 60 / .55); cursor: pointer; }   /* styled like a tab */
+  .tabrows.bottom .refresh:hover { color: #2c6b3c; background: none; }
+  .tabrows.bottom .refresh:disabled { color: rgb(44 107 60 / .25); cursor: default; }
+  .refresh:hover { border-color: var(--accent); }
+  .refresh:disabled { color: var(--ink-dim); cursor: default; }
+  .refresh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* the Ledger tab sits at the far right of the bottom strip's top row, Get lines under it on the second row */
+  .tabrows.bottom #tab-xy { position: relative !important; left: auto; top: auto; width: auto; height: 41px; padding-inline: 14px; }
+  /* a week tab's second row: Graphs at the far left */
+  .tabrows.bottom .strip-row2 { position: absolute; left: 0; right: 0; top: 41px; height: 41px; display: flex; align-items: center; gap: 8px; padding-right: 10px; box-sizing: border-box; z-index: 2; }
+  .fan-menu { position: absolute; right: 10px; top: 0; height: 41px; display: flex; align-items: center; z-index: 40; }   /* the top strip's upper right */
+  #fanBtn { appearance: none; background: none; border: 0; padding: 0 6px; display: flex; align-items: center; gap: 6px; font: 700 26px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: #12361b; cursor: pointer; }   /* the wager ticket's type */
+  .fan-window { position: fixed; inset: 90px auto auto 8px; margin: 0; width: calc(100vw - 16px); max-width: none; height: var(--games-h, 728px); max-height: none; box-sizing: border-box; padding: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--card-rule); border-radius: 3px; }   /* a game preview's size and place */
+  .fan-window[open] { display: flex; flex-direction: column; }
+  #fanList { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .fan-window::backdrop { background: rgb(0 0 0 / .45); }
+  .fan-win-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--paper-edge); }
+  .fan-win-head h2 { margin: 0; font: 700 20px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+  #appName { margin: 0 auto 0 12px; color: var(--ink-dim); font: 400 14px/1 var(--font-mono); }
+  #fanClose { appearance: none; background: none; border: 0; width: 32px; height: 32px; padding: 0; font: 400 26px/1 Arial, sans-serif; color: var(--ink); cursor: pointer; border-radius: 2px; }
+  #fanClose:hover { background: rgb(255 255 255 / .08); }
+  :root.pick-long { --pick: 170px; }
+  #leaguePick { position: absolute; right: 0; top: 41px; width: calc(var(--pick, 100px) - 4px); height: 41px; box-sizing: border-box; padding: 0 22px 0 6px; appearance: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2312361b' d='M0 0h12L6 8z'/%3E%3C/svg%3E") no-repeat right 6px center / 12px 8px; border: 0; font: 700 26px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: #12361b; cursor: pointer; }   /* the Fan button's font */
+  #leaguePick option { background: var(--paper); color: var(--ink); }
+  #leaguePick option:disabled { color: var(--ink-dim); }
+  .cfb-list { width: 100%; border-collapse: collapse; font: 400 15px/1.2 var(--font-mono); color: var(--ink); }
+  #ncaafb .cfb-list th { padding: 4px 10px; text-align: left; color: var(--ink-dim); font-weight: 400; border-bottom: 1px solid var(--card-rule); }
+  #ncaafb .cfb-list td { padding: 5px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--paper-edge); }
+  #ncaafb .cfb-list small { display: inline; color: var(--accent); font-size: inherit; }
+  #ncaafb .cfb-list .cfb-num { text-align: right; }
+  #ncaafb .cfb-net button { appearance: none; background: none; border: 0; margin-left: 8px; padding: 0 2px; color: var(--accent); cursor: pointer; vertical-align: middle; line-height: 0; }
+  #ncaafb .cfb-net button:hover { color: var(--ink); }
+  @media (max-width: 1180px) { #ncaafb .cfb-list { font-size: 13px; } #ncaafb .cfb-list th, #ncaafb .cfb-list td { padding-inline: 4px; } #ncaafb .cfb-net button { margin-left: 4px; } }
+  #fanBtn.due { position: relative; }
+  #fanBtn.due::after { content: ""; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .fan-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: max-content; justify-content: start; gap: 8px; padding-inline: 8px; border-bottom: 1px solid var(--paper-edge); }
+  .fan-tabs button { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 12px 8px; font: 400 16px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink-dim); cursor: pointer; }
+  .fan-tabs button:hover { color: var(--ink); }
+  .fan-tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .fan-list { display: grid; align-content: start; box-sizing: border-box; padding: 4px; }
+  .fan-list[hidden] { display: none; }
+  .fan-telecasts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 460px); gap: 24px; padding: 8px; }
+  .fan-telecasts h3 { margin: 0; padding: 4px 12px 8px; font: 700 15px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+  .fan-map { position: relative; margin: 4px 12px 12px; max-width: 100%; }
+  .fan-list .fan-map button { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-sizing: border-box; padding: 4px; overflow: hidden; background: rgb(0 0 0 / .25); border: 2px solid var(--card-rule); border-radius: 3px; font: 400 14px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink-dim); text-align: center; }
+  .fan-list .fan-map button:hover { background: rgb(255 255 255 / .06); }
+  .fan-list .fan-map button.on { border-color: var(--accent); color: var(--ink); }
+  .fan-map small { font: 400 12px var(--font-mono); }
+  .fan-map span, .fan-map small { position: relative; z-index: 1; }
+  .fan-spots { position: absolute; inset: 3px; display: grid; gap: 3px; }
+  .fan-spots i { display: flex; align-items: flex-start; justify-content: flex-start; padding: 2px 5px; background: rgb(255 140 26 / .14); border: 1px solid rgb(255 140 26 / .45); font: 400 13px var(--font-mono); font-style: normal; color: var(--accent); }
+  .fan-lay { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 12px 8px; }
+  .fan-list .fan-lay button { padding: 6px 10px; border: 1px solid var(--card-rule); font-size: 15px; }
+  .fan-list .fan-lay button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .fan-list .fan-lay button:disabled, .fan-list .fan-show:disabled { color: var(--ink-dim); cursor: default; }
+  .fan-list .fan-show { margin: 0 12px 4px; border: 1px solid var(--accent); color: var(--accent); }
+  .fan-records { display: flex; flex-direction: column; align-items: flex-start; }
+  .fan-note { margin: 0; padding: 8px 12px; font-size: 14px; line-height: 1.3; color: var(--ink-dim); }
+  .fan-net { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: 8px; padding: 4px 12px; font: 400 16px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink); }
+  .fan-net input { box-sizing: border-box; width: 100%; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); border-radius: 2px; color: var(--ink); font: 400 13px var(--font-mono); }
+  .fan-list button { appearance: none; background: none; border: 0; padding: 8px 12px; text-align: left; font: 400 18px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink); cursor: pointer; border-radius: 2px; }
+  .fan-list button:hover { background: rgb(255 255 255 / .08); }
+  .fan-list button.on { color: var(--accent); }
+  .fan-lg { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font: 400 18px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink); cursor: pointer; }
+  .fan-lg:hover { background: rgb(255 255 255 / .08); }
+  .fan-lg input { flex: none; width: 15px; height: 15px; margin: 0; padding: 0; accent-color: var(--accent); cursor: pointer; }
+  .fan-lg input:disabled { cursor: default; }
+  .fan-check { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font: 400 18px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink); cursor: pointer; white-space: nowrap; }
+  .fan-check input { flex: none; width: 15px; height: 15px; margin: 0; padding: 0; accent-color: var(--accent); cursor: pointer; }
+  .fan-check:hover { background: rgb(255 255 255 / .08); }
+  .tabrows.bottom .weektabs.grf { flex: none; display: block; width: auto; min-height: 41px; margin: 0; }
+  /* Graphs, Season stats and Ledger: fully dark lettering in every state (the orange bars mark the selected one) */
+  #tab-season, #tab-playbook, #tab-ledger, .weektabs [data-week].now { color: #12361b; }   /* .now = the calendar's current week */
+  .weektabs.pinned.wk2 #tab-season, .weektabs.pinned.wk2 #tab-playbook, .weektabs.pinned.wk2 #tab-ledger { font-size: min(24px, calc((var(--rw, 628px) - var(--pick, 100px)) / 19)); padding-inline: 0; }
+
+  /* ===== Game cards ===== */
+  /* hover arrows over the game strip: appear at its left and right edges when the pointer is over the cards and there is more to scroll that way */
+  .garrow { position: absolute; top: 50%; z-index: 6; width: 34px; height: 72px; margin-top: -36px; padding: 0; border: 1px solid var(--card-rule); border-radius: 4px; background: rgb(15 18 22 / .82); color: var(--ink); cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .12s; display: grid; place-items: center; }
+  .garrow.l { left: 4px; }
+  .garrow.r { right: 4px; }
+  .garrow svg { width: 18px; height: 28px; }
+  .gwrap:hover .garrow.on { opacity: .9; pointer-events: auto; }
+  .gwrap:hover .garrow.on:hover { opacity: 1; border-color: var(--accent); }
+  .games.strip { overscroll-behavior: none; scroll-behavior: auto; display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--paper-edge) transparent; padding-bottom: 6px; box-sizing: border-box; }
+  .games.strip .slot { flex: none; display: flex; flex-direction: column; gap: 4px; }
+  .games.strip .slot-h { margin: 0; height: 16px; font: 500 11px/16px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; }
+  .games.strip .slot-cards .sun-h { align-self: end; grid-column: 1; }   /* the Sunday morning heading sits at the bottom of the empty row above its card */
+  .games.strip .slot-cards { display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows), var(--card-h, 165px)); grid-auto-columns: var(--cw, 376px); gap: 4px; }
+  .games.strip.flat { display: block; overflow: hidden; }   /* every game final: a plain grid, scaled to the box */
+  .flat-cards { display: grid; grid-template-columns: repeat(var(--cols), 376px); grid-auto-rows: 165px; gap: 4px; }
+  .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); grid-auto-rows: minmax(120px, 1fr); gap: 4px; height: var(--games-h, 728px); }   /* the cards share a fixed 794px (a 940px viewport less tabs and the one-line slate header); the rest of the layout flexes to it */
+  .game { background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; display: grid; grid-template-rows: 20px minmax(0, 1fr) 40px; min-width: 0; min-height: 0; overflow: hidden; padding-block: 2px; }   /* 2px of air between the card edge and the title bar / bottom row */
+  .board { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
+  .board td.ml { width: 17%; padding-right: 6px; }   /* columns: moneyline | team badge | spread | total (or the score once the game is over) */
+  .board td.tn { width: 44%; }
+  .board td.tot { width: 20%; vertical-align: middle; font-size: min(24px, 7.2cqw); font-weight: 500; color: #a3acb8; -webkit-text-stroke: .3px currentColor; }   /* room for the bigger total */ /* the game total: a little darker and fatter */
+  .board th { height: 14px; padding: 0; font-weight: 400; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); text-align: right; }
+  .board th.live { color: var(--live); }
+  .board td.ml, .board td.tn { text-align: left; }
+  .board td { height: 24px; padding: 0; text-align: right; border-top: 1px solid var(--paper-edge); white-space: nowrap; font-size: min(18px, 5.6cqw); }
+  .board td { border-top: 0; }   /* no rules inside the board: none under the card title (no column headings) and none between the team rows */
+  .board .j { color: var(--ink-dim); font-size: 9px; }
+  .board td.ml { color: #cdd3da; text-indent: -4px; }
+  .board td.ml-go { cursor: pointer; }
+  .board td.ml-go:hover { text-decoration: underline; }
+  .tname { font-size: clamp(15px, min(46cqh - 9px, 8.4cqw), 46px); display: block; box-sizing: border-box; width: calc(100% - 10px); padding: 0 4px; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+  /* badge with a helmet: short name (the team's abbreviation), the helmet pinned left and allowed to overrun the badge's edges a little */
+  .tname.has-helm { display: flex; align-items: center; justify-content: flex-start; gap: 0; padding: 0 4px 0 0; overflow: visible; font-size: clamp(15px, min(46cqh - 9px, 8.4cqw), 46px); }
+  .tname.has-helm .helm { flex: none; height: calc(100% + 14px); width: auto; margin: -7px 0 -7px -9px; pointer-events: none; position: relative; z-index: 1; }
+  .tname.has-helm .tn-txt { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; }
+  /* The "license" badge: a stamped plate in the team's colors, with two mounting holes and a raised rim */
+  .board.lines:has(.plate) td.ml { width: 15%; }
+  .board.lines:has(.plate) td.tn { width: 47%; }
+  .board.lines:has(.plate) td.tot { width: 19%; }
+  .board .tname.plate { width: calc(100% - 5px); height: clamp(26px, 48.5cqh, 62px); border-width: 1.5px; border-style: solid; border-radius: 5px; box-shadow: inset 0 0 0 1.5px rgb(0 0 0 / .28), 0 1px 2px rgb(0 0 0 / .6); background-image: radial-gradient(circle at 30% 8px, rgb(0 0 0 / .55) 0 1.5px, transparent 2px), radial-gradient(circle at 78% 8px, rgb(0 0 0 / .55) 0 1.5px, transparent 2px), linear-gradient(rgb(255 255 255 / .1), rgb(0 0 0 / .1)); line-height: 1; overflow: hidden; }
+  .board .tname.plate .tn-txt { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-width: 0; line-height: 1; }
+  .board .tname.plate small { display: block; max-width: 100%; overflow: hidden; font: 700 9px/1 var(--font-label); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; opacity: .92; margin-bottom: 1px; }
+  .board .tname.plate .pl-st.long { font-size: 8px; letter-spacing: 0; }   /* a long state name still fits beside the helmet */
+  .board .tname.plate .pl-no { font: 700 1.14em/.92 var(--font-display); letter-spacing: .06em; text-shadow: 0 1px 0 rgb(255 255 255 / .22), 0 -1px 0 rgb(0 0 0 / .4); }
+  /* A final game's card: no top line, the two teams fill it, and a scoreboard F runs down the right */
+  .game.is-final { grid-template-rows: minmax(0, 1fr) 40px; }
+  .game.is-final .g-mid { padding-inline: 10px 6px; }
+  .game.is-final .board { --fin-fs: clamp(30px, min(40cqh, 14.5cqw), 52px); }   /* names, scores and the F share one size */
+  .board td.fin { width: 11%; text-align: center; vertical-align: middle; font: 800 var(--fin-fs)/1 "Doto", var(--font-mono); color: #ffb52e; text-shadow: 0 0 6px rgba(255, 170, 30, .45); }
+  .game.is-final .board td.tn { width: auto; }
+  /* A fixed grid, like a real scoreboard: helmet, three name cells from the left, score cells from the right, the same on every card */
+  .game.is-final .board .tname.over { height: clamp(30px, 47cqh, 72px); line-height: 1; font-size: var(--fin-fs); display: grid; grid-template-columns: auto 1fr calc(var(--score-cells, 2) * 1ch); column-gap: 0; align-items: center; letter-spacing: 0; padding: 0 2px 0 0; }
+  .game.is-final .board .tname.over.has-helm { grid-template-columns: 1.85em 3ch 1fr calc(var(--score-cells, 2) * 1ch); column-gap: 0; }
+  .game.is-final .board .tname.over .helm { width: 1.75em; height: min(112%, 64px); margin: -6% 0 -6% -2px; object-fit: contain; object-position: left center; }
+  .game.is-final .board .tname.over .tn-txt { flex: none; text-align: left; white-space: pre; }
+  .game.is-final .board .tname.over .sc { grid-column: -2 / -1; text-align: right; }
+  .board .tname.over { background: transparent !important; border-color: transparent !important; color: #8f6a1c !important; font-family: "Doto", var(--font-mono); font-size: 34px; font-weight: 800; letter-spacing: 0; padding-right: 0; }   /* final games: helmet stays, the badge goes, the name uses the score's dot-matrix font */
+  .board .tname.over { display: flex; align-items: center; width: 100%; padding: 0 10px 0 0; overflow: visible; }   /* the score sits 10px in from the right */
+  .board .tname.over.lost .helm { opacity: .25; }
+  .board .tname.over.win { color: #ffb52e !important; text-shadow: 0 0 6px rgba(255, 170, 30, .45); }
+  .board td.score { font: 800 34px/1 "Doto", var(--font-mono); letter-spacing: .04em; color: #8f6a1c; }   /* scoreboard-style dot-matrix digits */
+  .board td.score.win { color: #ffb52e; text-shadow: 0 0 6px rgba(255, 170, 30, .45); }
+  .board.lines td.ml, .board.lines td.sp { font: 500 min(17px, 5.2cqw)/1 var(--font-mono); font-variant-numeric: tabular-nums; }   /* the moneyline and the spread read as one pair of numbers */
+  .board.lines td.sp { text-align: left; padding-left: 4px; }   /* the spread starts a set distance from the team badge */
+  .board.lines td.tot { text-align: center; }   /* the total sits centered between the spread and the gutter */
+  .game .g-mid:has(.board.lines) { padding-right: 2px; }
+  .board .tname { font-weight: 700; height: clamp(22px, 43cqh, 48px); line-height: calc(clamp(22px, 43cqh, 48px) - 4px); }   /* badges nearly fill their rows */
+  .game { grid-template-columns: minmax(0, 1fr) 36px; }
+  .game > :not(.g-gut) { grid-column: 1; }
+  /* the game strip still scrolls sideways (wheel, trackpad, drag, arrows) but shows no scrollbar */
+  .games.strip { scrollbar-width: none; }
+  .games.strip::-webkit-scrollbar { display: none; }
+
+  /* ===== Wager ticket ===== */
+  /* The wager ticket's corners match the game cards (3px). */
+  .ticket { margin-top: 0; background: var(--paper); border: 1px solid transparent; border-radius: 3px; }
+  .ticket .group, .ticket .tabs, .ticket .seg { border-radius: 3px; }
+  .ticket-body { padding: 8px 12px; display: grid; gap: 6px; }
+  .amt-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); gap: 0; align-items: start; }
+  .check { display: flex; align-items: center; gap: 6px; margin-top: 0; height: 50px; padding: 0 10px; border: 1px solid var(--paper-edge); border-radius: 6px; background: var(--bg); cursor: pointer; font-size: 12px; }
+  .check input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+  .check:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+  .money { position: relative; }
+  .money b { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-dim); font-weight: 500; }
+  .money input { padding-inline: 24px; text-align: center; height: 50px; box-sizing: border-box; font-size: 17px; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+  .money input::-webkit-outer-spin-button, .money input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .tear { position: relative; border-top: 2px dashed var(--paper-edge); }
+  .stub { padding: 6px 12px 8px; display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+  .group { display: grid; gap: 5px; padding: 7px; border: 1px solid transparent; border-radius: 8px; }
+  /* the amount, Bonus and the Straight/Parlay tabs form one joined bar: no gaps, a shared border at each joint, square inner corners */
+  .amt-row .tabs button { font-size: 20px; }
+  .amt-row .check { font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; margin-left: -1px; border-radius: 0; justify-content: center; }   /* Bonus matches the tabs' type */
+  .amt-row .check input { width: 18px; height: 18px; }
+  .amt-row .tabs { height: 50px; margin-left: -1px; border-radius: 0 3px 3px 0; }
+  .amt-row .money input { border-radius: 3px 0 0 3px; }
+  .tabs { display: flex; border: 1px solid var(--paper-edge); border-radius: 6px; overflow: hidden; background: var(--bg); }
+  .tabs button { flex: 1 1 50%; font: 700 16px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); background: none; border: 0; border-bottom: 2px solid transparent; padding: 7px 10px 6px; cursor: pointer; }
+  .tabs button + button { border-left: 1px solid var(--paper-edge); }
+  .tabs button:hover { color: var(--ink); }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); background: rgb(95 208 166 / .08); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .legs { display: grid; gap: 6px; }
+  .leg { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid var(--paper-edge); border-radius: 6px; background: var(--bg); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .leg span { min-width: 0; overflow-wrap: anywhere; }
+  .leg-x { flex: none; background: none; border: 0; color: var(--ink-dim); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px; }
+  .leg-x:hover { color: var(--danger); }
+  .addleg { justify-self: end; font: 500 12px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); background: transparent; border: 1px solid var(--paper-edge); border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+  .addleg:hover { border-color: var(--accent); }
+  .addleg:focus-visible, .leg-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .parlay-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .parlay-row label { width: 120px; }
+  .parlay-row input { text-align: center; font-variant-numeric: tabular-nums; }
+  .parlay-row.invalid input { border-color: var(--danger); }
+  .parlay-row .calc { color: var(--ink-dim); font-size: 12px; padding-bottom: 12px; }
+  .group.bet { min-height: 230px; align-content: start; }
+  .pick { min-height: 30px; display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; align-items: stretch; }
+  .pick.has-price { grid-template-columns: minmax(0, 1fr) 80px 80px; }
+  .pick.no-line { grid-template-columns: minmax(0, 1fr); }
+  .pick.has-price.no-line { grid-template-columns: minmax(0, 1fr) 96px; }
+  .cent { position: relative; display: block; min-width: 0; }
+  .cent input { width: 100%; padding-right: 22px; }
+  .cent b { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: var(--ink-dim); font-weight: 400; pointer-events: none; }
+  .tick { position: relative; display: block; min-width: 0; }
+  .tick input { width: 100%; padding-right: 20px; }
+  .tick button { position: absolute; right: 1px; width: 18px; height: calc(50% - 1px); padding: 0; border: 0; background: none; color: var(--ink-dim); font-size: 9px; line-height: 1; cursor: pointer; }
+  .tick button:hover { color: var(--ink); background: rgb(255 255 255 / .08); }
+  .tick button.up { top: 1px; }
+  .tick button.dn { bottom: 1px; }
+  .pick.invalid input[type="text"] { border-color: var(--danger); }
+  .pick input[type="text"] { text-align: center; font-size: 13px; padding: 5px; font-variant-numeric: tabular-nums; }
+  .seg label.team span { background: var(--tb); color: var(--tf); font-weight: 700; box-shadow: inset 0 0 0 2px var(--to); opacity: .55; }
+  .seg label.team input:checked + span { background: var(--tb); color: var(--tf); opacity: 1; box-shadow: inset 0 0 0 2px var(--to), inset 0 0 0 4px var(--bg); }
+  .pick.invalid .seg { border-color: var(--danger); }
+  .pick .hint { grid-column: 1 / -1; display: flex; align-items: center; min-height: 30px; color: var(--ink-dim); font-size: 11px; }
+  .types[hidden] { display: none; }
+  .types { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 3px; }
+  .types legend { padding: 0; margin-bottom: 3px; }
+  .seg { display: flex; border: 1px solid var(--paper-edge); border-radius: 6px; overflow: hidden; background: var(--bg); }
+  .types.invalid .seg { border-color: var(--danger); }
+  .seg label { display: block; flex: 1 1 0; min-width: 0; }
+  .seg label + label { border-left: 1px solid var(--paper-edge); }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg span { display: block; text-align: center; padding: 6px 6px; font-size: 12px; cursor: pointer; color: var(--ink-dim); white-space: nowrap; }
+  .seg input:checked + span { background: var(--accent); color: var(--accent-ink); font-weight: 500; }
+  .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+  button.place { height: 40px; font: 700 23px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 6px; padding: 0 22px; cursor: pointer; }   /* as tall as a team badge on the game cards (40px) and the same size of type */
+  button.place:hover { filter: brightness(1.08); }
+  button.place:active { transform: translateY(1px); }
+  /* WAGER TICKET, receipt type on the game cards' colors: the page's own paper, rules and accent, 3px corners; geometric sans in caps; scoped to .ticket */
+  .ticket { --font-display: "Montserrat", "Helvetica Neue", Arial, sans-serif; --font-mono: "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--ink); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; }
+  .ticket .group { border: 0; }
+  .ticket input[type="text"], .ticket input[type="number"], .ticket select { border-radius: 3px; border-color: var(--card-rule); background: var(--bg); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 300; }
+  .ticket .tabs, .ticket .seg, .ticket .check, .ticket .leg, .ticket .addleg, .ticket .bsel-btn, .ticket .gsel-btn { border-radius: 3px !important; border-color: var(--card-rule); background: var(--bg); }
+  .ticket .amt-row .tabs { border-radius: 0 3px 3px 0 !important; }
+  .ticket .amt-row .check { border-radius: 0 !important; }
+  .ticket .amt-row .money input { border-radius: 3px 0 0 3px; }
+  .ticket .tabs button { font-weight: 400; letter-spacing: .04em; }
+  .ticket .tabs button[aria-selected="true"] { background: none; border-bottom-color: transparent; position: relative; box-shadow: 0 -1px 0 var(--accent), 0 1px 0 var(--accent); }   /* selected like Bonus when checked: green lettering and a green line on the top and bottom edges only (over the bar border), no sides, no fill */
+  .ticket .tabs { overflow: visible; }
+  .ticket .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 300; letter-spacing: .04em; text-transform: uppercase; font-size: 12px; }
+  .ticket .bsel-btn, .ticket .gsel-btn { font-weight: 400; letter-spacing: .04em; }
+  .ticket .tear { display: none; }
+  .ticket button.place { border-radius: 3px; font-weight: 700; letter-spacing: .06em; }
+  .ticket button.bookit { background: var(--bg); color: var(--ink); border: 1px solid var(--card-rule); }
+  .ticket button.sendit { background: var(--bg); color: var(--ink-dim); border: 1px solid var(--card-rule); opacity: .55; cursor: default; }
+  .ticket button.sendit.ready { background: #19f05f; color: #04210d; border-color: #19f05f; opacity: 1; cursor: pointer; }
+  .ticket button.sendit:disabled:hover { filter: none; }
+  #placeMsg { flex: 1; min-width: 0; font: 500 11px/1.25 Montserrat, sans-serif; color: var(--ink-dim); text-align: right; }
+  #placeMsg.ok { color: #19f05f; }
+  #placeMsg.err { color: var(--danger, #ff6b6b); }
+  .ticket .gsel-list .g { height: 37px; font-weight: 400; }
+  .ticket .bsel-list, .ticket .gsel-list { border-radius: 3px; border-color: var(--card-rule); }
+  /* sportsbook, game and the amount / Bonus / Straight-Parlay row: one control height */
+  .ticket .bsel-btn, .ticket .gsel-btn, .ticket .money input, .ticket .amt-row .check, .ticket .amt-row .tabs { height: 40px; box-sizing: border-box; }
+  .ticket .amt-row { margin-block: 7px -7px; }   /* the amount row sits centered between the sportsbook and game pickers (nudged 3px up from equal gaps: 12px above, 18px below), ticket height unchanged */
+
+  /* ===== Sportsbook and game pickers ===== */
+  /* The sportsbook dropdown: a custom list (a native select cannot show icons). The hidden select still holds the value. */
+  .bsel { display: block; min-width: 0; }
+  .bsel-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; height: 40px; font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); background: var(--bg); border: 1px solid var(--paper-edge); border-radius: 6px; padding: 0 12px; cursor: pointer; }
+  .bsel-btn .ph { color: var(--ink-dim); }
+  #book.invalid + .bsel .bsel-btn { border-color: var(--danger); }
+  .bsel .bico { width: 22px; height: 22px; }
+  /* the sportsbook list covers the whole right-hand stack like the game list (.col.left is the positioned parent) */
+  .bsel-list { position: absolute; z-index: 30; inset: 0; margin: 0; padding: 0 8px 8px; list-style: none; background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 3px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--paper-edge) transparent; }
+  .bsel-list[hidden] { display: none; }
+  .bsel-list .gh { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: center; height: 40px; margin: 0 -8px 2px; padding: 0 8px; background: var(--paper); border-bottom: 1px solid var(--paper-edge); font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); cursor: pointer; }
+  .bsel-list li:not(.gh) { display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 10px; border-radius: 4px; cursor: pointer; font: 700 22px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
+  .bsel-list li:not(.gh) .bk { gap: 10px; }
+  /* The game picker: a Select game button (the display font, like the tabs) that opens a list over the whole right-hand stack: helmets, abbreviations and the visitor's spread. */
+  .gsel { display: block; min-width: 0; }
+  .gsel-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; height: 40px; font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); background: var(--bg); border: 1px solid var(--paper-edge); border-radius: 6px; padding: 0 12px; cursor: pointer; }
+  .gsel-btn .ph { color: var(--ink-dim); }
+  .gsel .hl { height: 26px; width: auto; flex: none; pointer-events: none; }
+  .gsel-list { position: absolute; z-index: 30; inset: 0; margin: 0; padding: 0 8px 8px; list-style: none; background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 3px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--paper-edge) transparent; }
+  .gsel-list[hidden] { display: none; }
+  .gsel-list .gh { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: center; height: 40px; margin: 0 -8px 2px; padding: 0 8px; background: var(--paper); border-bottom: 1px solid var(--paper-edge); font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); cursor: pointer; }
+  .gsel-list .day { padding: 7px 6px 2px; font: 500 10px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+  .gsel-list .g { display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 10px; border-radius: 4px; cursor: pointer; font: 700 23px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
+  .gsel-list .g .hl { height: 32px; }
+  .gsel-list .g .sp { color: var(--ink-dim); font-weight: 500; }
+  .gsel-list .g .at { color: var(--ink-dim); font-weight: 500; }
+  .gsel-list .g .when { margin-left: auto; font: 400 11px var(--font-mono); letter-spacing: 0; color: var(--ink-dim); text-transform: none; }
+  .gsel-list .g:hover { background: rgb(255 255 255 / .07); }
+  .gsel-list .g[aria-selected="true"] { color: var(--accent); }
+  .bsel-list li:not(.gh):hover, .bsel-list li.cur { background: rgb(255 255 255 / .07); }
+  .bsel-list li[aria-selected="true"] { color: var(--accent); }
+  .g-top, .g-mid, .g-bot { padding-inline: 7px; min-width: 0; }
+  .g-top { display: flex; align-items: center; font-size: 11px; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Before kickoff (no status badge) the info line is centered over the team badges: the badge column starts after the 17% moneyline column
+     and is 48% wide, inside the board's 9px side padding. */
+  .g-top.upcoming { position: relative; }
+  .g-top.upcoming .g-when { position: absolute; left: calc(4px + 0.41 * (100% - 18px)); top: 50%; transform: translate(-50%, -50%); max-width: none; overflow: visible; }
+  .g-top.live { position: relative; }
+  .g-air { position: absolute; left: calc(4px + 0.41 * (100% - 18px)); top: 50%; transform: translate(-50%, -50%); padding: 0 9px; border: 2px solid #ff3d3d; border-radius: 4px; font: 700 13px/14px var(--font-label); letter-spacing: .1em; text-transform: uppercase; color: #ff5a5a; background: rgb(255 61 61 / .08); box-shadow: 0 0 6px rgb(255 61 61 / .45), inset 0 0 5px rgb(255 61 61 / .25); white-space: nowrap; }   /* "on air": the network in a red outlined button, centered like the old title */
+  .g-top.live .g-st { position: absolute; left: calc(4px + 0.41 * (100% - 18px)); top: 50%; transform: translate(-50%, -50%); margin-left: 0; }
+  .g-mid { display: flex; align-items: center; padding-inline: 9px; container-type: size; }   /* a size container, so the team badges can scale with the row */
+  .g-bot { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+  .g-bot .stat { gap: 1px; }
+  .g-bot .stat:nth-child(3) { justify-self: end; }   /* wagers at the left, max risk centered on the card, P/L at the right */
+  .g-bot .rk-val { position: relative; display: inline-block; white-space: nowrap; }
+  .g-bot .rk-val .tico { position: absolute; left: calc(100% + 4px); top: 50%; transform: translateY(-50%); }   /* beside the value, so the figure stays centered under its label */
+  .g-bot .stat .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 10.5px; letter-spacing: 0; text-transform: uppercase; line-height: 1.1; text-decoration: none; }   /* the totals card's header type (Montserrat bold caps), no underline, tightened so "MAX RISK" fills its column */
+  .g-bot .stat b { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size: 13px; line-height: 1.2; }
+  .g-bot.done .stat:nth-child(1) { grid-column: 3; justify-self: end; }
+  .g-bot .stat b:not(.dhi):not(.dlo):not(.dhg) { opacity: .7; }   /* the values are dimmed (the highlights keep their full color) */
+  .g-bot .stat b.settled { text-decoration: underline solid; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }   /* a settled result gets one thick underline that stays inside the bottom row */
+  .g-when { font-family: var(--font-display); font-size: 13px; letter-spacing: .02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .g-st { margin-left: auto; flex: none; padding: 1px 7px; border: 1px solid var(--card-rule); border-radius: 3px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+  .g-st.live { color: var(--accent); border: 2px solid #7dffc9; padding: 0 6px; }   /* in progress: a bright border */
+  /* The card's right-hand gutter: four icon buttons, dim until they do something */
+  .g-gut { grid-column: 2; grid-row: 1 / -1; display: flex; flex-direction: column; margin-block: 2px; cursor: default; }
+  .g-gut button { flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: 0; color: var(--ink-dim); opacity: .45; }
+  .g-gut button:disabled { cursor: default; }
+  .g-gut button:not(:disabled) { opacity: 1; color: var(--ink); cursor: pointer; }
+  .g-gut button:not(:disabled):hover { color: var(--accent); }
+  .g-gut button.active { color: var(--accent); }
+  .g-gut button.active svg { outline: 1.5px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  .g-bot .stat b.livepl:not(.dhi):not(.dlo):not(.dhg) { opacity: 1; }
+  .g-when { font-family: var(--font-label); font-weight: 700; font-size: 17px; letter-spacing: .04em; }
+
+  /* ===== Totals and Saved tickets ===== */
+  .saved { flex: 1 1 0; padding-bottom: 12px; min-height: 0; display: flex; flex-direction: column; background: var(--paper); border: 1px solid transparent; border-radius: 0; overflow: hidden; }
+  .totals { flex: none; margin-bottom: -8px; background: var(--paper); border: 1px solid transparent; border-radius: 3px 3px 0 0; padding: 6px 12px; display: grid; gap: 4px; }
+  .sum { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 12px 10px; scrollbar-width: thin; scrollbar-color: var(--paper-edge) transparent; }
+  .sum table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 12px; }
+  .sum th { padding: 4px 5px; text-align: right; font-weight: 400; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); border-bottom: 1px solid var(--paper-edge); white-space: nowrap; }
+  .sum td { padding: 4px 5px; text-align: right; white-space: nowrap; }
+  .sum th:first-child, .sum td:first-child { text-align: left; }
+  .sum tr.foot td { border-bottom: 1px solid var(--paper-edge); font-weight: 500; }
+  .sum .pos { color: var(--accent); }
+  .sum .neg { color: var(--danger); }
+  .sum .dim { color: var(--ink-dim); }
+  .saved.show-sum .ls-heads, .saved.show-sum #list, .saved.show-sum .ed-msg, .saved.show-sum #search { display: none; }
+  .saved:not(.show-sum) .sum { display: none; }
+  .totals h2 { margin: 0; font: 500 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+  .totals .tt-stats { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .totals .stat, .totals .stat:last-child { justify-items: center; text-align: center; }
+  .totals .stat b { font-size: 16px; }
+  .totals .stat b.hi { color: var(--danger); }
+  .totals .stat b.win { color: var(--accent); }
+  .ls-bar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--paper-edge); }
+  .ls-tabs { display: contents; }
+  .ls-tabs button { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; padding: 4px 0 3px; font: 500 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; cursor: pointer; }
+  .ls-tabs button:hover { color: var(--ink); }
+  .ls-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .ls-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ls-bar input { width: 100%; min-width: 0; box-sizing: border-box; font: 400 12px var(--font-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--paper-edge); border-radius: 5px; padding: 6px 8px; }
+  .saved { --cols: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, .8fr) minmax(0, .9fr) minmax(0, .9fr) 18px; }
+  .ls-heads { flex: none; display: grid; grid-template-columns: var(--cols); gap: 0 8px; padding: 0 12px; min-height: 26px; align-items: center; border-bottom: 1px solid var(--paper-edge); }
+  .ls-heads .gh { padding: 0; line-height: 1.25; }
+  .gh { font: 500 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); background: none; border: 0; padding: 4px 0; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; }
+  .gh.num { text-align: right; }
+  .gh.ctr, .saved li.row .ctr { text-align: center; }
+  .gh:hover { color: var(--ink); }
+  .gh:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .saved ul { flex: 1 1 auto; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 4px 0; scrollbar-width: thin; scrollbar-color: var(--paper-edge) transparent; }
+  .saved li { padding: 3px 12px; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+  .saved li.empty { color: var(--ink-dim); }
+  .saved li.row { display: grid; grid-template-columns: var(--cols); gap: 8px; row-gap: 1px; font-size: 12px; font-variant-numeric: tabular-nums; padding-block: 2px; line-height: 1.25; border-bottom: 1px solid rgb(255 255 255 / .06); }
+  .saved li.row .r2 { color: var(--ink-dim); font-size: 11px; }
+  .saved li.row:hover { background: rgb(255 255 255 / .03); }
+  .saved li.row.from-fill { background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+  .saved li.row.from-fill:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+  .saved li.row .num { text-align: right; }
+  .saved li.row .ed { cursor: text; border-radius: 3px; }
+  .saved li.row .ed:hover { background: rgb(255 255 255 / .07); }
+  .saved li.row .del { font: inherit; line-height: 1; color: var(--ink-dim); background: none; border: 0; padding: 0; cursor: pointer; border-radius: 3px; }
+  .saved li.row .del:hover, .saved li.row .del:focus-visible { color: var(--danger); outline: none; }
+  .saved li.row .legs { grid-column: 1 / -1; display: grid; gap: 1px; padding: 0 0 2px 10px; color: var(--ink-dim); font-size: 11px; line-height: 1.3; }
+  .saved li.row .del.arm { color: #fff; background: var(--danger); }
+  .ced { width: 100%; min-width: 0; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--accent); border-radius: 3px; padding: 0 3px; text-align: inherit; }
+  .ced:focus-visible { outline: none; }
+  .ed-msg { flex: none; padding: 5px 12px; font-size: 12px; color: var(--danger); border-bottom: 1px solid var(--paper-edge); }
+  /* the totals card wears the wager ticket's type: Montserrat, light caps labels, regular figures */
+  .totals .stat .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }
+  .totals .stat b { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size: 14px; }
+
+  /* ===== Risk detail and payoff grid ===== */
+  .stat { display: grid; gap: 2px; min-width: 0; }
+  .stat:last-child { justify-items: end; text-align: right; }
+  .stat.mid { justify-items: center; text-align: center; }
+  .riskcard { background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 8px; padding: 10px 16px; display: grid; gap: 8px; }
+  .riskcard .sec-title { margin: 0; }
+  .riskcard .dim, .rk-list .empty { margin: 0; color: var(--ink-dim); font-size: 12px; }
+  .rk-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .rk-game { font: 700 26px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
+  .rk-at { color: var(--ink-dim); }
+  .rk-stats { display: flex; gap: 56px; flex-wrap: wrap; }
+  .rk-stats .stat { gap: 4px; min-width: 120px; }
+  .rk-stats .stat .lbl { font-size: 11px; }
+  .rk-stats .stat b { font-size: 28px; line-height: 1.1; }
+  .rk-stats .stat b.hi { color: var(--danger); }
+  .rk-stats .stat b.win { color: var(--accent); }
+  .rk-sides { display: grid; grid-template-columns: 1fr 1fr; margin-top: 2px; margin-bottom: 40px; }   /* the badges sit on the inside; their edges are set from the graph's ticks (see riskGrid) */
+  .rk-sides .tchip { font-size: 38px; padding: 2px 16px 3px; border-radius: 6px; }
+  .rk-side { display: grid; gap: 8px; align-content: start; }
+  .rk-side { justify-items: start; }
+  .rk-side.end { justify-items: end; text-align: right; }
+  .rk-side.end .rk-books { justify-content: flex-end; }
+  .rk-side-row { display: flex; align-items: center; gap: 8px; }
+  .rk-books { display: flex; flex-wrap: wrap; gap: 6px 24px; min-height: 32px; color: var(--ink); font-size: 22px; line-height: 1.1; }   /* critical: which books hold each team, so both sides aren't bet in one place by accident */
+  .rk-books .bk { gap: 10px; }
+  .rk-books .bico { width: 32px; height: 32px; border-radius: 6px; }
+  .rk-axis svg { display: block; width: 100%; height: auto; }
+  .axis { color: var(--ink); }
+  .ax-all { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; }
+  .ax-alltag { fill: var(--accent); font: 700 11px var(--font-mono); letter-spacing: .1em; }
+  .ax-gp { fill: var(--accent); }
+  .ax-gn { fill: var(--danger); }
+  .axis .ax-gp { fill: #19e37a; }   /* vibrant profit and loss fills (and white figures with a dark edge so they read on them) */
+  .axis .ax-gn { fill: #ff3d3d; }
+  .axis .ax-pos, .axis .ax-neg { fill: #fff; stroke: none; }
+  .ax-no { fill: var(--ink-dim); fill-opacity: .12; }
+  .ax-frame { fill: none; stroke: var(--paper-edge); stroke-width: 1; }
+  .ax-cross, .ax-center { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 0.1 4; stroke-linecap: round; }   /* the total line and the point spread line: the same dotted line, color and weight */
+  .ax-cell { font: 500 18px var(--font-mono); }
+  .ax-cell2 { font: 500 12px var(--font-mono); fill-opacity: .8; }   /* second line: the result if the other legs of multi-game parlays lose */
+  .ax-pos { fill: var(--accent); }
+  .ax-neg { fill: var(--danger); }
+  .ax-tick { stroke: var(--ink-dim); stroke-width: 1; opacity: .6; }
+  .ax-lbl { fill: var(--ink-dim); font: 400 12px var(--font-mono); }
+  .ax-tot { fill: #fff; font: 500 13px var(--font-mono); }   /* the total (pre-game, or live while under way), bright white on the vertical axis */
+  .ax-tottick { stroke: #fff; stroke-width: 1.5; }
+  .ax-tottri { fill: #fff; }   /* the total has moved off the graph: a caret toward it, with its value */
+  /* The card is no longer shown in the page: it is still built (off-screen, at a laid-out width) so a game card click can copy it into a new tab. */
+  .riskcard.rk-off { position: fixed; left: -20000px; top: 0; width: 1100px; visibility: hidden; pointer-events: none; }
+  .riskcard.full { height: 860px; scroll-margin-top: 16px; grid-template-rows: auto auto auto minmax(0, 1fr); }
+  .riskcard.full .rk-list { min-height: 0; overflow-y: auto; align-content: start; scrollbar-width: thin; scrollbar-color: var(--paper-edge) transparent; padding-right: 4px; }
+  .rk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+  .rk-list li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 10px; border: 1px solid var(--paper-edge); border-radius: 6px; font-size: 12px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+  .rk-list li.empty { border: 0; padding: 0; }   /* a wager that pays off in the graph region under the pointer */
+  .rk-list li { align-items: center; }
+  .rk-what { min-width: 0; overflow-wrap: anywhere; }
+  .rk-legs { display: block; margin-top: 2px; color: var(--ink-dim); font-size: 13px; line-height: 1.4; }
+  .rk-leg { display: block; }
+  .rk-leg.per { opacity: .7; }
+  .rk-nums { display: flex; gap: 20px; flex: none; }
+  .rk-num { display: grid; gap: 0; text-align: right; }
+  .rk-num b { font-weight: 500; font-size: 12px; line-height: 1.3; }
+  .rk-num b.pos { color: var(--accent); }
+  .rk-num b.neg { color: var(--danger); }
+  .rk-num b.dim { color: var(--ink-dim); }
+  .rk-num.res { min-width: 92px; }
+  .stat .lbl { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat b { font-weight: 500; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .stat b.dim { color: var(--ink-dim); }
+  .stat b.pos { color: var(--accent); }
+  .stat b.neg { color: var(--danger); }
+  .stat b.dhi, .stat b.dlo, .stat b.dhg { padding: 0 6px; }
+  .stat b.dhg { background: #ffb52e; color: #1c1403; }
+  .stat b.tico { display: inline-flex; align-items: center; justify-content: center; height: 16px; padding: 0 3px; }
+  .stat b.tico svg { display: block; }
+  .trade-tip { position: fixed; z-index: 60; width: 270px; box-sizing: border-box; padding: 8px 10px; display: grid; gap: 3px; background: #0d1014; border: 1px solid var(--card-rule); border-radius: 4px; box-shadow: 0 6px 18px rgb(0 0 0 / .55); font: 400 12px/1.35 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--ink-dim); pointer-events: none; }
+  .trade-tip b { color: #fff; font-weight: 600; }
+  .stat b.dhi { background: #12c84a; color: #04170a; }
+  .stat b.dlo { background: #f0322e; color: #fff; }
+  .stat b.settled { text-decoration: underline double; text-underline-offset: 3px; }
+  .stat b.livepl { font-weight: 500; }   /* live expected P/L: bright green or red by its sign, no outline */
+  .stat b.livepl.pos { color: #19e37a; }
+  .stat b.livepl.neg { color: #ff3d3d; }
+  .stat .bsub { color: var(--ink-dim); font-size: .7em; font-weight: 400; white-space: nowrap; }
+  .col.left .riskcard.rk-over { position: relative; left: auto; width: auto; visibility: visible; pointer-events: auto; flex: none; box-sizing: border-box; height: var(--tk-h, 411px); min-height: 0; overflow: hidden; margin-bottom: var(--tk-slack, 0px); padding: 8px 12px; border-color: var(--card-rule); border-radius: 3px; align-content: start; grid-template-rows: none; }
+  .col.left .riskcard.rk-over .rk-list, .col.left .riskcard.rk-over .sec-title { display: none; }
+  .col.left .riskcard.rk-over { gap: 6px; }
+  .rk-over .rk-top { display: grid; gap: 6px; justify-content: stretch; }
+  .rk-over .rk-game { font-size: 20px; position: relative; display: block; height: 27px; margin-top: 10px; width: 100%; }   /* the top team info 6px lower, the graph 6px higher (net, with the -12px below) */
+  .rk-over .rk-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .rk-over .rk-stats .stat { min-width: 0; gap: 2px; }
+  .rk-over .rk-stats .stat b { font-size: 17px; }
+  .rk-over .rk-stats .stat .lbl { font-size: 10px; letter-spacing: .08em; white-space: nowrap; }
+  .rk-over .rk-sides { margin-bottom: 4px; }
+  .rk-over .rk-sides .tchip { font-size: 24px; padding: 1px 12px 2px; }
+  .rk-over .rk-side { gap: 4px; }
+  .rk-over .bd-badge { height: 20px; padding: 0 8px 0 0; font-size: 13.4px; border-radius: 3px; }   /* the four badges, 33% smaller than first drawn (30px tall, 20px type) */
+  .rk-over .bd-bhelm { height: 29.5px; margin: -4.7px 2.7px -4.7px -6.7px; }
+  .rk-over .bd-bname { padding-top: 3px; }   /* Archivo Black's caps sit high in their line box (room is left for descenders): this centers them on the badge */
+  .col.left .riskcard.rk-over { display: flex; flex-direction: column; }
+  .rk-over .rk-stats { margin-top: auto; }   /* the totals sit at the bottom of the card */
+  .rk-over .rk-hedge { display: grid; gap: 2px; margin-top: 5px; padding-top: 4px; border-top: 1px solid var(--card-rule); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; }   /* the suggested bet, under the sportsbooks */
+  .rk-hedge .hh { font: 700 11px/1.1 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-dim); }
+  .rk-hedge .hb { font-size: 13px; line-height: 1.25; color: var(--ink); }
+  .rk-hedge .hb b { font-weight: 600; color: #fff; }
+  .rk-hedge .hb small { font-size: 11px; color: var(--ink-dim); }
+  .rk-hedge .hr { font-size: 11.5px; line-height: 1.3; color: var(--ink-dim); }
+  .rk-hedge .hr b { font-weight: 600; }
+  .rk-hedge .hr b.pos { color: #19e37a; }
+  .rk-hedge .hr b.neg { color: #ff3d3d; }
+  .rk-hedge .hx { display: flex; flex-direction: row-reverse; justify-content: flex-start; align-items: center; gap: 10px; margin-top: 5px; min-height: 22px; }   /* the button at the right edge, its result to its left */
+  .rk-hedge .hxbtn { appearance: none; cursor: pointer; font: 700 11px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #04170a; background: #19e37a; border: 0; border-radius: 3px; padding: 6px 12px; }
+  .rk-hedge .hxbtn:hover:not(:disabled) { background: #4af09a; }
+  .rk-hedge .hxsl { width: 96px; margin: 0; accent-color: #19e37a; cursor: pointer; }
+  .rk-hedge .hxbtn:disabled { cursor: default; color: var(--ink-dim); background: transparent; box-shadow: inset 0 0 0 1px var(--card-rule); }
+  .rk-hedge .hxres { font-size: 11.5px; line-height: 1.3; color: var(--ink-dim); }
+  .rk-hedge .hxres.ok { color: #19e37a; }
+  .rk-hedge .hxres.err { color: #ff6b6b; }
+  .rk-over .rk-stats .stat .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }   /* the totals card's header type */
+  .rk-over .rk-game .bd-badge { height: 26.6px; padding: 0 10.6px 0 0; font-size: 17.8px; border-radius: 4px; position: absolute; top: 0; }   /* the two top badges: 33% bigger than the ones under the axis, helmets included */
+  .rk-over .rk-game .bd-bhelm { height: 39.2px; margin: -6.3px 3.6px -6.3px -8.9px; }
+  .rk-over .rk-axis { margin-top: -12px; }
+  .rk-over .rk-sides .rk-side-row { display: none; }   /* no badges under the axis: the books lists stay at the ends */ /* the "@" is centered over 0 on the graph (--pc = the plot's center), the badges either side of it */
+  .rk-over .rk-game .rk-at { position: absolute; left: var(--pc, 50%); top: 50%; transform: translate(-50%, -50%); }
+  .rk-over .rk-game .rk-at ~ .bd-badge { left: calc(var(--pc, 50%) + 35px); }   /* 26px, plus the helmet's 9px overhang toward the "@" */
+  .rk-over .rk-game .bd-badge:first-child { right: calc(100% - var(--pc, 50%) + 26px); }
+  .rk-over .rk-books .bico { width: 16px; height: 16px; border-radius: 4px; }   /* smaller sportsbooks (icon and code); the amounts keep their size */
+  .rk-over .rk-books { min-height: 16px; font-size: 14px; }
+  .rk-over .rk-books .bk { gap: 6px; }
+  .rk-over .rk-stats { display: flex; justify-content: space-between; gap: 6px; }   /* the totals spread across the full width (five or six of them) */
+  /* the badges sit at the ends of the x-axis (underdog at the plot's left edge, favorite at its right), on the "Margin of victory" row, so the books get the room below */
+  .rk-over .rk-sides { grid-template-columns: 1fr 1fr !important; padding-left: var(--pl, 0); padding-right: var(--pr, 0); margin-top: var(--bdy, 6px); position: relative; }   /* the books and amounts sit below the x-axis (under its "Margin of victory" caption) */
+  .rk-over .rk-sides .rk-side:last-child { grid-column: 2 !important; justify-items: end; text-align: right; }
+  .rk-over .rk-sides .rk-side:last-child .rk-books { justify-content: flex-end; }
+  .rk-over .rk-sides .rk-side:last-child .rk-bk { align-items: flex-end; }
+  .rk-over .rk-sides .rk-side.end { justify-items: start; text-align: left; }
+  .rk-over .rk-sides .rk-side.end .rk-books { justify-content: flex-start; }
+  .rk-over .rk-sides .rk-side.end .rk-bk { align-items: flex-start; }
+  .rk-over .ax-cell { font-size: 13px; }   /* the P/L figures inside the graph: smaller over the wager ticket */
+  .rk-over .ax-cell2 { font-size: 10px; }
+  .rk-bk { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .rk-side.end .rk-bk { align-items: flex-end; }
+  .rk-bkamt { font: 500 14px/1 var(--font-mono); color: var(--ink-dim); }
+  .rk-over .rk-bkamt { font-size: 17px; }
+
+  /* ===== Game detail ===== */
+  /* the game detail: the card's Game preview icon replaces the cards with a head-to-head of the two teams (data: TEAM_INFO, from ESPN) */
+  .games.bd { display: block; overflow: hidden; padding: 0; }
+  .top.bd-open .col.left { visibility: hidden; }
+  .top.bd-open .games.bd { width: calc(100% + var(--bdx, 0px)); position: relative; z-index: 3; }
+  .bd-close { position: absolute; top: 8px; right: 8px; z-index: 5; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / .55); border: 1px solid rgb(255 255 255 / .35); border-radius: 50%; color: #fff; font: 400 22px/1 var(--font-display); cursor: pointer; }
+  .bd-close:hover { background: rgb(0 0 0 / .85); border-color: #fff; }
+  .bd-wrap { height: 100%; box-sizing: border-box; display: grid; grid-template-rows: 112px minmax(0, 1fr); gap: 8px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; padding: 10px 14px 6px; }
+  .bd-head { position: relative; display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; align-items: center; }   /* the same two columns as the injury / schedule tables below; each team group is centered over its column */
+  .bd-team { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; }
+  .bd-team.home { flex-direction: row-reverse; text-align: right; }   /* kickoff, network, result: centered between the two groups */
+  .bd-rows { display: grid; grid-auto-rows: 22px; }
+  .bd-row { display: grid; grid-template-columns: 1fr 210px 1fr; align-items: center; border-top: 1px solid var(--paper-edge); font: 500 15px var(--font-mono); }
+  .bd-row .l { text-align: center; font: 700 15px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); }
+  .bd-row .v { padding: 0 18px; color: var(--ink); }
+  .bd-row .v.a { text-align: right; }
+  .bd-row .v.best { color: var(--accent); font-weight: 600; }
+  .bd-row .v small { font-size: 11px; color: var(--ink-dim); margin: 0 6px; }
+  .bd-low { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; min-height: 0; overflow: visible; }   /* visible: the schedule panels reach a few px past the columns (inside the board padding) and were clipped on the left */
+  .bd-half { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 10px; height: 100%; min-height: 0; min-width: 0; align-content: start; }
+  .bd-col h4 { text-align: center; margin: 0 0 6px; font: 700 18px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); }
+  .bd-line { display: flex; gap: 8px; align-items: center; height: var(--lh, 30px); font: 500 var(--lfs, 15px) var(--font-mono); color: var(--ink); white-space: nowrap; overflow: hidden; }
+  .bd-line .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .bd-line .w { color: var(--accent); font-weight: 600; }
+  .bd-line .x { color: var(--danger); font-weight: 600; }
+  .bd-line .dim { color: var(--ink-dim); }
+  .bd-sched { display: flex; gap: 4px; align-items: stretch; margin: 2px -11px 0; padding: 5px 2px 3px; border: 1px solid color-mix(in srgb, var(--tc, #888) 18%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--tc, #888) 8%, transparent); }   /* the panel is a few px larger than the table on every side (the cells keep the same width: margin -11 + border 1 + padding 2 = -8) */ /* very light team-colored panel */
+  .bd-vlabel.sched { width: 18px; font-size: 12px; letter-spacing: .14em; margin: -7px 0 -5px -4px; border-radius: 3px 8px 8px 3px; }   /* bleeds 1px past the panel's border so no light outline shows around it */ /* the label is rotated 180deg, so the radii are written for the rotated box: the rounded corners end up on the panel's left side */ /* spans the whole panel height, flush with its left edge; slim so the five columns still fit */
+  .bd-half > .bd-sched:not(.bd-script) { align-self: end; }   /* the schedule stays at the bottom of the board */
+  .bd-sched.bd-script { display: block; width: 372px; max-width: 100%; margin: 8px auto 0; padding: 0 0 0 14px; border: 0; border-radius: 0; background: none; box-sizing: border-box; }   /* no label, no background: the text sits right on the board */
+  .bd-sbody { min-width: 0; display: grid; gap: 3px; align-content: start; padding: 0 2px; font: 400 var(--sfs, 14.5px)/1.31 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }   /* the part the eye goes to: an open, readable text face (Source Sans 3) instead of the mono */
+  .bd-sl b { margin-right: 7px; font: 700 15px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--tc); }
+  .bd-sl.role { font: 700 17px/19px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--tc); }
+  .bd-sl.need { color: var(--ink); }
+  .bd-sl.inj { color: #c62f2f; }
+  .bd-sl.spot { color: var(--ink-dim); }
+  .bd-sl.mot { color: var(--ink-dim); }
+  .bd-sl.mot.low { color: #c62f2f; font-weight: 600; }
+  .bd-sl.mot.buy { color: #1a8f4d; font-weight: 600; }
+  .bd-team { flex-direction: column; gap: 4px; }
+  .bd-team.home { flex-direction: column; text-align: center; }
+  .bd-badge { display: flex; align-items: center; height: 50px; padding: 0 20px 0 0; border-radius: 6px; font: 700 31px/1 var(--font-display); letter-spacing: .04em; white-space: nowrap; }
+  .bd-bhelm { flex: none; height: 72px; width: auto; margin: -11px 6px -11px -14px; position: relative; z-index: 1; pointer-events: none; }
+  .bd-bname { text-align: center; }
+  .wx-ic { width: 24px; height: 24px; flex: none; }
+  .bd-wrap .bd-sched h4 { color: var(--tc, #1f4bd8); border-bottom-color: color-mix(in srgb, var(--tc, #1f4bd8) 55%, transparent); }
+  .bd-sgrid .bd-sc:nth-child(n + 5) { border-left: 1px solid color-mix(in srgb, var(--tc, #888) 24%, transparent); }   /* slight vertical lines between the five schedule columns */ /* a little wider than its column so the five columns of four weeks fit without clipping (8px gap left between the teams) */
+  .bd-col:not(.bd-sched) { display: flex; gap: 8px; align-items: stretch; align-self: start; width: 372px; max-width: 100%; margin: 0 auto; }
+  .bd-ilist { flex: 1; min-width: 0; }
+  .bd-vlabel { flex: none; width: 22px; display: grid; place-items: center; writing-mode: vertical-rl; transform: rotate(180deg); font: 700 15px var(--font-label); letter-spacing: .24em; text-transform: uppercase; border-radius: 4px; }   /* vertical, reads bottom to top, team colors */ /* the injury table is narrower than its column (name, status and injury sit closer together); the columns themselves are unchanged */
+  .bd-sgrid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 18px); grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 4px; }
+  .bd-sc { display: flex; gap: 2px; align-items: center; height: 18px; padding: 0 1px; font: 500 10px var(--font-mono); color: var(--ink); white-space: nowrap; overflow: hidden; }
+  .bd-sc .wk { width: 12px; text-align: right; }   /* (the team text has no ellipsis: it cut CAR to C… by a pixel in the first column) */
+  .bd-sc .nm { flex: 1; min-width: 0; white-space: nowrap; }
+  .bd-sc .w { color: var(--accent); font-weight: 600; }
+  .bd-sc .x { color: var(--danger); font-weight: 600; }
+  .bd-sc .dim { color: var(--ink-dim); }
+  .bd-sc.cur, .bd-sc.bye { background: rgb(95 208 166 / .16); }
+  .bd-sc .bye-w { flex: 1; text-align: center; }   /* BYE centered in its cell */ /* the game being viewed */
+  .bd-line.key { background: rgb(242 184 75 / .2); padding: 0 6px; margin: 0 -6px; border-radius: 2px; }   /* key players (the team's statistical leaders, quarterbacks) on the injury report */
+  .bd-line .st { font-weight: 600; }
+  .bd-line .st.out { color: var(--danger); }
+  .bd-line .st.doubt { color: var(--live); }
+  .bd-line .st.q { color: var(--ink-dim); }
+  .bd-line .st.ir { color: var(--ink-dim); font-weight: 500; }
+  /* the game detail as a whiteboard: white board in a grey aluminum frame, black and blue marker, highlighter on the key players (local colors: everything inside reads the variables) */
+  .bd-wrap { --ink: #1c2330; --ink-dim: #667085; --accent: #1a8f4d; --danger: #c62f2f; --live: #d19a00; --paper-edge: #d5dae0; --card-rule: #c2c8cf; background: linear-gradient(135deg, rgb(255 255 255 / .9) 0%, rgb(255 255 255 / 0) 38%), #f6f7f5; color: var(--ink); border: 7px solid #bfc5cc; border-radius: 6px; box-shadow: inset 0 0 0 1px #9aa2ab, inset 0 2px 10px rgb(0 0 0 / .08), 0 2px 8px rgb(0 0 0 / .45); }
+  .bd-wrap .bd-col h4 { color: #1f4bd8; border-bottom: 2px solid rgb(31 75 216 / .55); width: max-content; margin-left: auto; margin-right: auto; padding: 0 14px 1px; }   /* blue marker titles, underlined */
+  .bd-wrap .bd-line.key { background: rgb(255 226 0 / .55); }   /* yellow highlighter */
+  .bd-line .pos.clu { background: rgb(214 48 48 / .4); border-radius: 3px; padding: 0 4px; margin-left: -1px; }   /* red highlighter behind the POSITION text of a clustered unit's players (the line itself is untouched; key players stay yellow and bold) */
+  .bd-line.key .nm { font-weight: 700; }
+  .bd-wrap .bd-sc.cur, .bd-wrap .bd-sc.bye { background: rgb(26 143 77 / .15); }   /* a bye gets the same highlight as the game being viewed */
+  .bd-wrap .bd-line .st.q { color: #667085; }
+  .bd-wrap .bd-foot { color: #7a8491; }
+  .bd-foot { font: 500 11px/14px var(--font-mono); color: var(--ink-dim); text-align: center; white-space: pre-line; }   /* red marker when a unit is clustered (3+ out, doubtful or questionable) */
+  /* the game info block on a weather backdrop: sky, clouds, rain, snow, storm, fog, night or a dome, picked from the kickoff-hour forecast */
+  .bd-head[data-scene]:not([data-scene=""]) { box-shadow: 0 1px 0 rgb(0 0 0 / .3); }
+  /* weather photos behind the game preview header (Pexels, free license: sky 216596, partly cloudy 216596, overcast 17404215, rain on glass 12179233, lightning 9837044, snow 12803096, fog 59688, night sky 813269, domed stadium 35398204), cropped to the header strip */
+  .bd-head[data-scene="clear"] { background: var(--img-clear) center / cover no-repeat; }
+  .bd-head[data-scene="partly"] { background: var(--img-partly) center / cover no-repeat; }
+  .bd-head[data-scene="cloudy"] { background: var(--img-cloudy) center / cover no-repeat; }
+  .bd-head[data-scene="rain"] { background: var(--img-rain) center / cover no-repeat; }
+  .bd-head[data-scene="storm"] { background: var(--img-storm) center / cover no-repeat; }
+  .bd-head[data-scene="snow"] { background: var(--img-snow) center / cover no-repeat; }
+  .bd-head[data-scene="fog"] { background: var(--img-fog) center / cover no-repeat; }
+  .bd-head[data-scene="night"] { background: var(--img-night) center / cover no-repeat; }
+  .bd-head[data-scene="dome"] { background: var(--img-dome) center / cover no-repeat; }
+  .bd-head[data-scene="none"] { background: linear-gradient(#eef0f2, #dfe3e7); }
+  .bd-head[data-scene="rain"] .wx-ic, .bd-head[data-scene="storm"] .wx-ic, .bd-head[data-scene="night"] .wx-ic, .bd-head[data-scene="dome"] .wx-ic { filter: drop-shadow(0 0 1px rgb(0 0 0 / .5)); }
+  /* the header: one info line over the two team badges, on the weather backdrop that runs to the edges of the card's top */
+  .bd-head { grid-template-rows: auto minmax(0, 1fr); margin: -10px -14px 0; padding: 4px 14px 0; height: 122px; align-self: start; box-sizing: border-box; }
+  .bd-info { grid-column: 1 / -1; text-align: center; white-space: nowrap; font: 400 11.5px/20px var(--font-mono); color: var(--ink-dim); }
+  .bd-info i { font-style: normal; color: var(--ink-dim); }
+  .bd-info b { font-weight: 500; letter-spacing: .04em; color: var(--ink); }
+  .bd-wxmid { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); z-index: 1; display: flex; align-items: center; gap: 5px; pointer-events: none; font: 400 11.5px/20px var(--font-mono); color: var(--ink-dim); white-space: nowrap; }   /* the kickoff forecast: bottom of the frame, centered, same type as the info line */
+  .bd-wxmid .wx-ic { width: 18px; height: 18px; }
+  .bd-wxmid span { font: inherit; }
+  /* the backdrop is washed out by 50% white so the lettering on it stays readable; all scenes use the dark lettering */
+  .bd-head[data-scene]:not([data-scene=""])::before { content: ""; position: absolute; inset: 0; background: rgb(255 255 255 / .5); pointer-events: none; }
+  .bd-head > .bd-info, .bd-head > .bd-team { position: relative; z-index: 1; }
+  .bd-head > .bd-team { align-self: center; }
+  /* lettering over the header: black on the light backdrops (and the plain board), white on the dark ones (storm, night, dome) */
+  .bd-head .bd-info, .bd-head .bd-info i, .bd-head .bd-info b, .bd-head .bd-wxmid { color: #000; }
+  .bd-head[data-scene="storm"] .bd-info, .bd-head[data-scene="storm"] .bd-info i, .bd-head[data-scene="storm"] .bd-info b, .bd-head[data-scene="storm"] .bd-wxmid, .bd-head[data-scene="night"] .bd-info, .bd-head[data-scene="night"] .bd-info i, .bd-head[data-scene="night"] .bd-info b, .bd-head[data-scene="night"] .bd-wxmid, .bd-head[data-scene="dome"] .bd-info, .bd-head[data-scene="dome"] .bd-info i, .bd-head[data-scene="dome"] .bd-info b, .bd-head[data-scene="dome"] .bd-wxmid { color: #fff; text-shadow: 0 0 3px rgb(0 0 0 / .55); }
+  /* game preview badges: font #17 (Archivo Black, the Giants pick from the team font sheet) on both team names */
+  .bd-badge .bd-bname { font-family: "Archivo Black", var(--font-display); font-weight: 400; letter-spacing: .03em; }
+
+  /* ===== Ledger ===== */
+  .ledger { background: var(--paper); border: 1px solid var(--paper-edge); padding: 10px 16px; min-width: 0; }
+  .ledger h2 { margin: 0 0 4px; font: 700 22px/1.1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; }
+  .ledger small { display: block; margin-bottom: 14px; color: var(--ink-dim); font-size: 11px; }
+  .ledger table { width: 100%; max-width: 1300px; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .ledger th { padding: 6px 10px; text-align: right; font-weight: 400; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); border-bottom: 1px solid var(--paper-edge); white-space: nowrap; }
+  .ledger td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--paper-edge); white-space: nowrap; }
+  .ledger th:first-child, .ledger td:first-child { text-align: left; }
+  .ledger tfoot td { font-weight: 700; border-top: 2px solid var(--paper-edge); border-bottom: 0; }
+  /* The Ledger tab: a card of green-ruled ledger paper. A single rule above a total, a double rule under it, losses in parentheses. */
+  .lcard { background: #f6f3e4; color: #1d2a20; border: 1px solid var(--card-rule); border-radius: 3px; padding: 14px 18px 18px; box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+  .ledger .lcard h2 { color: #12361b; margin-bottom: 2px; }
+  .ledger .lcard small, .ledger .lcard .pb-note { display: block; margin: 0 0 10px; color: #5d6455; font-size: 12px; }
+  .ledger table.lsheet { max-width: none; border: 1px solid #8fae93; background: #f6f3e4; }
+  .ledger .lsheet th { color: #12361b; background: #dfe9d2; border-bottom: 2px solid #4f7a58; border-left: 1px solid #b4cbb0; padding: 6px 10px; white-space: normal; vertical-align: bottom; line-height: 1.1; }
+  .ledger .lsheet td { border-bottom: 1px solid #c9dac3; border-left: 1px solid #b4cbb0; padding: 5px 10px; }
+  .ledger .lsheet th:first-child, .ledger .lsheet td:first-child { border-left: 0; border-right: 3px double #b0473d; }   /* the red double rule of a ledger's account column */
+  .ledger .lsheet .lsec td { background: #eaf0dd; color: #12361b; font: 700 15px/1.2 var(--font-display); letter-spacing: .08em; text-transform: uppercase; border-left: 0; border-right: 0; padding: 7px 10px 4px; }
+  .ledger .lsheet .ltotal td { font-weight: 700; border-top: 1px solid #1d2a20; border-bottom: 3px double #1d2a20; }
+  .ledger .lsheet .bico { background: #1a1f26; border-radius: 2px; }   /* some book icons are white */
+  .ledger .lsheet .neg { color: #a8201a; }
+  .ledger .lsheet .pos { color: #12612f; }
+  .ledger .lsheet .dim { color: #7c8373; }
+  .ledger .pos { color: var(--accent); }
+  .ledger .neg { color: var(--danger); }
+  .ledger .dim { color: var(--ink-dim); }
+
+  /* ===== Graphs and flagged pairs ===== */
+  .xy svg { display: block; }
+  .xyrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
+  .ledger.bare { background: none; border: 0; padding: 0; }   /* the Graphs panel draws straight onto the page: no boxes, no captions */
+  #xy.bare { background: #000; border-radius: 3px; position: relative; }   /* the Graphs panel sits on black */
+  .xypair { position: fixed; z-index: 60; width: 660px; box-sizing: border-box; padding: 8px 10px 4px; background: var(--bg); border: 1px solid var(--card-rule); border-radius: 3px; box-shadow: 0 8px 28px rgba(0,0,0,.7); pointer-events: none; }   /* the pair's P/L graph shown on hover */
+  .xypair-tx { display: grid; gap: 3px; margin: 2px 0 4px; font: 12px/1.35 var(--font-mono); color: var(--ink); }
+  .xypair-tx b { font-weight: 500; }
+  .xypair-t { width: 100%; border-collapse: collapse; margin: 2px 0 6px; font: 12px/1.3 var(--font-mono); color: var(--ink); }
+  .xypair-t th { text-align: left; font: 700 15px var(--font-label); letter-spacing: .04em; color: var(--ink-dim); padding: 2px 6px; border-bottom: 1px solid var(--card-rule); }
+  .xypair-t td { padding: 3px 6px; vertical-align: top; border-bottom: 1px solid var(--card-rule); }
+  .xypair-t td.num, .xypair-t th:nth-child(1), .xypair-t th:nth-child(n+4) { text-align: right; }
+  .xypair-t td small { display: block; font-size: 10.5px; color: var(--ink-dim); }
+  .xypair-sum { margin-bottom: 4px; font: 500 12px var(--font-mono); color: var(--ink-dim); }
+  .xypair-h { font: 700 16px var(--font-label); letter-spacing: .04em; margin-bottom: 4px; }
+  .xypair .rk-sides { margin-bottom: 6px; }
+  .xypair .rk-sides .tchip { font-size: 22px; padding: 1px 10px 2px; }
+  #xy svg.xylink { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
+  .bare .xycell { border: 0; background: none; padding: 0; }
+  .bare .xyrow { margin-bottom: 0; }
+  .xycell { border: 1px solid var(--paper-edge); background: var(--bg); padding: 10px; min-width: 0; }
+  .xycell .cap { margin: 0 0 8px; font: 500 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+  .xy text { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-dim); }
+  .xy text.ax { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+  .xy .mk text { font: 700 15px var(--font-display); letter-spacing: .04em; text-anchor: middle; dominant-baseline: central; }
+  .xy text.implied { fill: var(--accent); opacity: .85; font-size: 10.5px; }
+  .xy .tick { stroke: var(--ink-dim); stroke-width: 1; }
+  .xy .base { stroke: var(--ink-dim); stroke-width: 1; }
+  .xy .bar { opacity: .75; }
+  .xy .bar.end { opacity: .38; }   /* the +/-12 buckets hold every bigger margin too */
+  .xy .bar.win { fill: var(--accent); }
+  .xy .bar.lose { fill: var(--ink-dim); }
+  .xy .bar.tie { fill: var(--live); }
+  .xy text.cnt { font-size: 11px; fill: var(--ink); }
+  .xy .grid { stroke: var(--paper-edge); stroke-width: 1; }
+  .xy .zero { stroke: var(--ink-dim); stroke-width: 1; stroke-dasharray: 4 4; }
+  .xy .mk rect { stroke: none; }
+  .xy .mk rect.flag { fill: none; stroke: var(--live); stroke-width: 3; }
+  .xy .mk text.off { font: 500 11.5px var(--font-mono); letter-spacing: 0; }
+  /* the game overview's badges (bdBadge) at card scale: the top row and the badges under the axis */
+  .xypair .bd-badge { height: 30px; padding: 0 12px 0 0; font-size: 20px; border-radius: 4px; }
+  .xypair .bd-bhelm { height: 44px; margin: -7px 4px -7px -10px; }
+
+  /* ===== Season stats and Playbook ===== */
+  #playbook table { max-width: none; font-size: 13px; }
+  #playbook th, #playbook td { padding: 4px 8px; }
+  #playbook .pb-g { text-align: center; border-left: 1px solid var(--paper-edge); color: var(--ink); }
+  #playbook .pb-l { border-left: 1px solid var(--paper-edge); }
+  #playbook tbody tr.pb-s { cursor: pointer; }
+  #playbook tbody tr.pb-s:hover { background: rgb(255 255 255 / .04); }
+  #playbook tr.pb-y td { color: var(--ink-dim); font-size: 12px; padding-block: 2px; }
+  #playbook td small { display: inline; color: var(--ink-dim); font-size: 11px; margin-left: 8px; }
+  #playbook .pb-note { margin: 0 0 8px; font-size: 12px; color: var(--ink-dim); }
+  .pg-stub { justify-self: start; text-align: left; font: 400 22px/1.2 "Saira Stencil One", var(--font-display); letter-spacing: .04em; color: var(--ink); padding: 16px 12px 4px; }
+  .pg-stub-t { margin: 0; padding: 0 12px 16px; font-size: 15px; color: var(--ink-dim); }
+
+  /* ===== Across components: one rule for several of the above ===== */
+  option, optgroup { background: var(--paper); color: var(--ink); }
+  .rk-num small { color: var(--ink-dim); font-size: 9px; line-height: 1.2; letter-spacing: .12em; text-transform: uppercase; }
+  .ledger th, .sum th, .board th, .lbl, .gh, .g-st, .gsel-list .day, .rk-num small, .xy text.ax { font-family: var(--font-label); font-weight: 700; }
+  .sec-title h2, .totals h2, .xycell .cap, .games.strip .slot-h { font-family: var(--font-label); font-weight: 700; }
+  .ledger th, .sum th, .board th, .lbl, .gh, .g-st, .gsel-list .day, .xy text.ax { font-size: 15px; }
+  .sec-title h2, .totals h2, .xycell .cap, .games.strip .slot-h { font-size: 16px; }
+  .rk-num small { font-size: 14px; }
+
+  /* ===== Bet tracking off ===== */
+  /* The Fan. menu's Bet tracking checkbox, off */
+  .tracking-off .col.left, .tracking-off #tab-ledger, .tracking-off #tab-xy, .tracking-off #tab-playbook, .tracking-off #playbook, .tracking-off #slateNote { display: none !important; }
+  .one-line #slateNote.problem, #slateNote.problem { color: #ff6b6b; font-weight: 700; }
+  .prices-off #tab-xy, .prices-off #tab-playbook, .prices-off #playbook, .prices-off #slateNote { display: none !important; }
+  .tracking-off .top { grid-template-columns: minmax(0, 1fr) !important; }   /* the game cards run to the right edge */
+  .tracking-off .top.bd-open .games.bd { width: 100%; }
+  .tracking-off .game { grid-template-rows: 20px minmax(0, 1fr); }
+  .tracking-off .g-bot { display: none; }
+  .tracking-off .game.is-final { grid-template-rows: minmax(0, 1fr); }
+
+  /* ===== Windows and motion ===== */
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  /* Portrait window: the ticket column gives up width so two full columns of game cards fit (2 x 376 + 12 gap = 764), never under 400px. Landscape windows never see this. */
+  @media (orientation: portrait) and (min-width: 921px) { .top { grid-template-columns: minmax(0, 1fr) clamp(352px, calc(100vw - 16px - 20px - 764px), 620px); } }
+  @media (orientation: portrait) and (min-width: 921px) and (max-width: 1347px) {   /* the narrowed ticket column: tighter type, and the Straight / Parlay tabs get their own row */
+    .ticket .amt-row .tabs button, .ticket .amt-row .check { font-size: 13px; letter-spacing: 0; padding-inline: 2px; }   /* amount, Bonus, Straight, Parlay: four equal cells, the same as the wide layout */
+    .ticket .amt-row .check { gap: 4px; }
+    .ticket .amt-row .check input { width: 14px; height: 14px; }
+    .ticket .amt-row .money input { padding-inline: 18px 4px; }
+    .ticket .amt-row .money b { left: 7px; }
+    .totals { padding-inline: 8px; }
+    .totals .tt-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .totals .stat .lbl { font-size: 10px; letter-spacing: 0; white-space: normal; line-height: 1.1; }
+    .totals .stat b { font-size: 14px; }
+    .saved { --cols: minmax(0, 68fr) minmax(0, 44fr) minmax(0, 34fr) minmax(0, 36fr) minmax(0, 40fr) minmax(0, 40fr) 14px; }
+    .ls-heads, .saved li.row { column-gap: 3px; }
+    .saved li.row .r2 { font-size: 10px; }
+    .ls-heads { padding-inline: 6px; }
+    .gh { font-size: 12px; letter-spacing: 0; }
+    .saved li { padding-inline: 6px; overflow-wrap: normal; }
+    .saved li.row { font-size: 10px; }
+    .sum { padding-inline: 6px; }
+    .rk-over .rk-game .bd-badge { font-size: 13px; height: 22px; }
+    .sum table { font-size: 10px; }
+    .sum th { font-size: 11px; letter-spacing: 0; white-space: normal; line-height: 1.05; vertical-align: bottom; }
+    .sum th, .sum td { padding-inline: 2px; }
+  }
