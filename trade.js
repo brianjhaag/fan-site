@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvygt301";
-import { Fan } from "./hosts.js?v=mvygt301";
-import { Calc } from "./calc.js?v=mvygt301";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvygt301";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvyh962f";
+import { Fan } from "./hosts.js?v=mvyh962f";
+import { Calc } from "./calc.js?v=mvyh962f";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvyh962f";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -19,8 +19,10 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     if (Fan.env !== "demo") return;
     document.documentElement.classList.add("demo");
     document.title = "DEMO " + document.title;
-    const b = el("div", "demo-badge", "DEMO: Kalshi's demo, fake money");
-    b.id = "demoBadge"; document.body.append(b);
+    const b = el("span", "demo-badge", "DEMO");
+    b.id = "demoBadge"; b.title = "Kalshi's demo, fake money";
+    $("fanBtn").prepend(b);
+    $("fanBtn").setAttribute("aria-label", "Fan, settings, on Kalshi's demo with fake money");
   }
   let feedWaiting = Date.now();   // when the feed last stopped being connected
   const reader = () => Fan.trader || Fan.reads;   // what can read the venue, whether or not it takes orders
