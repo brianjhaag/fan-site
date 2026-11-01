@@ -1,14 +1,14 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvxuitv8";
-import { Fan } from "./hosts.js?v=mvxuitv8";
-import { Calc } from "./calc.js?v=mvxuitv8";
-import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvxuitv8";
-  Object.assign(later, { execControls, renderKalshiCheck, setBet, syncPlace });
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy0gi42";
+import { Fan } from "./hosts.js?v=mvy0gi42";
+import { Calc } from "./calc.js?v=mvy0gi42";
+import { changed, $, ABBR, ALL_GAMES, GAMES, allTickets, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy0gi42";
+  Object.assign(later, { execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
   (async () => {
     await Fan.connectTrader();
-    fillSettings();
+    changed("settings");
     if (riskGame) changed("exec");
     syncPlace();
     if (reader()) { pendingFills().catch(() => {}); feedLoop(); }
@@ -17,7 +17,7 @@ import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contracts
   const reader = () => Fan.trader || Fan.reads;   // what can read the venue, whether or not it takes orders
   async function setBet(on) {
     try { await Fan.setBet(on); } catch (e) {}
-    syncPlace(); changed("exec"); fillSettings();
+    syncPlace(); changed("exec", "settings");
   }
   // FILL FEED. wait_fill stays open until a fill arrives. Every fill is logged to the fills collection
   // (doc feed-<trade_id>, so a repeat overwrites itself) and shown with its delay. It does not save tickets yet: Execute saves its own from the order's reply.
@@ -248,4 +248,4 @@ import { changed, fillSettings, $, ABBR, ALL_GAMES, GAMES, allTickets, contracts
     if (lastExec.cls === "ok") clearTicket();
     syncPlace();
   });
-export { pendingFills, execControls, handleFill, refreshPrices, renderKalshiCheck, syncPlace };
+export { pendingFills, execControls, handleFill, refreshPrices, renderKalshiCheck, setBet, syncPlace };

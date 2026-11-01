@@ -1,0 +1,150 @@
+// The settings window: Fan's button, its tabs and the status monitor.
+import { espnState } from "./espn.js?v=mvy0gi42";
+import { Fan } from "./hosts.js?v=mvy0gi42";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvy0gi42";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvy0gi42";
+import { setBet } from "./trade.js?v=mvy0gi42";
+  // Fan's button opens the settings window.
+  let fillSettings;
+  { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
+    const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) win.close(); };
+    let tab = "about";
+    const leagueRows = () => Object.entries(leagueNames()).map(([k, h]) => {
+      const row = el("label", "fan-lg"), c = el("input");
+      c.type = "checkbox"; c.checked = leaguesOn.has(k); c.disabled = !LEAGUES_READY.includes(k) || (c.checked && leaguesOn.size === 1); c.setAttribute("aria-label", "Use " + h);
+      c.addEventListener("change", () => { setLeagueOn(k, c.checked); fill(); });
+      row.append(c, h);
+      return row;
+    });
+    // The monitor map: drawn to scale in Windows' arrangement. The selected monitor shows the layout's spots, numbered in the order they fill.
+    const screenPicker = () => {
+      const box = el("div", "fan-screens");
+      if (!Fan.screens) { box.append(el("p", "fan-note", "Choosing a monitor takes the desktop app. Here a telecast opens as a plain link.")); return box; }
+      const draw = ds => {
+        const matches = (d, p) => d.label === p.label && d.bounds.width === p.width && d.bounds.height === p.height;
+        const same = telecastPref ? ds.filter(d => matches(d, telecastPref)) : [], picked = telecastPref ? same.find(d => d.bounds.x === telecastPref.x && d.bounds.y === telecastPref.y) || same[0] : null;
+        const suggested = telecastPref ? null : ds.find(d => d.workArea.height > d.workArea.width), sel = picked || suggested;
+        const rows = telecastPref ? telecastPref.rows : 3, cols = telecastPref ? telecastPref.cols : 1;
+        const prefOf = (d, r, c) => ({ label: d.label, width: d.bounds.width, height: d.bounds.height, x: d.bounds.x, y: d.bounds.y, rows: r, cols: c });
+        const minX = Math.min(...ds.map(d => d.bounds.x)), minY = Math.min(...ds.map(d => d.bounds.y)), w = Math.max(...ds.map(d => d.bounds.x + d.bounds.width)) - minX, h = Math.max(...ds.map(d => d.bounds.y + d.bounds.height)) - minY, k = Math.min(720 / w, 400 / h);
+        const map = el("div", "fan-map"); map.style.width = Math.round(w * k) + "px"; map.style.height = Math.round(h * k) + "px";
+        ds.forEach(d => {
+          const b = el("button", d === sel ? "on" : null), label = el("span", null, d.label || "Monitor");
+          b.type = "button"; b.setAttribute("aria-pressed", String(d === sel));
+          b.style.cssText = `left:${Math.round((d.bounds.x - minX) * k)}px;top:${Math.round((d.bounds.y - minY) * k)}px;width:${Math.round(d.bounds.width * k)}px;height:${Math.round(d.bounds.height * k)}px`;
+          b.append(label, el("small", null, `${d.bounds.width}x${d.bounds.height}`));
+          if (d === sel) { const g = el("div", "fan-spots"); g.style.gridTemplate = `repeat(${rows}, 1fr) / repeat(${cols}, 1fr)`; for (let i = 1; i <= rows * cols; i++) g.append(el("i", null, String(i))); b.append(g); }
+          b.addEventListener("click", () => { setTelecastPref(prefOf(d, rows, cols)); draw(ds); });
+          map.append(b);
+        });
+        const lay = el("div", "fan-lay");
+        TELECAST_LAYOUTS.forEach(([name, r, c]) => {
+          const b = el("button", null, name); b.type = "button"; b.disabled = !sel; b.setAttribute("aria-pressed", String(!!sel && r === rows && c === cols));
+          b.addEventListener("click", () => { setTelecastPref(prefOf(sel, r, c)); draw(ds); });
+          lay.append(b);
+        });
+        const show = el("button", "fan-show", "Show me"); show.type = "button"; show.disabled = !sel; show.addEventListener("click", () => Fan.screens.show(telecastPref || prefOf(sel, rows, cols)));
+        const note = telecastPref && !picked ? "The monitor you chose isn't connected, so telecasts open beside Fan. Click one to choose again." : suggested ? "Fan's suggestion, your portrait monitor. Click a monitor or layout to choose your own." : !sel ? "Click a monitor. Until then, telecasts open beside Fan." : "Telecasts fill these spots in order. With every spot taken, a new one lands on top of the others.";
+        box.replaceChildren(el("h3", null, "Where telecasts open"), map, lay, show, el("p", "fan-note", note));
+      };
+      Fan.screens.list().then(draw, () => box.replaceChildren(el("p", "fan-note", "Couldn't read the monitors.")));
+      return box;
+    };
+    const telecastRows = () => { const grid = el("div", "fan-telecasts"), links = el("div"); links.append(...networkRows()); grid.append(screenPicker(), links); return [grid]; };
+    const networkRows = () => [el("h3", null, "Network links"), el("p", "fan-note", "YouTube TV links. Open a channel in your browser, copy its address and paste it here."), ...NETWORKS.map(n => {
+      const row = el("label", "fan-net"), c = el("input");
+      c.type = "url"; c.value = networkLinks[n] || ""; c.placeholder = "https://tv.youtube.com/watch/..."; c.spellcheck = false;
+      c.addEventListener("input", () => setNetworkLink(n, c.value));
+      row.append(n, c);
+      return row;
+    })];
+    const trackItem = () => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = trackingOn; c.addEventListener("change", () => { setTracking(c.checked); fill(); }); lab.append(c, "Track"); return lab; };
+    const pricesItem = () => {
+      if (!Fan.lines) return [el("p", "fan-note", (trackingOn ? "Your bets stay in this browser. " : "") + "Prices need the Fan connector on this computer.")];
+      const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = pricesWanted; c.addEventListener("change", () => setPrices(c.checked)); lab.append(c, "Price"); return [lab];
+    };
+    // Starting the connector from the page. The page that has no connector gets a new tab on the connector's own address; one whose connector went away reloads when it answers again.
+    const startItem = which => {
+      const a = el("a", "fan-start", "Start connector"), box = el("div", "fan-starting");
+      a.href = Fan.startLink(which);
+      a.addEventListener("click", () => {
+        box.append(el("small", null, which === "open" ? "It opens Fan from your computer in a new tab. If nothing opens, the connector isn't installed here." : "Starting…"));
+        a.hidden = true;
+        if (which === "start") { let tries = 0; const t = setInterval(() => { if (++tries > 30) { clearInterval(t); a.hidden = false; box.lastChild.remove(); return; } Fan.hostHello().then(() => { clearInterval(t); location.reload(); }, () => {}); }, 1000); }
+      });
+      box.prepend(a);
+      return box;
+    };
+    const keysItem = () => { const b = el("button", null, "Connect Kalshi"); b.type = "button"; b.addEventListener("click", () => { open(false); Fan.account(); }); return b; };
+    const badgeItem = () => { const b = el("button", null, "Badges: " + BADGE_STYLES[badgeStyle].label), names = Object.keys(BADGE_STYLES); b.type = "button"; b.addEventListener("click", () => { setBadgeStyle(names[(names.indexOf(badgeStyle) + 1) % names.length]); b.textContent = "Badges: " + BADGE_STYLES[badgeStyle].label; }); return b; };
+    // What Fan is, opened on launch until the user ticks the box: the four layers, each with what it takes.
+    // The Fan tab: left what's built in, right what the connector adds. A box's checkbox is its part's own switch, and greyed where the part can't be changed from here.
+    const partCheck = (name, on, change) => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.disabled = !change; if (change) c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, name); return lab; };
+    const ABOUT = () => ({
+      watch: [partCheck("Watch", true), "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up."],
+      track: [partCheck("Track", trackingOn, on => setTracking(on)), "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them."],
+      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines ? on => setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? "Free. Uses the Fan connector, running on your computer." : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", !Fan.lines && Fan.startLink ? startItem("open") : null],
+      bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed ? on => setBet(on) : null), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one. Off, Fan sends no orders, and fills you make anywhere else still arrive.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.account && !Fan.keyed ? keysItem() : null]
+    });
+    // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
+    const statusRows = async () => {
+      let hi = null, away = false;
+      if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
+      const espn = espnState(), feed = $("feedNote"), nets = Object.values(networkLinks).filter(u => /^https:\/\//i.test(u)).length, time = at => timeZoned(new Date(at));
+      return { hi, away, rows: [
+        ["Connector", away ? ["bad", "Not answering"] : hi ? ["ok", "Running on this computer"] : ["off", "Not on this page"]],
+        ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at)] : ["ok", "Using this browser's saved copy"]],
+        ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
+        ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : ["ok", "Lines from " + time(slateAt)]],
+        ["Kalshi", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "No key connected"] : hi.orders ? ["ok", "Connected, orders on"] : ["ok", "Connected, orders off"]],
+        ["Fill feed", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "Waits for a Kalshi key"] : !feed.textContent || feed.classList.contains("wait") ? ["wait", "Starting"] : feed.classList.contains("on") ? ["ok", "Live"] : ["bad", feed.textContent]],
+        ["Telecasts", nets ? ["ok", nets + (nets === 1 ? " network linked" : " networks linked")] : ["off", "No links pasted"]],
+        ["Leagues", ["ok", [...leaguesOn].map(k => leagueNames()[k]).join(", ")]]
+      ] };
+    };
+    const drawStatus = async box => {
+      const { hi, away, rows } = await statusRows();
+      if (box.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
+      box.replaceChildren(el("h3", null, "Status"), ...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
+      if (away && Fan.startLink) box.append(startItem("start"));
+      if (hi && hi.login != null) {   // an installed connector's own checkbox
+        const lab = el("label", "fan-check"), c = el("input");
+        c.type = "checkbox"; c.checked = hi.login;
+        c.addEventListener("change", () => { Fan.setLogin(c.checked).catch(() => {}).then(() => drawStatus(box)); });
+        lab.append(c, "Start the connector when I log in");
+        box.append(lab);
+      }
+    };
+    setInterval(() => { const box = document.querySelector(".fan-status"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
+    const aboutRows = () => {
+      const box = el("div", "fan-about"), parts = ABOUT();
+      const cell = k => { const [toggle, what, needs, extra] = parts[k], d = el("div", "fan-part"); d.dataset.part = k; d.append(toggle, el("p", null, what), el("small", null, needs)); if (extra) d.append(extra); return d; };
+      box.append(el("span"), el("h3", null, "Built in"), el("h3", null, "With the Fan connector"), el("b", null, "Watching games"), cell("watch"), cell("price"), el("b", null, "Tracking and betting"), cell("track"), cell("bet"));
+      const status = el("div", "fan-status");
+      drawStatus(status);
+      return [box, status];
+    };
+    const SETTINGS_TABS = [
+      ["about", "Fan", aboutRows],
+      ["leagues", "Leagues", leagueRows],
+      ["telecasts", "Telecasts", telecastRows],
+      ["sportsbooks", "Sportsbooks", () => [trackItem(), ...pricesItem(), ...(Fan.account ? [keysItem()] : [])]],
+      ["look", "Look/feel", () => [badgeItem()]],
+      ["records", "Records", () => recordsItems()]
+    ];
+    const fill = () => {
+      const tabs = SETTINGS_TABS.filter(([k]) => k !== "records" || (trackingOn && Fan.store && Fan.store.dump));   // only a browser's own records need this, and only with Bet tracking on
+      if (!tabs.some(([k]) => k === tab)) tab = "leagues";
+      $("fanTabs").replaceChildren(...tabs.map(([k, h]) => {
+        const b = el("button", null, h);
+        b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(k === tab));
+        b.addEventListener("click", () => { tab = k; fill(); });
+        return b;
+      }));
+      list.replaceChildren(...tabs.map(([k, , rows]) => { const p = el("div", "fan-list"); p.setAttribute("role", "tabpanel"); p.hidden = k !== tab; p.append(...rows()); return p; }));
+    };
+    btn.addEventListener("click", () => { fill(); open(!win.open); });
+    $("fanClose").addEventListener("click", () => open(false));
+    setTimeout(() => { fill(); open(true); }, 0);
+    fillSettings = () => { if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
+export { fillSettings };

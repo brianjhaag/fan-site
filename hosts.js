@@ -15,6 +15,7 @@ const Fan = {
   screens: window.fanBridge ? { list: () => window.fanBridge.displays(), show: pref => window.fanBridge.showSpots(pref) } : null,   // the host's monitors, if it can place windows on them
   openTelecast: (url, pref) => { if (window.fanBridge) window.fanBridge.openTelecast(url, pref); else window.open(url, "_blank", "noopener"); },   // the desktop app sizes and places its own window; anywhere else it's a plain link
   setMarket: on => { if (window.fanBridge) window.fanBridge.setMarket(on); else tellConnector({ market: on }); },   // tells a host that refreshes lines whether anyone wants prices
+  startLink: window.fanBridge || window.claude ? null : which => "fan-connector://" + which,   // starts an installed connector: "open" also opens its page, "start" is for a page already open. Windows runs what the install registered, and the page can't tell whether it did
   setLeagues: list => { if (window.fanBridge) window.fanBridge.setLeagues(list); else tellConnector({ leagues: list }); }   // tells a host that refreshes lines which leagues to refresh
 };
 
@@ -168,6 +169,10 @@ Fan.connectStore = async () => {
     tellConnector(connectorPrefs);
   }
   if (hi) Fan.hostHello = () => window.fetch("/connector/hello").then(r => r.json());
+  if (hi && hi.login != null) Fan.setLogin = async on => {   // the login checkbox
+    const r = await (await window.fetch("/connector/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
+    if (!r.ok) throw new Error(r.error);
+  };
   if (hi && hi.telecast) {
     const send = (path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };

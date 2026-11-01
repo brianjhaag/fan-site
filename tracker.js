@@ -1,9 +1,9 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { HELMETS } from "./data/assets.js?v=mvxuitv8";
-import { Fan } from "./hosts.js?v=mvxuitv8";
-import { $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvxuitv8";
-import { setPlaybook } from "./panels.js?v=mvxuitv8";
-  Object.assign(later, { setPrices, syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, recordsItems, setTracking, showSaved, weekChanged });
+import { HELMETS } from "./data/assets.js?v=mvy0gi42";
+import { Fan } from "./hosts.js?v=mvy0gi42";
+import { $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvy0gi42";
+import { setPlaybook } from "./panels.js?v=mvy0gi42";
+  Object.assign(later, { syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(last(g.away))} ${pts(g.line.sp)} @ ${n(last(g.home))}`; };
   const vigText = v => v < -0.5 ? "−" + money(-v) : money(Math.max(0, v));
@@ -781,4 +781,4 @@ import { setPlaybook } from "./panels.js?v=mvxuitv8";
     drawNow();
     window.dispatchEvent(new Event("resize"));   // the page refits as it does for a new window size
   }
-export { addTicket, balances, bookReport, centsOk, clearTicket, fillMoneyline, fillSpread, fillTotal, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, renderLedger, renderPick, renderTickets, setBalances, setPrices, setTracking, showSaved, startRecords, ticketsReady, updateTicket, weekChanged };
+export { addTicket, balances, bookReport, centsOk, clearTicket, fillMoneyline, fillSpread, fillTotal, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, recordsItems, renderLedger, renderPick, renderTickets, setBalances, setPrices, setTracking, showSaved, startRecords, ticketsReady, updateTicket, weekChanged };

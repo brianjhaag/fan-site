@@ -182,6 +182,11 @@
   .fan-part p { margin: 0; font: 400 16px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
   .fan-part small { font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-part button { appearance: none; padding: 6px 10px; background: none; border: 1px solid var(--accent); border-radius: 2px; color: var(--accent); cursor: pointer; }
+  .fan-start { display: inline-block; padding: 6px 10px; border: 1px solid var(--accent); border-radius: 2px; color: var(--accent); font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; text-decoration: none; cursor: pointer; }
+  .fan-start[hidden] { display: none; }
+  .fan-status > .fan-starting, .fan-status > .fan-check { grid-column: 1 / -1; }
+  .fan-status > .fan-check { padding: 4px 0; font-size: 16px; }
+  .fan-status > .fan-check:hover { background: none; }
   .fan-status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 16px; padding: 8px 12px 8px 130px; }   /* under the grid's boxes, not its row names */
   .fan-status h3 { grid-column: 1 / -1; margin: 0 0 2px; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-st { display: grid; grid-template-columns: 8px minmax(0, 1fr); column-gap: 6px; align-items: center; font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
