@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy7a8gj";
-import { Fan } from "./hosts.js?v=mvy7a8gj";
-import { Calc } from "./calc.js?v=mvy7a8gj";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy7a8gj";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy7lhjr";
+import { Fan } from "./hosts.js?v=mvy7lhjr";
+import { Calc } from "./calc.js?v=mvy7lhjr";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy7lhjr";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -247,11 +247,12 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
       if (Date.now() >= a.next) armStep(a).catch(e => disarm(a, String(e && e.message)));
     });
   }, 1000);
-  // The risk detail's panel. The settings lock while armed, since the panel redraws with every price.
+  // The risk detail's panel, there for any game with positions. The settings lock while armed, since the panel redraws with every price.
   function armControls(g) {
-    if (!Fan.trader) return null;
+    // With no way to send yet, the settings still work and the suggestion follows them; the switch says what it's waiting for.
+    const blocked = Fan.trader ? "" : !Fan.lines ? "Needs the Fan connector" : !Fan.keyed ? "Needs a Kalshi key: Connect Kalshi in the settings window" : "Tick Bet in the settings window to arm";
     const a = armOf(g), box = el("div", "rk-arm" + (a.on ? " on" : "")), row = el("div", "ar"), btn = el("button", "arbtn", a.on ? "Armed: disarm" : "Arm");
-    btn.type = "button"; btn.setAttribute("aria-pressed", String(a.on));
+    btn.type = "button"; btn.disabled = !!blocked && !a.on; btn.setAttribute("aria-pressed", String(a.on));
     btn.addEventListener("click", () => { if (a.on) { disarm(a, "you turned it off"); } else armOn(g); });
     row.append(btn);
     const save = () => { try { localStorage.setItem("fan.arm", JSON.stringify(armSet)); } catch (e) {} };
@@ -266,7 +267,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     kind.value = armSet.kind; kind.disabled = a.on; kind.addEventListener("change", () => { armSet.kind = kind.value; save(); });
     kindLab.append(kind);
     row.append(kindLab, field("Max", "max", "Contracts per order at most. 0 sends the whole suggestion"), field("Size %", "size", "Share of the suggestion to send"), field("Up ¢", "up", "Cents above the ask the order may pay"), field("Every s", "every", "Seconds between checks"), field("Lift $", "lift", "How much a hedge has to raise the worst case", "0.5"), field("Capital ¢", "capital", "Charge per dollar put down, for hedges", "0.5"));
-    const note = el("small", null, a.on ? "Fan is sending this game's suggested bet by itself while this page stays open. A reload disarms it." : "Armed, Fan sends this game's suggested bet by itself while this page stays open. A reload disarms it.");
+    const note = el("small", blocked ? "arwhy" : null, blocked || a.on ? (blocked || "Fan is sending this game's suggested bet by itself while this page stays open. A reload disarms it.") : "Armed, Fan sends this game's suggested bet by itself while this page stays open. A reload disarms it.");
     box.append(row, note);
     if (a.log.length) { const log = el("div", "arlog"); a.log.slice(0, 4).forEach(l => log.append(el("div", l.cls, `${timeZoned(new Date(l.at))} ${l.text}`))); box.append(log); }
     return box;
