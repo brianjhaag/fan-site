@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvyaz1lr";
-import { Fan } from "./hosts.js?v=mvyaz1lr";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyaz1lr";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyaz1lr";
-import { setBet } from "./trade.js?v=mvyaz1lr";
+import { espnState } from "./espn.js?v=mvyb5g58";
+import { Fan } from "./hosts.js?v=mvyb5g58";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyb5g58";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyb5g58";
+import { setBet } from "./trade.js?v=mvyb5g58";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -103,7 +103,7 @@ import { setBet } from "./trade.js?v=mvyaz1lr";
       }
       else step(el("b", null, "Run the file. "), "It isn't signed yet, so your browser may ask whether to keep it, and Windows may warn you: choose More info, then Run anyway. It needs no admin rights.");
       step(el("b", null, "You're moved. "), "It installs and opens Fan from your own computer, at localhost:5180. That's the copy with prices and betting. Settings, telecast links and bets typed on this site stay with this site, so set those up once there.");
-      box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "Always start from this page. When the connector is running, this page finds it and moves you to it. When it isn't, press Start connector. The first time, your browser asks two things: whether to open Fan connector, where you can tick always allow, and whether this site may look for programs on your computer. Say yes to both."), startItem(), el("p", null, "The connector closes itself 30 minutes after your last Fan page closes, unless you tick Start the connector when I log in, in the status list once you've moved. Its page stays current by itself. To update the program, download and run the file again. Your records and key stay where they are."));
+      box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "Always start from this page. When the connector is running, this page finds it and moves you to it. When it isn't, press Start connector. The first time, your browser asks two things: whether to open Fan connector, where you can tick always allow, and whether this site may look for programs on your computer. Say yes to both."), startItem(), el("p", null, "The connector closes itself 30 minutes after your last Fan page closes, unless you tick Start the connector when I log in, in the status list once you've moved. Reloading the page brings the newest version of it. To update the program, download and run the file again. Your records and key stay where they are."));
       return [box];
     };
     const getOrStart = () => { const box = el("div", "fan-get"), get = el("button", null, "Get the connector"); get.type = "button"; get.addEventListener("click", () => { tab = "connector"; fill(); }); box.append(startItem(), get); return box; };
