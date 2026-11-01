@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvy109cm";
-import { Fan } from "./hosts.js?v=mvy109cm";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvy109cm";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvy109cm";
-import { setBet } from "./trade.js?v=mvy109cm";
+import { espnState } from "./espn.js?v=mvy1hbit";
+import { Fan } from "./hosts.js?v=mvy1hbit";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvy1hbit";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvy1hbit";
+import { setBet } from "./trade.js?v=mvy1hbit";
   // Fan's button opens the settings window.
   let fillSettings;
   { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
@@ -73,7 +73,7 @@ import { setBet } from "./trade.js?v=mvy109cm";
         box.append(note); a.hidden = true;
         let tries = 0;
         const t = setInterval(() => {
-          if (++tries > 15) { clearInterval(t); note.textContent = "Nothing answered. If this computer doesn't have the connector yet, it's under the Connector tab."; a.hidden = false; return; }
+          if (++tries > 15) { clearInterval(t); note.replaceChildren("Nothing answered. If it did start, your browser kept this page from seeing it: ", (() => { const go = el("a", null, "open Fan from your computer"); go.href = Fan.localFan; return go; })(), ". If this computer doesn't have the connector yet, it's under the Connector tab."); a.hidden = false; return; }
           Fan.connectorUp().then(() => { clearInterval(t); if (Fan.hostHello) location.reload(); else location.href = Fan.localFan; }, () => {});
         }, 1000);
       });
@@ -83,12 +83,13 @@ import { setBet } from "./trade.js?v=mvy109cm";
     // What a first-time user does, on a page with no connector.
     const connectorRows = () => {
       const box = el("div", "fan-connector"), steps = el("ol"), step = (...parts) => { const li = el("li"); li.append(...parts); steps.append(li); };
-      const windows = /Windows/.test(navigator.userAgent), get = el("a", "fan-start", "Download for Windows");
-      get.href = "fan-connector-setup.exe"; get.setAttribute("download", "");
+      const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, get = el("a", "fan-start", mac ? "Download for Mac" : "Download for Windows");
+      get.href = mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe"; get.setAttribute("download", "");
       box.append(el("h3", null, "Why it's needed"), el("p", null, "Watch and Track work right here. Price and Bet need the Fan connector: a small program on your computer that pulls prices over your own connection and holds your own Kalshi key. Nothing about your bets or your key leaves your computer for this site."));
-      if (!windows) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector is Windows only for now.")); return [box]; }
+      if (!windows && !mac) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector runs on a Windows or Mac computer.")); return [box]; }
       step(el("b", null, "Download it. "), get);
-      step(el("b", null, "Run the file. "), "It isn't signed yet, so your browser may ask whether to keep it, and Windows may warn you: choose More info, then Run anyway. It needs no admin rights.");
+      if (mac) step(el("b", null, "Open it. "), "Open the zip, then double-click Fan Connector Setup. Apple hasn't checked it yet, so the Mac refuses the first time: go to System Settings, Privacy & Security, scroll down and choose Open Anyway. It needs no admin password.");
+      else step(el("b", null, "Run the file. "), "It isn't signed yet, so your browser may ask whether to keep it, and Windows may warn you: choose More info, then Run anyway. It needs no admin rights.");
       step(el("b", null, "Use the new address. "), "It installs and opens Fan from your own computer, at localhost:5180. Use that address from now on: it's the one with prices and betting. Settings, telecast links and bets typed on this site stay with this site, so set those up once there.");
       box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "It runs only when it's started, and closes itself 30 minutes after your last Fan page closes. Start it here, or tick Start the connector when I log in, in the status list at the new address. The first time you press Start, your browser asks to open it: tick always allow."), startItem(), el("p", null, "To update it, download and run the file again. Your records and key stay where they are."));
       return [box];
