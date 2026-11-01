@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy7lhjr";
-import { Fan } from "./hosts.js?v=mvy7lhjr";
-import { Calc } from "./calc.js?v=mvy7lhjr";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy7lhjr";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvy7uihh";
+import { Fan } from "./hosts.js?v=mvy7uihh";
+import { Calc } from "./calc.js?v=mvy7uihh";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvy7uihh";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -164,7 +164,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
           }).catch(() => {});
         } catch (e) {}
         // The fill is known for certain from the order's own reply, so it is saved as a Kalshi ticket at once (contracts filled, total paid fee included).
-        if (o.filled > 0 && h.tkt && !(o.env === "demo")) {
+        if (o.filled > 0 && h.tkt && (h.armed || o.env !== "demo")) {   // a hand-sent demo order makes no ticket. An armed one does, since the game's position is what it works from
           try {
             const { contracts: C, amount, american, cents, fee } = fill, ml = h.tkt.type === "Moneyline";
             addTicket({
@@ -230,7 +230,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
       a.lastWait = "";
       armLog(a, `Sending ${d.n} ${h.txt}, limit ${Math.round(d.ask * 100)}¢ (${h.kind})`);
       const count = allTickets.length;
-      await runExec({ ...h, n: d.n, ask: d.ask, ticketCents: d.ticketCents }, gameKey(a.g));
+      await runExec({ ...h, n: d.n, ask: d.ask, ticketCents: d.ticketCents, armed: true }, gameKey(a.g));
       const text = lastExec ? lastExec.text : "";
       if (lastExec && lastExec.cls === "ok") { armLog(a, text, "ok"); a.sent = { count, at: Date.now() }; }
       else if (/^Nothing filled/.test(text)) armLog(a, text);
