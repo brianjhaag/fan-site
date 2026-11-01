@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvyeiw8y";
-import { Fan } from "./hosts.js?v=mvyeiw8y";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyeiw8y";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyeiw8y";
-import { setBet } from "./trade.js?v=mvyeiw8y";
+import { espnState } from "./espn.js?v=mvyf4k2u";
+import { Fan } from "./hosts.js?v=mvyf4k2u";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyf4k2u";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyf4k2u";
+import { setBet } from "./trade.js?v=mvyf4k2u";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
