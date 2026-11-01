@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvy0gi42";
-import { Fan } from "./hosts.js?v=mvy0gi42";
-import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvy0gi42";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvy0gi42";
-import { setBet } from "./trade.js?v=mvy0gi42";
+import { espnState } from "./espn.js?v=mvy109cm";
+import { Fan } from "./hosts.js?v=mvy109cm";
+import { $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvy109cm";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvy109cm";
+import { setBet } from "./trade.js?v=mvy109cm";
   // Fan's button opens the settings window.
   let fillSettings;
   { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
@@ -63,18 +63,37 @@ import { setBet } from "./trade.js?v=mvy0gi42";
       if (!Fan.lines) return [el("p", "fan-note", (trackingOn ? "Your bets stay in this browser. " : "") + "Prices need the Fan connector on this computer.")];
       const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = pricesWanted; c.addEventListener("change", () => setPrices(c.checked)); lab.append(c, "Price"); return [lab];
     };
-    // Starting the connector from the page. The page that has no connector gets a new tab on the connector's own address; one whose connector went away reloads when it answers again.
-    const startItem = which => {
+    // Starting the connector from the page. This tab then goes to the connector's own address, or reloads if it's already there. Nothing answering after a while says so, and it can be pressed again.
+    const startItem = () => {
       const a = el("a", "fan-start", "Start connector"), box = el("div", "fan-starting");
-      a.href = Fan.startLink(which);
+      a.href = Fan.startLink;
       a.addEventListener("click", () => {
-        box.append(el("small", null, which === "open" ? "It opens Fan from your computer in a new tab. If nothing opens, the connector isn't installed here." : "Starting…"));
-        a.hidden = true;
-        if (which === "start") { let tries = 0; const t = setInterval(() => { if (++tries > 30) { clearInterval(t); a.hidden = false; box.lastChild.remove(); return; } Fan.hostHello().then(() => { clearInterval(t); location.reload(); }, () => {}); }, 1000); }
+        box.querySelector("small")?.remove();
+        const note = el("small", null, "Starting…");
+        box.append(note); a.hidden = true;
+        let tries = 0;
+        const t = setInterval(() => {
+          if (++tries > 15) { clearInterval(t); note.textContent = "Nothing answered. If this computer doesn't have the connector yet, it's under the Connector tab."; a.hidden = false; return; }
+          Fan.connectorUp().then(() => { clearInterval(t); if (Fan.hostHello) location.reload(); else location.href = Fan.localFan; }, () => {});
+        }, 1000);
       });
       box.prepend(a);
       return box;
     };
+    // What a first-time user does, on a page with no connector.
+    const connectorRows = () => {
+      const box = el("div", "fan-connector"), steps = el("ol"), step = (...parts) => { const li = el("li"); li.append(...parts); steps.append(li); };
+      const windows = /Windows/.test(navigator.userAgent), get = el("a", "fan-start", "Download for Windows");
+      get.href = "fan-connector-setup.exe"; get.setAttribute("download", "");
+      box.append(el("h3", null, "Why it's needed"), el("p", null, "Watch and Track work right here. Price and Bet need the Fan connector: a small program on your computer that pulls prices over your own connection and holds your own Kalshi key. Nothing about your bets or your key leaves your computer for this site."));
+      if (!windows) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector is Windows only for now.")); return [box]; }
+      step(el("b", null, "Download it. "), get);
+      step(el("b", null, "Run the file. "), "It isn't signed yet, so your browser may ask whether to keep it, and Windows may warn you: choose More info, then Run anyway. It needs no admin rights.");
+      step(el("b", null, "Use the new address. "), "It installs and opens Fan from your own computer, at localhost:5180. Use that address from now on: it's the one with prices and betting. Settings, telecast links and bets typed on this site stay with this site, so set those up once there.");
+      box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "It runs only when it's started, and closes itself 30 minutes after your last Fan page closes. Start it here, or tick Start the connector when I log in, in the status list at the new address. The first time you press Start, your browser asks to open it: tick always allow."), startItem(), el("p", null, "To update it, download and run the file again. Your records and key stay where they are."));
+      return [box];
+    };
+    const getOrStart = () => { const box = el("div", "fan-get"), get = el("button", null, "Get the connector"); get.type = "button"; get.addEventListener("click", () => { tab = "connector"; fill(); }); box.append(startItem(), get); return box; };
     const keysItem = () => { const b = el("button", null, "Connect Kalshi"); b.type = "button"; b.addEventListener("click", () => { open(false); Fan.account(); }); return b; };
     const badgeItem = () => { const b = el("button", null, "Badges: " + BADGE_STYLES[badgeStyle].label), names = Object.keys(BADGE_STYLES); b.type = "button"; b.addEventListener("click", () => { setBadgeStyle(names[(names.indexOf(badgeStyle) + 1) % names.length]); b.textContent = "Badges: " + BADGE_STYLES[badgeStyle].label; }); return b; };
     // What Fan is, opened on launch until the user ticks the box: the four layers, each with what it takes.
@@ -83,7 +102,7 @@ import { setBet } from "./trade.js?v=mvy0gi42";
     const ABOUT = () => ({
       watch: [partCheck("Watch", true), "Every game this week on one page, with live scores, so you can see what's on and what's close. Open any game for its injuries, matchup edges and what each team is playing for. Then one click puts it on from the TV you already pay for. That's YouTube TV for now: paste your channel links under Telecasts.", "Free. No install, no sign-up."],
       track: [partCheck("Track", trackingOn, on => setTracking(on)), "Enter your bets from any sportsbook, and each game shows what you have riding on it while you watch. See the most you can win or lose on a game, and which scores make or break you. The Ledger shows how you've really done, book by book.", "Free. No install. Your bets stay on your computer, and only you see them."],
-      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines ? on => setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? "Free. Uses the Fan connector, running on your computer." : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", !Fan.lines && Fan.startLink ? startItem("open") : null],
+      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines ? on => setPrices(on) : null), "Live prices from Kalshi and Polymarket on every game, moving as the game does. Graphs and the Playbook's past results open up too. With Track on, see what your bets are worth right now, and whether you paid more or less than a fair price.", Fan.lines ? "Free. Uses the Fan connector, running on your computer." : "Free. Uses the Fan connector, a small program on your computer that pulls prices over your own connection.", !Fan.lines && Fan.startLink ? getOrStart() : null],
       bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed ? on => setBet(on) : null), "Trade on Kalshi from the game card in one click, without leaving the game. Fills arrive live and record themselves, and Fan points out a hedge or a lock when your position has one. Off, Fan sends no orders, and fills you make anywhere else still arrive.", "Free. Uses the Fan connector and your own Kalshi account, with your own money.", Fan.account && !Fan.keyed ? keysItem() : null]
     });
     // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
@@ -106,7 +125,7 @@ import { setBet } from "./trade.js?v=mvy0gi42";
       const { hi, away, rows } = await statusRows();
       if (box.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
       box.replaceChildren(el("h3", null, "Status"), ...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
-      if (away && Fan.startLink) box.append(startItem("start"));
+      if (away && Fan.startLink) box.append(startItem());
       if (hi && hi.login != null) {   // an installed connector's own checkbox
         const lab = el("label", "fan-check"), c = el("input");
         c.type = "checkbox"; c.checked = hi.login;
@@ -130,10 +149,11 @@ import { setBet } from "./trade.js?v=mvy0gi42";
       ["telecasts", "Telecasts", telecastRows],
       ["sportsbooks", "Sportsbooks", () => [trackItem(), ...pricesItem(), ...(Fan.account ? [keysItem()] : [])]],
       ["look", "Look/feel", () => [badgeItem()]],
+      ["connector", "Connector", connectorRows],
       ["records", "Records", () => recordsItems()]
     ];
     const fill = () => {
-      const tabs = SETTINGS_TABS.filter(([k]) => k !== "records" || (trackingOn && Fan.store && Fan.store.dump));   // only a browser's own records need this, and only with Bet tracking on
+      const tabs = SETTINGS_TABS.filter(([k]) => k === "connector" ? !Fan.lines && Fan.startLink : k !== "records" || (trackingOn && Fan.store && Fan.store.dump));   // the connector's tab is for a page without one. Only a browser's own records need Records, and only with Bet tracking on
       if (!tabs.some(([k]) => k === tab)) tab = "leagues";
       $("fanTabs").replaceChildren(...tabs.map(([k, h]) => {
         const b = el("button", null, h);

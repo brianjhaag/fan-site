@@ -1,17 +1,17 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mvy0gi42";
-import "./risk.js?v=mvy0gi42";
-import "./panels.js?v=mvy0gi42";
-import "./tracker.js?v=mvy0gi42";
-import "./trade.js?v=mvy0gi42";
-import "./settings.js?v=mvy0gi42";
-import { Fan } from "./hosts.js?v=mvy0gi42";
-import { WEEK_GAMES } from "./espn.js?v=mvy0gi42";
-import { changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mvy0gi42";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mvy0gi42";
-import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mvy0gi42";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mvy0gi42";
-import { fillSettings } from "./settings.js?v=mvy0gi42";
+import "./base.js?v=mvy109cm";
+import "./risk.js?v=mvy109cm";
+import "./panels.js?v=mvy109cm";
+import "./tracker.js?v=mvy109cm";
+import "./trade.js?v=mvy109cm";
+import "./settings.js?v=mvy109cm";
+import { Fan } from "./hosts.js?v=mvy109cm";
+import { WEEK_GAMES } from "./espn.js?v=mvy109cm";
+import { changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mvy109cm";
+import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mvy109cm";
+import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mvy109cm";
+import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mvy109cm";
+import { fillSettings } from "./settings.js?v=mvy109cm";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };

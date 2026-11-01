@@ -15,7 +15,9 @@ const Fan = {
   screens: window.fanBridge ? { list: () => window.fanBridge.displays(), show: pref => window.fanBridge.showSpots(pref) } : null,   // the host's monitors, if it can place windows on them
   openTelecast: (url, pref) => { if (window.fanBridge) window.fanBridge.openTelecast(url, pref); else window.open(url, "_blank", "noopener"); },   // the desktop app sizes and places its own window; anywhere else it's a plain link
   setMarket: on => { if (window.fanBridge) window.fanBridge.setMarket(on); else tellConnector({ market: on }); },   // tells a host that refreshes lines whether anyone wants prices
-  startLink: window.fanBridge || window.claude ? null : which => "fan-connector://" + which,   // starts an installed connector: "open" also opens its page, "start" is for a page already open. Windows runs what the install registered, and the page can't tell whether it did
+  startLink: window.fanBridge || window.claude ? null : "fan-connector://start",   // starts an installed connector. Windows runs what the install registered
+  localFan: "http://localhost:5180/",   // where it answers. A page on another site can't read it, but can tell a refusal from no answer, which is all it needs
+  connectorUp: () => (Fan.hostHello ? Fan.hostHello() : window.fetch(Fan.localFan + "connector/hello", { mode: "no-cors" })),
   setLeagues: list => { if (window.fanBridge) window.fanBridge.setLeagues(list); else tellConnector({ leagues: list }); }   // tells a host that refreshes lines which leagues to refresh
 };
 
