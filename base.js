@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js";
     return tag;
   }
 
-  const APP_VERSION = "0.5.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.5.4";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -805,6 +805,7 @@ import { Fan } from "./hosts.js";
   });
   syncLeaguePick();
   // Fan's button opens the settings window.
+  const aboutOnStart = () => { try { return localStorage.getItem("fan.about") !== "off"; } catch (e) { return true; } };
   { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
     const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) win.close(); };
     let tab = "leagues";
@@ -864,7 +865,16 @@ import { Fan } from "./hosts.js";
     };
     const keysItem = () => { const b = el("button", null, "Kalshi account"); b.type = "button"; b.addEventListener("click", () => { open(false); Fan.account(); }); return b; };
     const badgeItem = () => { const b = el("button", null, "Badges: " + BADGE_STYLES[badgeStyle].label), names = Object.keys(BADGE_STYLES); b.type = "button"; b.addEventListener("click", () => { setBadgeStyle(names[(names.indexOf(badgeStyle) + 1) % names.length]); b.textContent = "Badges: " + BADGE_STYLES[badgeStyle].label; }); return b; };
+    // A tour and reminder, opened on launch until the user ticks the box. Stubbed for now.
+    const aboutRows = () => {
+      const lab = el("label", "fan-check"), c = el("input");
+      c.type = "checkbox"; c.checked = !aboutOnStart();
+      c.addEventListener("change", () => { try { localStorage.setItem("fan.about", c.checked ? "off" : "on"); } catch (e) {} });
+      lab.append(c, "Don't show on startup");
+      return [el("p", "fan-note", "The tour goes here."), lab];
+    };
     const SETTINGS_TABS = [
+      ["about", "About Fan", aboutRows],
       ["leagues", "Leagues", leagueRows],
       ["telecasts", "Telecasts", telecastRows],
       ["sportsbooks", "Sportsbooks", () => [trackItem(), ...(trackingOn ? pricesItem() : []), ...(Fan.account ? [keysItem()] : [])]],
@@ -883,7 +893,8 @@ import { Fan } from "./hosts.js";
       list.replaceChildren(...tabs.map(([k, , rows]) => { const p = el("div", "fan-list"); p.setAttribute("role", "tabpanel"); p.hidden = k !== tab; p.append(...rows()); return p; }));
     };
     btn.addEventListener("click", () => { fill(); open(!win.open); });
-    $("fanClose").addEventListener("click", () => open(false)); }
+    $("fanClose").addEventListener("click", () => open(false));
+    if (aboutOnStart()) setTimeout(() => { tab = "about"; fill(); open(true); tab = "leagues"; }, 0); }
   // Onto the first league that's on, if the one on screen isn't.
   function leaveOffLeague() {
     const stubOn = LEAGUES.includes(view), active = stubOn ? view : league;
