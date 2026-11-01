@@ -171,10 +171,36 @@
   .fan-list .fan-lay button:disabled, .fan-list .fan-show:disabled { color: var(--ink-dim); cursor: default; }
   .fan-list .fan-show { margin: 0 12px 4px; border: 1px solid var(--accent); color: var(--accent); }
   .fan-records { display: flex; flex-direction: column; align-items: flex-start; }
-  .fan-about { display: grid; grid-template-columns: 110px repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px 12px; }
+  .fan-about { display: grid; grid-template-columns: minmax(0, 1.25fr) 96px minmax(0, 1.1fr) 96px minmax(0, .8fr); gap: 8px 0; padding: 8px 12px; }   /* the page, a wire, the connector, a wire, the outside services */
+  .fan-about > * { grid-row: var(--r); grid-column: var(--c); min-width: 0; }
   .fan-about h3 { margin: 0; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
-  .fan-about b { align-self: center; font: 400 18px/1.15 "Saira Stencil One", var(--font-display); color: var(--accent); }
-  .fan-part { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; border: 1px solid var(--card-rule); border-radius: 3px; }
+  .fan-frame { border: 1px solid var(--accent); border-radius: 3px; background: rgb(255 255 255 / .02); }
+  .fan-frame.away { border: 1px dashed var(--card-rule); background: none; }
+  .fan-con { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 12px 0; }
+  .fan-con > b { font-size: 18px; color: var(--ink); }
+  .fan-con .fan-st { display: flex; }
+  .fan-con .fan-get { flex-basis: 100%; }
+  .fan-job { align-self: center; margin: 0; padding: 0 12px; font: 400 15px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .fan-wire { align-self: center; padding: 0 1px; font: 400 13px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; text-align: center; color: var(--ink-dim); }
+  .fan-wire span { display: block; margin-bottom: 3px; }
+  .fan-wire div { position: relative; border-top: 1px dashed var(--card-rule); }
+  .fan-wire i { position: absolute; top: -5px; width: 0; height: 0; border-block: 4.5px solid transparent; }
+  .fan-wire i.l { left: 0; border-right: 7px solid var(--card-rule); }
+  .fan-wire i.r { right: 0; border-left: 7px solid var(--card-rule); }
+  .fan-wire.lit { color: var(--accent); }
+  .fan-wire.lit div { border-top: 1px solid var(--accent); }
+  .fan-wire.lit i.l { border-right-color: var(--accent); }
+  .fan-wire.lit i.r { border-left-color: var(--accent); }
+  .fan-out { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; padding: 8px 10px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; }
+  .fan-out b { font-size: 16px; color: var(--ink); }
+  .fan-out small { font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
+  .fan-list .fan-out button, .fan-list .fan-con button { appearance: none; padding: 6px 10px; background: none; border: 1px solid var(--accent); border-radius: 2px; font-size: 14px; line-height: 1.3; color: var(--accent); cursor: pointer; }
+  .fan-con-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; flex-basis: 100%; }
+  .fan-con-ctl:empty { display: none; }
+  .fan-con-ctl .fan-check { padding: 0; font-size: 14px; }
+  .fan-con-ctl .fan-check:hover { background: none; }
+  .fan-part { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 12px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; }
+  .fan-part.off p { color: var(--ink-dim); }
   .fan-part .fan-check { padding: 0; font-size: 22px; }
   .fan-part .fan-check:hover { background: none; }
   .fan-part .fan-check:has(input:disabled) { cursor: default; }
@@ -196,10 +222,7 @@
   .fan-connector ol { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
   .fan-connector li b { font-weight: 600; }
   .fan-connector small { display: block; margin-top: 4px; color: var(--ink-dim); }
-  .fan-status > .fan-starting, .fan-status > .fan-check { grid-column: 1 / -1; }
-  .fan-status > .fan-check { padding: 4px 0; font-size: 16px; }
-  .fan-status > .fan-check:hover { background: none; }
-  .fan-status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 16px; padding: 8px 12px 8px 130px; }   /* under the grid's boxes, not its row names */
+  .fan-status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 16px; padding: 8px 12px; }
   .fan-status h3 { grid-column: 1 / -1; margin: 0 0 2px; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-st { display: grid; grid-template-columns: 8px minmax(0, 1fr); column-gap: 6px; align-items: center; font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-st i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
@@ -920,9 +943,13 @@
     .tabrows:not(.bottom) .weektabs.pinned.wk2 button { flex: none; width: auto !important; position: relative !important; top: 0; left: auto !important; height: 41px; font-size: 16px; padding-inline: 10px; }
     .tabrows.bottom { position: static; margin-top: 8px; }
     .garrow { display: none !important; }
-    .fan-about { grid-template-columns: minmax(0, 1fr); }
-    .fan-about h3, .fan-about > span { display: none; }
-    .fan-status { grid-template-columns: minmax(0, 1fr); padding-left: 12px; }
+    .fan-about { grid-template-columns: minmax(0, 1fr); gap: 6px; }   /* one column, row by row, with no wires: what the connector and the services do hangs indented under each card */
+    .fan-about > * { grid-row: auto; grid-column: 1; }
+    .fan-about h3, .fan-about > span, .fan-frame, .fan-wire { display: none; }
+    .fan-job, .fan-out { margin-left: 16px; }
+    .fan-job { padding: 0 0 0 10px; border-left: 1px solid var(--card-rule); }
+    .fan-con { padding: 8px 0 0; }
+    .fan-status { grid-template-columns: minmax(0, 1fr); }
     .top { display: block; }
     .games, .games.strip { display: block; height: auto; overflow: visible; }
     .games.strip .slot { margin-bottom: 12px; }
