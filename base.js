@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvyb5g58";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvyb5g58";
-import { Calc } from "./calc.js?v=mvyb5g58";
-import { Fan } from "./hosts.js?v=mvyb5g58";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvybkdyy";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvybkdyy";
+import { Calc } from "./calc.js?v=mvybkdyy";
+import { Fan } from "./hosts.js?v=mvybkdyy";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -168,7 +168,7 @@ import { Fan } from "./hosts.js?v=mvyb5g58";
     return tag;
   }
 
-  const APP_VERSION = "0.16.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.16.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan";
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -357,9 +357,9 @@ import { Fan } from "./hosts.js?v=mvyb5g58";
     changed("cards");
   }
 
-  // A game under way shows ESPN's score on the plain page. With prices on, the card keeps its live prices.
-  const showsNow = g => !g.final && !!g.now && !pricesOn();
-  const scoreOf = g => g.final || (showsNow(g) ? g.now.score : null);
+  // A game under way, by ESPN: its card has the clock, and each plate the team's score, with or without prices.
+  const showsNow = g => !g.final && !!g.now;
+  const scoreOf = g => g.final || null;
   function teamRow(g, side, over) {
     const L = lineOf(g), away = side === "away", n = away ? 0 : 1;
     const tr = el("tr");
@@ -371,6 +371,12 @@ import { Fan } from "./hosts.js?v=mvyb5g58";
       chip.replaceChildren(img, el("span", "tn-txt", abbr(last(g[side])))); chip.classList.add("has-helm");
     }
     BADGE_STYLES[over ? "plain" : badgeStyle].draw(chip, g, side);
+    if (!over && showsNow(g)) {   // the score takes the place of the team and state, in scoreboard type. With no helmet to say who it is, the team stays above it
+      const box = el("span", "tn-txt live-sc"), old = chip.querySelector(".tn-txt");
+      if (!HELMETS[last(g[side])]) box.append(el("small", null, abbr(last(g[side]))));
+      box.append(el("b", "pl-sc", String(g.now.score[n])));
+      if (old) old.replaceWith(box); else chip.replaceChildren(box);
+    }
     name.append(chip);
     if (over) {
       // final: no badge; helmet, name and score share one cell, the name centered between helmet and score in the scoreboard font
@@ -603,9 +609,9 @@ import { Fan } from "./hosts.js?v=mvyb5g58";
       const staked = mine.filter(t => !t.bonus).reduce((s, t) => s + t.amount, 0) + spent.filter(s => !s.t.bonus).reduce((a, s) => a + s.share, 0);
       const bonusStaked = mine.filter(t => t.bonus).reduce((s, t) => s + t.amount, 0) + spent.filter(s => s.t.bonus).reduce((a, s) => a + s.share, 0);
       const [stText, stCls] = status(g);
-      const over = stCls === "final" || showsNow(g);
+      const over = stCls === "final" && !showsNow(g);
 
-      const card = el("article", "game" + (over && !showsNow(g) ? " is-final" : "") + (riskGame === g ? " sel" : ""));
+      const card = el("article", "game" + (over ? " is-final" : "") + (riskGame === g ? " sel" : ""));
       if (pricesOn() && g.live && stCls === "live") { const P = g.line, sgn = v => (v > 0 ? "+" : "") + v; card.title = `Live prices (Kalshi). Pre-game: ${last(g.away)} ${pts(P.sp)} @ ${last(g.home)}, total ${P.tot}, moneyline ${sgn(P.ml[0])} / ${sgn(P.ml[1])}`; }   // hover shows the saved pre-game line
 
       // Top: when and where to watch
@@ -658,7 +664,7 @@ import { Fan } from "./hosts.js?v=mvyb5g58";
       if (g.final) { bot.classList.add("done"); bot.append(pl); }   // a final game: the bottom row is just its P/L, in its usual column
       else bot.append(wagered, risk, pl);
 
-      if (!over || showsNow(g)) card.append(top);   // a final game has no top line: the F on its board says it
+      if (!over) card.append(top);   // a final game has no top line: the F on its board says it
       card.append(mid, bot, cardGutter(g));
       made.push([g, card]);
     });
