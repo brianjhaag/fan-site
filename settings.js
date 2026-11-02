@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzwawrt";
-import { Fan } from "./hosts.js?v=mvzwawrt";
-import { LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzwawrt";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mvzwawrt";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzwawrt";
-import { demoAway, setBet } from "./trade.js?v=mvzwawrt";
+import { espnState } from "./espn.js?v=mvzwiyx8";
+import { Fan } from "./hosts.js?v=mvzwiyx8";
+import { LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzwiyx8";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mvzwiyx8";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzwiyx8";
+import { demoAway, setBet } from "./trade.js?v=mvzwiyx8";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -24,12 +24,10 @@ import { demoAway, setBet } from "./trade.js?v=mvzwawrt";
       p.style.zoom = "";
       for (let z = 1; z > .6 && overflows(); ) { z = Math.round((z - .05) * 100) / 100; p.style.zoom = String(z); }
     };
-    // Fitted again, once a frame at most, when the window changes size (it follows the strips, base.js fitBand), when its text changes (the statuses update in place) and when fonts arrive.
-    let fitQueued = false;
-    const refit = () => { if (!fitQueued) { fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fitList(); }); } };
-    const listWatch = new ResizeObserver(refit), textWatch = new MutationObserver(refit);   // held here, so they keep watching
+    // Fitted again when the window changes size (it follows the strips, base.js fitBand), when its text changes (the statuses update in place) and when fonts arrive. Its own zoom is a style change, which neither watcher hears.
+    const listWatch = new ResizeObserver(() => fitList()), textWatch = new MutationObserver(() => fitList());   // held here, so they keep watching
     listWatch.observe(list); textWatch.observe(list, { childList: true, characterData: true, subtree: true });
-    if (document.fonts) document.fonts.addEventListener("loadingdone", refit);
+    if (document.fonts) document.fonts.addEventListener("loadingdone", () => fitList());
     let tab = "about";
     const leagueRows = () => Object.entries(leagueNames()).map(([k, h]) => {
       const row = el("label", "fan-lg" + (LEAGUES_LATER.includes(k) ? " later" : "")), c = el("input");

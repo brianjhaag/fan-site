@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzwawrt";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzwawrt";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzwawrt";
-import { Calc } from "./calc.js?v=mvzwawrt";
-import { Fan } from "./hosts.js?v=mvzwawrt";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzwiyx8";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzwiyx8";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzwiyx8";
+import { Calc } from "./calc.js?v=mvzwiyx8";
+import { Fan } from "./hosts.js?v=mvzwiyx8";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -205,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvzwawrt";
     return tag;
   }
 
-  const APP_VERSION = "0.35.20";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.21";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -566,7 +566,7 @@ import { Fan } from "./hosts.js?v=mvzwawrt";
     if (h > 0 && h < r.height - 1) { col.style.alignSelf = "start"; col.style.height = Math.max(300, h) + "px"; }
   }
   // The background image fills the band from the top strip's bottom edge to the bottom strip's top edge, behind the info line too: pinned to the window with the bottom strip, or measured on the page where that strip scrolls with it (a phone).
-  function fitBand() { const t = document.querySelector(".tabrows:not(.bottom)").getBoundingClientRect(), strip = document.querySelector(".tabrows.bottom"), b = strip.getBoundingClientRect(), band = $("bgBand"), pinned = getComputedStyle(strip).position === "fixed"; band.style.position = pinned ? "fixed" : "absolute"; band.style.top = (t.bottom + window.scrollY) + "px"; band.style.bottom = pinned ? b.height + "px" : "auto"; band.style.height = pinned ? "" : Math.max(0, b.top - t.bottom) + "px"; const win = $("fanWindow"), infoTop = document.querySelector(".sec-title.one-line").getBoundingClientRect().top; win.style.top = pinned ? (t.bottom + 8) + "px" : ""; win.style.height = pinned ? Math.max(200, infoTop - 2 - t.bottom - 8) + "px" : ""; }   // the settings window too: the usable space, from the top strip down to the info line
+  function fitBand() { const t = document.querySelector(".tabrows:not(.bottom)").getBoundingClientRect(), strip = document.querySelector(".tabrows.bottom"), b = strip.getBoundingClientRect(), band = $("bgBand"), pinned = getComputedStyle(strip).position === "fixed"; band.style.position = pinned ? "fixed" : "absolute"; band.style.top = (t.bottom + window.scrollY) + "px"; band.style.bottom = pinned ? b.height + "px" : "auto"; band.style.height = pinned ? "" : Math.max(0, b.top - t.bottom) + "px"; const win = $("fanWindow"), info = document.querySelector(".sec-title.one-line").offsetHeight; win.style.top = pinned ? (t.bottom + 8) + "px" : ""; win.style.bottom = pinned ? (b.height + 2 + info + 2) + "px" : ""; win.style.height = pinned ? "auto" : ""; }   // the settings window too: the usable space, from the top strip down to the info line, its bottom held to the strip so it follows the window's height
   const bandWatch = new ResizeObserver(fitBand);   // held here, so it keeps watching
   bandWatch.observe(document.body); bandWatch.observe(document.querySelector(".tabrows:not(.bottom)"));
   window.addEventListener("resize", () => { fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); fitBand(); });
