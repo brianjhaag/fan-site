@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzn4ppv";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzn4ppv";
-import { Calc } from "./calc.js?v=mvzn4ppv";
-import { Fan } from "./hosts.js?v=mvzn4ppv";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvznp0an";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvznp0an";
+import { Calc } from "./calc.js?v=mvznp0an";
+import { Fan } from "./hosts.js?v=mvznp0an";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -123,14 +123,6 @@ import { Fan } from "./hosts.js?v=mvzn4ppv";
     if (ch) { Fan.playHdhr(hdhr.ip, ch).then(r => { if (!r.ok) toast(/VLC isn't installed/.test(r.error) ? say : "HDHomeRun: " + r.error); }, () => toast(say)); return; }
     Fan.openTelecast(telecastLink(g), telecastPref);
   }
-  // The Live telecast button's hover: everything that decides whether it's lit, to be read aloud when debugging someone else's setup [U, Nov 2 2026].
-  function telecastInfo(g, st, live) {
-    const nets = watchSetup === "hdhomerun" ? antennaNets(g) : String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean), set = Object.entries(hdhr.channels).map(([n, c]) => `${n} ${c}`).join(", ");
-    const why = live ? "on" : st === "final" ? "off: the game is over" : !nets.length ? "off: ESPN lists no network" : watchSetup !== "hdhomerun" ? "off: no YouTube TV link pasted for " + nets.join(" or ") : !hdhr.ip ? "off: no HDHomeRun address" : "off: no channel set for " + nets.join(" or ");
-    return ["Live telecast: " + why, `Game: ${g.away} @ ${g.home}, ${st || "upcoming"}`, "Networks: " + (nets.join(", ") || "none"), "Watching with: " + (watchSetup === "hdhomerun" ? "HDHomeRun" : "YouTube TV"),
-      ...(watchSetup === "hdhomerun" ? ["HDHomeRun address: " + (hdhr.ip || "none"), "Channels set: " + (set || "none"), "Matched: " + (hdhrPick(g) ? `${hdhrPick(g)} on ${hdhrChannel(g)}` : "none"), "Plays in VLC: " + (Fan.playHdhr ? "yes, if VLC is installed" : "no, needs a connector of 0.33 or later")] : ["Link: " + (pastedLink(g) || "none")]),
-      "Connector: " + (Fan.connectorVersion || "not here") + ", page " + APP_VERSION].join("\n");
-  }
   // Where a game's Live telecast button goes: the first of its networks with a pasted https link ("ESPN / ABC" is two), or else YouTube TV's site.
   const pastedLink = g => String(g.tv || "").split("/").map(n => networkLinks[n.trim()]).find(u => /^https:\/\//i.test(u || ""));
   const telecastLink = g => pastedLink(g) || "https://tv.youtube.com/";
@@ -197,7 +189,7 @@ import { Fan } from "./hosts.js?v=mvzn4ppv";
     return tag;
   }
 
-  const APP_VERSION = "0.33.8";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.33.9";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -356,7 +348,7 @@ import { Fan } from "./hosts.js?v=mvzn4ppv";
     const st = status(g)[1];
     CARD_ACTIONS.forEach(([name, icon]) => {
       const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && (!!pastedLink(g) || !!hdhrChannel(g)) : name === "Tape" ? st === "final" && leagueOf(g).code === "NFL" : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
-      b.type = "button"; b.disabled = !live; b.title = name === "Live telecast" ? telecastInfo(g, st, live) : name; b.setAttribute("aria-label", name); b.innerHTML = icon;
+      b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
       if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { watchGame(g); } : name === "Tape" ? () => { window.open(tapeLink(g), "_blank", "noopener"); } : name === "Box score" ? () => { window.open(`https://www.espn.com/nfl/boxscore/_/gameId/${g.eid}`, "_blank", "noopener"); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });

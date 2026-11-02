@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzn4ppv";
-import { Fan } from "./hosts.js?v=mvzn4ppv";
-import { BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzn4ppv";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzn4ppv";
-import { demoAway, setBet } from "./trade.js?v=mvzn4ppv";
+import { espnState } from "./espn.js?v=mvznp0an";
+import { Fan } from "./hosts.js?v=mvznp0an";
+import { switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvznp0an";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvznp0an";
+import { demoAway, setBet } from "./trade.js?v=mvznp0an";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -12,7 +12,9 @@ import { demoAway, setBet } from "./trade.js?v=mvzn4ppv";
     Fan.connectorUp().then(() => { $("slateNote").textContent = "Found your connector. Moving to it…"; location.href = Fan.localFan; }, () => {});
   };
   { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
-    const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) win.close(); };
+    let firstClose = true;   // closing the window that opens on load shows the current week [U, Nov 2 2026]
+    const toNow = () => { if (firstClose) { firstClose = false; switchWeek(weekNow()); } };
+    const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) { win.close(); toNow(); } };
     let tab = "about";
     const leagueRows = () => Object.entries(leagueNames()).map(([k, h]) => {
       const row = el("label", "fan-lg"), c = el("input");
@@ -366,6 +368,7 @@ import { demoAway, setBet } from "./trade.js?v=mvzn4ppv";
     };
     btn.addEventListener("click", () => { fill(); open(!win.open); });
     $("fanClose").addEventListener("click", () => open(false));
+    win.addEventListener("close", toNow);   // Escape closes it too
     setTimeout(() => { fill(); open(true); }, 0);
     fillSettings = () => { if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
 export { fillSettings, findConnector };

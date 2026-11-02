@@ -151,7 +151,6 @@ Fan.connectStore = async () => {
     tellConnector(connectorPrefs);
   }
   if (hi) Fan.hostHello = () => window.fetch("/connector/hello").then(r => r.json());
-  Fan.connectorVersion = (hi && hi.version) || null;   // for the telecast button's hover
   if (hi && hi.login != null) Fan.setLogin = async on => {   // the login checkbox
     const r = await (await window.fetch("/connector/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
     if (!r.ok) throw new Error(r.error);
