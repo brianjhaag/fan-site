@@ -566,7 +566,7 @@
   /* Before kickoff (no status badge) the info line is centered over the team badges: the badge column starts after the 17% moneyline column
      and is 48% wide, inside the board's 9px side padding. */
   .g-top.upcoming { position: relative; }
-  .g-top.upcoming .g-when { position: absolute; left: calc(4px + 0.41 * (100% - 18px)); top: 50%; transform: translate(-50%, -50%); max-width: none; overflow: visible; }
+  .g-top.upcoming .g-when { position: absolute; left: 4px; width: calc(2 * 0.41 * (100% - 18px)); top: 50%; transform: translateY(-50%); max-width: none; overflow: visible; display: flex; justify-content: center; justify-content: safe center; }   /* centered on the same point as before, in a box from the card's left edge, so a line too long to center starts at that edge and runs off to the right, never the left [U, Nov 2 2026] */
   .g-top.live { position: relative; }
   .g-air { position: absolute; left: calc(4px + 0.41 * (100% - 18px)); top: 50%; transform: translate(-50%, -50%); padding: 0 9px; border: 2px solid #ff3d3d; border-radius: 4px; font: 700 13px/14px var(--font-label); letter-spacing: .1em; text-transform: uppercase; color: #ff5a5a; background: rgb(255 61 61 / .08); box-shadow: 0 0 6px rgb(255 61 61 / .45), inset 0 0 5px rgb(255 61 61 / .25); white-space: nowrap; }   /* "on air": the network in a red outlined button, centered like the old title */
   .g-top.live .g-st { position: absolute; left: calc(4px + 0.41 * (100% - 18px)); top: 50%; transform: translate(-50%, -50%); margin-left: 0; }
