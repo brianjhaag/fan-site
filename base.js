@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzujyo4";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzujyo4";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzujyo4";
-import { Calc } from "./calc.js?v=mvzujyo4";
-import { Fan } from "./hosts.js?v=mvzujyo4";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzurx0y";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzurx0y";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzurx0y";
+import { Calc } from "./calc.js?v=mvzurx0y";
+import { Fan } from "./hosts.js?v=mvzurx0y";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -205,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvzujyo4";
     return tag;
   }
 
-  const APP_VERSION = "0.35.14";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.15";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -475,25 +475,17 @@ import { Fan } from "./hosts.js?v=mvzujyo4";
     document.querySelector(".weektabs.grf").style.display = !other && graphsOK() ? "" : "none";
     if (other) {
       document.querySelector(".bye-box").style.display = "none";
-      row.style.setProperty("--n", "8");
       row.replaceChildren(...(SECTIONS[view].length < 2 || (!LG().stats && view === "season") ? [] : SECTIONS[view].map(s => {
         const b = el("button", null, s.h);
         b.type = "button"; b.draggable = false; b.setAttribute("aria-selected", String(subView[view] === s.k));
         b.addEventListener("click", () => { subView[view] = s.k; showView(view); });
         return b;
       })));
-      sizeTabRows();
+      fitStripRows();
       return;
     }
     if (view === "xy") document.querySelector(".bye-box").style.display = "";
-    row.style.setProperty("--n", "14"); row.replaceChildren();   // a week's strip has only Graphs; the 14 keeps its type the size it has always been
-    sizeTabRows();
-  }
-  // The bottom strip's buttons: a section's in cells of an eighth of the strip, Graphs in a fourteenth; their type follows the cell.
-  function sizeTabRows() {
-    const w = document.querySelector(".tabrows.bottom").clientWidth, cell = w / Math.max(1, Number($("sectiontabs1").style.getPropertyValue("--n")) || 1);
-    document.querySelector(".strip-row2").style.setProperty("--cell", cell + "px");
-    document.querySelector(".pagetabs").style.setProperty("--cell", (w / 14) + "px");   // Season stats and Playbook: a week's Graphs type on every view, so they never change size
+    row.replaceChildren();   // a week's strip has only Graphs
     fitStripRows();
   }
   // The rows rule (the user's, Nov 2 2026): buttons go on the top strip's top row and the bottom strip's bottom row. In a portrait or narrow layout a strip whose row doesn't fit
@@ -507,10 +499,11 @@ import { Fan } from "./hosts.js?v=mvzujyo4";
     bottom.classList.toggle("collapsed", folds && document.querySelector(".strip-left").scrollWidth + right + 26 > bottom.clientWidth);
     const top = document.querySelector(".tabrows:not(.bottom)");
     top.classList.toggle("collapsed", folds && document.querySelector(".weektabs.wk2").offsetWidth + $("leaguePick").offsetWidth + $("fanBtn").offsetWidth + 18 > top.clientWidth);
-    top.style.setProperty("--pick-room", (divideX != null && !top.classList.contains("collapsed") ? Math.max(0, $("fanBtn").getBoundingClientRect().left - divideX) : 0) + "px");
+    const box = $("leagueBox"), room = divideX != null && !top.classList.contains("collapsed") ? $("fanBtn").getBoundingClientRect().left - divideX : 0;
+    box.style.marginRight = Math.max(0, room / 2 - box.offsetWidth / 2) + "px";
   }
-  const rowWatch = new ResizeObserver(() => fitStripRows());   // held here, so it keeps watching: the picker's width, the DEMO badge, a section's buttons
-  [$("fanMenu"), document.querySelector(".strip-left"), document.querySelector(".pagetabs"), document.querySelector(".ledgertab")].forEach(e => rowWatch.observe(e));
+  const rowWatch = new ResizeObserver(() => fitStripRows());   // held here, so it keeps watching: the picker's width, the DEMO badge, a section's buttons (not Fan's box, which the picker's margin resizes)
+  [$("leagueBox"), $("fanBtn"), document.querySelector(".strip-left"), document.querySelector(".pagetabs"), document.querySelector(".ledgertab")].forEach(e => rowWatch.observe(e));
 
   // The bottom strip stays the width of the screen; its two tab rows run from the left edge of the game cards to the left edge of the right-hand stack (the wager ticket column).
   function fitSectionTabs() {
@@ -525,7 +518,7 @@ import { Fan } from "./hosts.js?v=mvzujyo4";
     const g = { left: g0.left, width: wr.left > g0.left ? wr.left - g0.left : document.querySelector(".tabrows:not(.bottom)").clientWidth };   // a narrow layout puts the stack above the cards: the weeks take the strip's width, and fitStripRows puts Fan over them
     // the two week rows are as wide as the game cards (the strips themselves stay the width of the screen)
     document.querySelectorAll(".weektabs.wk2").forEach(r => { r.style.width = g.width + "px"; r.style.setProperty("--cell", (g.width / 9) + "px"); });
-    sizeTabRows();
+    fitStripRows();
   }
   // The week view must not scroll vertically: if the page is taller than the window, the games area (and the card height) shrinks by the overflow. It always tries the full size
   // first, so a window that grows later gets the room back at the next render; nothing is sized from the window directly, which is what made an auto-sized frame run away before.
@@ -840,20 +833,37 @@ import { Fan } from "./hosts.js?v=mvzujyo4";
     switchWeek(weekNow());
     renderByes();
   }
-  // The league picker under Fan lists every league but those waiting for next year, with the ones that are off dimmed and not choosable.
-  function syncLeaguePick() {
-    const pick = $("leaguePick"), names = leagueNames();
-    pick.replaceChildren(...LEAGUE_ORDER.filter(k => !LEAGUES_LATER.includes(k)).map(k => { const o = el("option", null, names[k]); o.value = k; o.disabled = !leaguesOn.has(k); return o; }));
-    pick.value = LEAGUES.includes(view) ? view : league;
-    document.documentElement.classList.toggle("pick-long", names[pick.value].length > 3);
-  }
-  $("leaguePick").addEventListener("change", e => {
-    const k = e.target.value;
-    e.target.blur();   // its focus ring would stay behind after the pick
+  // The league picker (the user's, Nov 2 2026: graphical, like the wager ticket's pickers): a button with the league on screen in its own type, opening a list of every league but
+  // those waiting for next year, each dressed as its own strip, the ones that are off dimmed and not choosable. Its arrows step through the leagues that are on, as the Book picker's do.
+  const pickable = () => LEAGUE_ORDER.filter(k => !LEAGUES_LATER.includes(k));
+  const closeLeagues = () => { $("leagueList").hidden = true; $("leaguePick").setAttribute("aria-expanded", "false"); };
+  function pickLeague(k) {
+    closeLeagues();
     if (LEAGUES.includes(k)) showView(k);
     else if (k !== league) setLeague(k);
     else if (LEAGUES.includes(view)) { detailGame = null; switchWeek(weekNow()); }
+  }
+  function syncLeaguePick() {
+    const names = leagueNames(), cur = LEAGUES.includes(view) ? view : league;
+    $("leaguePick").replaceChildren(names[cur]);
+    $("leagueList").replaceChildren(...pickable().map(k => {
+      const li = el("li", "lg-tile", names[k]);
+      li.setAttribute("role", "option"); li.dataset.v = k; li.dataset.lg = k;
+      li.setAttribute("aria-selected", String(k === cur)); li.setAttribute("aria-disabled", String(!leaguesOn.has(k)));
+      li.addEventListener("click", () => { if (leaguesOn.has(k)) pickLeague(k); });
+      return li;
+    }));
+  }
+  $("leaguePick").addEventListener("click", () => { const open = $("leagueList").hidden; $("leagueList").hidden = !open; $("leaguePick").setAttribute("aria-expanded", String(open)); });
+  $("leaguePick").dataset.keys = "arrows";   // it handles its own keys, past the page's key layer
+  $("leaguePick").addEventListener("keydown", e => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    const on = pickable().filter(k => leaguesOn.has(k)), next = on[on.indexOf(LEAGUES.includes(view) ? view : league) + (e.key === "ArrowDown" ? 1 : -1)];
+    if (next) pickLeague(next);
   });
+  document.addEventListener("click", e => { if (!$("leagueList").hidden && !e.composedPath().includes($("leagueBox"))) closeLeagues(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("leagueList").hidden) { closeLeagues(); $("leaguePick").focus(); } });
   syncLeaguePick();
   // Onto the first league that's on, if the one on screen isn't.
   function leaveOffLeague() {
