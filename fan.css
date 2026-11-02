@@ -66,6 +66,22 @@
   /* The layout is classes on the page (base.js's applyLayout): lay-narrow (920px or less), lay-phone (760px or less), lay-portrait (a portrait window over 920px), from the window on Auto, or from Look/feel's Layout. */
   :where(:root:not(.lay-narrow)) .col.left { order: 2; }   /* the game cards run on the left, the totals/wagers stack on the right */
   :where(.lay-narrow) { .top { grid-template-columns: minmax(0, 1fr); } .saved { flex: none; max-height: 320px; } }
+  /* The narrow layout's accordion (the user's, Nov 2 2026): one column filling the usable space, the game cards on top with their own scroll, then Saved tickets (with the totals) and the wager ticket as title bars, one open at a time (base.js setAcc). A phone keeps its own page. */
+  .acc-head { display: none; }
+  :where(.lay-narrow:not(.lay-phone)) {
+    & body:has(#panel:not([hidden])) main { height: 100dvh; display: flex; flex-direction: column; }
+    #panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .top { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+    .top > section.col { order: 1; flex: 1; min-height: 0; overflow: auto; }
+    .col.left { order: 2; flex: none; align-self: stretch !important; height: auto !important; }   /* over fitTicketColumn's inline size, which is for two columns */
+    .acc-head { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 40px; padding: 0 12px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; font: 700 16px/1 var(--font-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); cursor: pointer; }
+    .acc-head::after { content: "+"; font-size: 20px; color: var(--ink-dim); }
+    .acc-head[aria-expanded="true"]::after { content: "\2212"; }
+    .col.left:not(.acc-saved) :is(#totals, .saved) { display: none; }
+    .col.left:not(.acc-ticket):not(.has-sel) .ticket { display: none; }   /* a selected game's risk detail takes the ticket's place, open */
+    .col.left.all-final #accTicket { display: none; }
+    .col.left .saved { flex: none; }   /* its own height up to 320px; the general .saved rule, later, would give it none */
+  }
   .col:has(#games.strip) { grid-template-columns: minmax(0, 1fr); }   /* the strip scrolls inside its column instead of widening the page */
   /* the selected game's risk detail sits where the wager ticket was (same height); the ticket steps aside */
   .col.left.has-sel .ticket { display: none; }
@@ -109,6 +125,14 @@
   .weektabs.pinned button[aria-selected="true"]::before { left: -4px; }
   .weektabs.pinned > button:first-child[aria-selected="true"]::before { left: 0; }   /* a strip's first cell keeps its marker inside the strip */
   .weektabs.pinned button[aria-selected="true"]::after { right: -4px; }
+  /* The NHL's markers are the ice's blue lines, the NBA's thin lines in its board's navy (the user's, Nov 2 2026; the navy and the tinted fill Claude's), on both strips. */
+  :root[data-league="nhl"] .tabrows .weektabs button[aria-selected="true"]::before, :root[data-league="nhl"] .tabrows .weektabs button[aria-selected="true"]::after { top: -5px; bottom: 0; height: auto; background: #0b3d91; clip-path: none; }   /* -5px: over the button's top border, the row's full height */
+  :root[data-league="nba"] .tabrows .weektabs button[aria-selected="true"]::before, :root[data-league="nba"] .tabrows .weektabs button[aria-selected="true"]::after { top: 6px; bottom: 6px; height: auto; width: 2px; background: #1d428a; clip-path: none; }
+  :root[data-league="nba"] .tabrows .weektabs button[aria-selected="true"]::before { left: -1px; }
+  :root[data-league="nba"] .tabrows .weektabs button[aria-selected="true"]::after { right: -1px; }
+  :root[data-league="nba"] .tabrows .weektabs.pinned > button:first-child[aria-selected="true"]::before { left: 0; }
+  :root[data-league="nhl"] .tabrows:not(.bottom) .weektabs button[aria-selected="true"] { background: rgb(11 61 145 / .12); }
+  :root[data-league="nba"] .tabrows:not(.bottom) .weektabs button[aria-selected="true"] { background: rgb(29 66 138 / .1); }
   /* on the bottom strip the bars are upside down: flat at the bottom, pointing up */
   .tabrows.bottom .weektabs button[aria-selected="true"]::before, .tabrows.bottom .weektabs button[aria-selected="true"]::after { top: auto; bottom: 7px; clip-path: polygon(0 100%, 100% 100%, 100% 30%, 50% 0, 0 30%); }
   /* the bottom strip: a section's buttons, in two rows of equal cells (--n columns) */
@@ -138,6 +162,7 @@
   .byes { display: flex; align-items: center; gap: 4px; letter-spacing: .08em; white-space: nowrap; }
   .bye-chip { position: relative; display: inline-flex; align-items: center; height: 25px; padding: 0 10px 0 30px; margin-left: 17px; border-radius: 5px; line-height: 1; letter-spacing: .06em; font-size: calc(var(--slate-fs, 16px) * 1.25); }   /* 25% bigger than v423 */
   .bye-helm { position: absolute; left: -15px; top: 50%; height: 35px; width: auto; transform: translateY(-50%); }
+  :where(.lay-narrow) { .bye-chip { background: none !important; padding: 0; margin-left: 4px; height: auto; font-size: 0; } .bye-helm { position: static; transform: none; height: 30px; } }   /* the byes as helmets only (the user's, Nov 2 2026) */
   .byeLabel { font-weight: 700; letter-spacing: .08em; color: var(--ink-dim); }
   .byes i { font-style: normal; color: var(--ink); }
   .tabrows.bottom .refresh { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 2; appearance: none; background: none; border: 0; border-radius: 0; padding: 4.75px 14px 9.25px; font: 400 20px/1.1 var(--font-league); letter-spacing: .08em; text-transform: uppercase; color: rgb(44 107 60 / .55); cursor: pointer; }   /* styled like a tab */

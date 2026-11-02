@@ -1,8 +1,8 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { Fan } from "./hosts.js?v=mvzv5woj";
-import { nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvzv5woj";
-import { TEAM, abbr } from "./leagues.js?v=mvzv5woj";
-import { setPlaybook } from "./panels.js?v=mvzv5woj";
+import { Fan } from "./hosts.js?v=mvzvdspt";
+import { nick, $, setAcc, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvzvdspt";
+import { TEAM, abbr } from "./leagues.js?v=mvzvdspt";
+import { setPlaybook } from "./panels.js?v=mvzvdspt";
   Object.assign(later, { syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))} ${pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };
@@ -506,6 +506,7 @@ import { setPlaybook } from "./panels.js?v=mvzv5woj";
     fillTicket(g, "Total", n, L.tot, row ? Math.round(row[n + 1] * 100) : centsOf(L.toj[n]));
   }
   function fillTicket(g, type, n, line, cents) {
+    setAcc("ticket");   // the narrow layout's accordion shows the ticket being filled
     if (riskGame) setRiskGame(null);   // the risk detail covers the ticket while a game is selected
     if (mode !== "straight") setMode("straight");
     bookSel.value = "Kalshi"; bookSel.dispatchEvent(new Event("input", { bubbles: true }));

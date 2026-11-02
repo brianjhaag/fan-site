@@ -1,7 +1,7 @@
 // Each league's identity in one place, from what adding the NBA and NHL taught on Nov 2 2026: how its slates are numbered and named, where ESPN keeps it,
 // and its teams, with their codes, colors, home states and art, keyed the way calc.js's nick() keys them. The money and model rules stay in calc.js (RULES.leagues).
-import { HELMETS, NBA_LOGOS, NHL_LOGOS } from "./data/assets.js?v=mvzv5woj";
-import { Calc } from "./calc.js?v=mvzv5woj";
+import { HELMETS, NBA_LOGOS, NHL_LOGOS } from "./data/assets.js?v=mvzvdspt";
+import { Calc } from "./calc.js?v=mvzvdspt";
 
 // A slate is what one tab shows. An NFL week is its number; a daily league's slate is its base plus the Eastern-time day as yyyymmdd, so no two leagues share a tab, a ticket's week
 // or a slate document. tag starts the slate documents' ids, as the connector writes them (w8-…, w20261102-…, nhl20261102-…). espnCodes turn ESPN's team codes into Kalshi's,
