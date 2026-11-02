@@ -94,6 +94,14 @@ const Auto = (() => {
     note(doc, `Filled ${o.filled} of ${o.requested != null ? o.requested : d.n} at ${(fill.avg * 100).toFixed(1)}¢${o.env === "demo" ? " (demo)" : ""}`, "ok");
     save(key, doc);
   }
+  // Each decision in the connector's event journal, with everything it read, so it can be replayed: the game, the other games its parlays need, its tickets, the prices, the settings and the clock. After the order, off its path.
+  function journal(key, by, g, read, set, now, out, cfg) {
+    if (!fan.journal) return;   // a connector before 0.26 keeps none
+    const tickets = held.tickets.filter(t => t.key === key || (t.parlay && (t.legs || []).some(l => l.key === key)));
+    const legKeys = new Set(tickets.flatMap(t => (t.legs || []).map(l => l.key)).filter(k => k !== key));
+    const order = out.order && { tk: out.order.h.tk, side: out.order.h.side, n: out.order.d.n, ask: out.order.d.ask, kind: out.order.h.kind, txt: out.order.h.txt };
+    try { fan.journal("decision", { key, by, now, game: g, games: held.games.filter(x => legKeys.has(Calc.gameKey(x))), tickets, fills: held.fills, read, set, abbr: cfg.abbr || {}, out: { stop: out.stop, wait: out.wait, order } }); } catch (e) {}
+  }
   const readPrices = g => { try { return { q: fan.call("market_prices", { venue: "kalshi", ticker: firstTicker(g) }) }; } catch (e) { return { error: e.code || e.message }; } };   // the live book's when it has the game, so no request
 
   // One pass. `heard`: the fill that set this off; `moved`: the slate ids the book just moved; neither for the clock.
@@ -129,8 +137,9 @@ const Auto = (() => {
       const decide = DECIDE[set.response && set.response.kind];
       if (!decide) { stop(key, doc, "no response called " + (set.response && set.response.kind)); continue; }
       timers.set(key, fan.now() + (Number(trig.seconds) || 0) * 1000);
-      const out = decide(g, readPrices(g), set, held, cfg, fan.now());
+      const now = fan.now(), read = readPrices(g), out = decide(g, read, set, held, cfg, now);
       act(key, doc, g, out);
+      journal(key, heard ? "fill" : moved ? "move" : "clock", g, read, set, now, out, cfg);
       if (out.order) { follow(); games = null; }   // the order changed the tickets and the fills
     }
   }
@@ -153,5 +162,11 @@ const Auto = (() => {
   // Each move of the book, as it comes: a game armed on a price decides on it at once. A 0.24 connector has no such event, and its price trigger runs on the once-a-second prices.
   let hearsMoves = true;
   try { fan.on("move", ev => pass(null, new Set((ev && ev.ids) || []))); } catch (e) { hearsMoves = false; }
-  return { pass, priced, decide: DECIDE };
+  // A journaled decision made again from what it read, as the journal summarizes it. tools/dev/replay.js runs a day's.
+  function replay(e) {
+    const out = DECIDE[e.set.response.kind](e.game, e.read, e.set, { tickets: e.tickets, fills: e.fills, games: [e.game, ...e.games] }, { abbr: e.abbr }, e.now);
+    const order = out.order && { tk: out.order.h.tk, side: out.order.h.side, n: out.order.d.n, ask: out.order.d.ask, kind: out.order.h.kind, txt: out.order.h.txt };
+    return { stop: out.stop, wait: out.wait, order };
+  }
+  return { pass, priced, decide: DECIDE, replay };
 })();
