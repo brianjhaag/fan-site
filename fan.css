@@ -192,7 +192,7 @@
   .fan-con > b { font-size: 18px; color: var(--ink); }
   .fan-free { font-size: 19px; line-height: 1; color: var(--accent); }
   .fan-list:has(.fan-yours) { min-height: 100%; grid-template-rows: auto 1fr; }   /* the statement takes what's left of the window */
-  .fan-yours { align-self: center; margin: 0; padding: 4px 12px; font: 700 21px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--accent); text-align: center; text-wrap: balance; }
+  .fan-yours { align-self: end; margin: 0; padding: 4px 12px 10px;   /* at the bottom, leaving the space under the gear for the connector's program details */ font: 700 21px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--accent); text-align: center; text-wrap: balance; }
   .fan-job { align-self: center; padding: 0 12px; }
   .fan-job p { margin: 0; font: 400 15px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
   .fan-wire { align-self: center; padding: 0 1px; font: 400 13px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; text-align: center; color: var(--ink-dim); }
