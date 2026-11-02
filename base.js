@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullNhl, pullStatus, setRefresh } from "./espn.js?v=mvzpo1k8";
-import { BOOK_ICONS, HELMETS, NHL_LOGOS, NHL_TEAMS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzpo1k8";
-import { Calc } from "./calc.js?v=mvzpo1k8";
-import { Fan } from "./hosts.js?v=mvzpo1k8";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullNhl, pullStatus, setRefresh } from "./espn.js?v=mvzps0ie";
+import { BOOK_ICONS, HELMETS, NBA_LOGOS, NHL_LOGOS, NHL_TEAMS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzps0ie";
+import { Calc } from "./calc.js?v=mvzps0ie";
+import { Fan } from "./hosts.js?v=mvzps0ie";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -196,7 +196,7 @@ import { Fan } from "./hosts.js?v=mvzpo1k8";
     return tag;
   }
 
-  const APP_VERSION = "0.34.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.34.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -330,6 +330,7 @@ import { Fan } from "./hosts.js?v=mvzpo1k8";
     TEAMS[name] = [bg, contrast(bg, fg) >= 3 ? fg : contrast(bg, "#ffffff") >= contrast(bg, "#000000") ? "#ffffff" : "#000000"];
     ABBR[name] = code; TEAM_STATE[name] = st; HELMETS[name] = NHL_LOGOS[code];
   });
+  Object.assign(HELMETS, NBA_LOGOS);   // the NBA's logos in the helmet's place, by nickname
   const abbr = n => ABBR[n] || n;
   // Helmet logos for the team badges (the files are kept in helmets/, from the helmet_left set in github.com/ajreinhard/data-viz, scaled to 80px
   // tall), embedded as data URIs like the sportsbook icons. Shown at the left of each team badge on the game cards.

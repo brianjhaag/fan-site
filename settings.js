@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzpo1k8";
-import { Fan } from "./hosts.js?v=mvzpo1k8";
-import { LEAGUES_LATER, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzpo1k8";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzpo1k8";
-import { demoAway, setBet } from "./trade.js?v=mvzpo1k8";
+import { espnState } from "./espn.js?v=mvzps0ie";
+import { Fan } from "./hosts.js?v=mvzps0ie";
+import { LEAGUES_LATER, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzps0ie";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzps0ie";
+import { demoAway, setBet } from "./trade.js?v=mvzps0ie";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
