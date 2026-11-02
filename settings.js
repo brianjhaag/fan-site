@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvznytuy";
-import { Fan } from "./hosts.js?v=mvznytuy";
-import { switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvznytuy";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvznytuy";
-import { demoAway, setBet } from "./trade.js?v=mvznytuy";
+import { espnState } from "./espn.js?v=mvzo9izr";
+import { Fan } from "./hosts.js?v=mvzo9izr";
+import { bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzo9izr";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzo9izr";
+import { demoAway, setBet } from "./trade.js?v=mvzo9izr";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -299,13 +299,24 @@ import { demoAway, setBet } from "./trade.js?v=mvznytuy";
       draw();
       return [box];
     };
+    // Each part card's mockup of an element of the page it brings, named under it, on the user's word (Nov 2 2026). Made-up figures, no game data.
+    const MOCK = { watch: "Game card badge", track: "Wager ticket", price: "Line", bet: "Place button" };
+    const partMock = k => {
+      const m = el("div", "fan-mock"), art = el("div", "fan-mock-art");
+      if (k === "watch") art.append(bdBadge({ away: "Chicago Bears", home: "Seattle Seahawks" }, "home"));
+      else if (k === "track") art.append(el("span", "fan-mock-book", "KAL"), el("span", null, "SEA -3.5"), el("span", "fan-mock-num", "$100"));
+      else if (k === "price") art.append(el("span", null, "-3.5"), el("span", "fan-mock-num", "-110"), el("span", "fan-mock-num", "+150"));
+      else art.append(el("span", "fan-mock-place", "Place"), el("span", "fan-mock-num", "100 @ 52¢"));
+      m.dataset.mock = k; m.append(art, el("small", null, MOCK[k]));
+      return m;
+    };
     const aboutRows = () => {
       const box = el("div", "fan-about"), parts = ABOUT();
       const here = !!Fan.lines && !connectorAway;   // the connector is on this page and answering
       const at = (node, row, col) => { node.style.setProperty("--r", row); node.style.setProperty("--c", col); return node; };
       // Where a status indicator goes. A plain one sits under its own name, so it doesn't repeat it.
       const slot = (name, plain) => { const s = el("div", "fan-slot"); s.dataset.st = name; if (plain) s.dataset.plain = "1"; return s; };
-      const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("span", "fan-cost"), head = el("div", "fan-part-head"); cost.append(el("b", "fan-free", "Free"), needs); head.append(toggle, cost); d.append(head, el("p", null, what)); return at(d, row, 1); };
+      const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("span", "fan-cost"), head = el("div", "fan-part-head"); cost.append(el("b", "fan-free", "Free"), needs); head.append(toggle, cost); d.append(head, el("p", null, what), partMock(k)); return at(d, row, 1); };
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
       const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
       const job = (text, status, row) => { const d = el("div", "fan-job" + (row === 3 ? " first" : "")); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
