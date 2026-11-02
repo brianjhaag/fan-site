@@ -71,7 +71,10 @@
   .col.left.has-sel .ticket { display: none; }
 
   /* ===== Tab strips and the slate line ===== */
-  .tabrows.bottom { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: 0; z-index: 30; }   /* pinned to the viewport bottom */
+  .tabrows.bottom { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: 0; z-index: 30; height: 82px; }   /* pinned to the viewport bottom; two rows, its tabs on the second */
+  /* The rows rule (the user's, Nov 2 2026): buttons go on the top strip's top row and the bottom strip's bottom row. A portrait or narrow layout whose row doesn't fit collapses (base.js fitStripRows): the top strip's right side over its left, the bottom strip's left side over its right. */
+  .tabrows:not(.bottom).collapsed { padding-top: 41px; }
+  .tabrows.bottom.collapsed .strip-left { position: absolute; left: 0; bottom: 100%; max-width: 100%; }
   /* The NHL's page (Nov 2 2026, the user's photos): the rink behind everything, and the tab strips as its boards, red line to kick plate, the bottom one flipped (src/data/images.css). */
   :root[data-league="nhl"] body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), color-mix(in srgb, #1d3f63 40%, var(--bg)); }
   :root[data-league="nhl"] .bg-band { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-rink) center / cover no-repeat; }
@@ -142,6 +145,9 @@
   .refresh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .tabrows.bottom #tab-xy { position: relative !important; left: auto; top: auto; width: auto; height: 41px; padding-inline: 14px; }
   /* the strip's second row: Graphs at the far left; Season stats, Playbook and Ledger at the far right, Ledger in the settings window's plain type */
+  .tabrows.bottom .strip-left { flex: none; display: flex; height: 41px; }   /* Graphs on a week, a section's own buttons on that section */
+  .tabrows.bottom #sectiontabs1 { flex: none; width: auto; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: var(--cell, 200px); }
+  .tabrows.bottom #sectiontabs1:empty { display: none; }
   .tabrows.bottom .weektabs.pagetabs { flex: none; display: flex; width: auto; min-height: 41px; margin: 0 0 0 auto; }
   .tabrows.bottom .pagetabs button { position: relative; width: auto; height: 41px; padding-inline: 14px; }
   .tabrows.bottom .weektabs.ledgertab { flex: none; display: block; width: auto; min-height: 41px; margin: 0; }
@@ -160,7 +166,7 @@
   #fanClose { appearance: none; background: none; border: 0; width: 32px; height: 32px; padding: 0; font: 400 26px/1 Arial, sans-serif; color: var(--ink); cursor: pointer; border-radius: 2px; }
   #fanClose:hover { background: rgb(255 255 255 / .08); }
   :root.pick-long { --pick: 170px; }
-  #leaguePick { position: absolute; right: 0; top: 41px; width: calc(var(--pick, 100px) - 4px); height: 41px; box-sizing: border-box; padding: 0 22px 0 6px; appearance: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2312361b' d='M0 0h12L6 8z'/%3E%3C/svg%3E") no-repeat right 6px center / 12px 8px; border: 0; font: 700 26px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: #12361b; cursor: pointer; }   /* the Fan button's font */
+  #leaguePick { position: relative; flex: none; width: calc(var(--pick, 100px) - 4px); height: 41px; box-sizing: border-box; padding: 0 22px 0 6px; appearance: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2312361b' d='M0 0h12L6 8z'/%3E%3C/svg%3E") no-repeat right 6px center / 12px 8px; border: 0; font: 700 26px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: #12361b; cursor: pointer; }   /* the Fan button's font */
   #leaguePick option { background: var(--paper); color: var(--ink); }
   #leaguePick option:disabled { color: var(--ink-dim); }
   .cfb-list { width: 100%; border-collapse: collapse; font: 400 15px/1.2 var(--font-mono); color: var(--ink); }
@@ -1034,13 +1040,14 @@
   /* ===== Phones ===== */
   :where(.lay-phone) {
     &, & body { height: auto !important; overflow-x: hidden; }
-    .tabrows:not(.bottom) { position: static !important; display: flex; overflow-x: auto; scrollbar-width: none; padding-top: 82px; }   /* Fan and the league picker above one row of tabs */
+    .tabrows:not(.bottom) { position: static !important; display: flex; overflow-x: auto; scrollbar-width: none; padding-top: 41px; }   /* Fan and the league picker above one row of tabs */
     .tabrows:not(.bottom) .weektabs.pinned.wk2 { display: contents; }
     #fanMenu { right: 16px; }
     .tabrows:not(.bottom) .weektabs.pinned.wk2 button { flex: none; width: auto !important; position: relative !important; top: 0; left: auto !important; height: 41px; font-size: 16px; padding-inline: 10px; }
     .tabrows.bottom { position: relative; inset: auto; margin-top: 46px; }   /* the info line rides on its top edge here too, in the room above it (static, it sat above the page's top) */
-    .tabrows.bottom .strip-row2 { overflow-x: auto; scrollbar-width: none; }   /* Graphs, Season stats, Playbook and Ledger scroll sideways when they don't fit */
-    .tabrows.bottom :is(#tab-xy, #tab-season, #tab-playbook, #tab-ledger) { font-size: 16px; padding-inline: 10px; }
+    .tabrows.bottom :is(#tab-xy, #tab-season, #tab-playbook, #tab-ledger, #sectiontabs1 button) { font-size: 16px; padding-inline: 10px; }
+    .tabrows.bottom #sectiontabs1 { grid-auto-columns: auto; }
+    .tabrows.bottom .strip-left { overflow-x: auto; scrollbar-width: none; }   /* a section's buttons scroll sideways when they don't fit their row */
     .garrow { display: none !important; }
     .fan-about { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 6px; }   /* one column, row by row, with no wires: what the connector and the services do hangs indented under each card */
     .fan-about > * { grid-row: auto; grid-column: 1; }

@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvztogen";
-import { BOOK_ICONS } from "./data/assets.js?v=mvztogen";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvztogen";
-import { Calc } from "./calc.js?v=mvztogen";
-import { Fan } from "./hosts.js?v=mvztogen";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzty8fa";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzty8fa";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzty8fa";
+import { Calc } from "./calc.js?v=mvzty8fa";
+import { Fan } from "./hosts.js?v=mvzty8fa";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -205,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvztogen";
     return tag;
   }
 
-  const APP_VERSION = "0.35.10";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.11";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -471,46 +471,55 @@ import { Fan } from "./hosts.js?v=mvztogen";
   function renderSectionTabs() {
     later.syncPlace();   // new slate data can bring the ticket's Kalshi market
     if (view === "xy" && !graphsOK()) { showView("week"); return; }
-    const other = !!SECTIONS[view], rowsEl = [$("sectiontabs1"), $("sectiontabs2")];
+    const other = !!SECTIONS[view], row = $("sectiontabs1");
     document.querySelector(".weektabs.grf").style.display = !other && graphsOK() ? "" : "none";
     if (other) {
       document.querySelector(".bye-box").style.display = "none";
-      rowsEl.forEach((r, i) => {
-        r.style.setProperty("--n", "8");
-        r.replaceChildren(...(i || SECTIONS[view].length < 2 || (!LG().stats && view === "season") ? [] : SECTIONS[view].map(s => {
-          const b = el("button", null, s.h);
-          b.type = "button"; b.draggable = false; b.setAttribute("aria-selected", String(subView[view] === s.k));
-          b.addEventListener("click", () => { subView[view] = s.k; showView(view); });
-          return b;
-        })));
-      });
+      row.style.setProperty("--n", "8");
+      row.replaceChildren(...(SECTIONS[view].length < 2 || (!LG().stats && view === "season") ? [] : SECTIONS[view].map(s => {
+        const b = el("button", null, s.h);
+        b.type = "button"; b.draggable = false; b.setAttribute("aria-selected", String(subView[view] === s.k));
+        b.addEventListener("click", () => { subView[view] = s.k; showView(view); });
+        return b;
+      })));
       sizeTabRows();
       return;
     }
     if (view === "xy") document.querySelector(".bye-box").style.display = "";
-    rowsEl.forEach(r => { r.style.setProperty("--n", "14"); r.replaceChildren(); });   // a week's strip has only Graphs; the 14 keeps its type the size it has always been
+    row.style.setProperty("--n", "14"); row.replaceChildren();   // a week's strip has only Graphs; the 14 keeps its type the size it has always been
     sizeTabRows();
   }
-  // The bottom strip's rows run its full width; their type follows the cell.
+  // The bottom strip's buttons: a section's in cells of an eighth of the strip, Graphs in a fourteenth; their type follows the cell.
   function sizeTabRows() {
-    const w = document.querySelector(".tabrows.bottom").clientWidth, r1 = $("sectiontabs1"), cell = w / Math.max(1, Number(r1.style.getPropertyValue("--n")) || 1);
-    [r1, $("sectiontabs2")].forEach(r => { r.style.width = "100%"; r.style.marginLeft = "0"; r.style.setProperty("--cell", cell + "px"); });
-    document.querySelector(".strip-row2").style.setProperty("--cell", cell + "px");   // Graphs: the same type as the game buttons
+    const w = document.querySelector(".tabrows.bottom").clientWidth, cell = w / Math.max(1, Number($("sectiontabs1").style.getPropertyValue("--n")) || 1);
+    document.querySelector(".strip-row2").style.setProperty("--cell", cell + "px");
     document.querySelector(".pagetabs").style.setProperty("--cell", (w / 14) + "px");   // Season stats and Playbook: a week's Graphs type on every view, so they never change size
+    fitStripRows();
   }
+  // The rows rule (the user's, Nov 2 2026): buttons go on the top strip's top row and the bottom strip's bottom row. In a portrait or narrow layout a strip whose row doesn't fit
+  // collapses: the top strip puts its right side (the league picker and Fan) over its tabs, the bottom strip its left side (Graphs or a section's buttons) over Season stats, Playbook and Ledger.
+  // Measured from what doesn't move when it collapses, so it never flips back and forth.
+  function fitStripRows() {
+    const c = document.documentElement.classList, folds = c.contains("lay-portrait") || c.contains("lay-narrow");
+    const bottom = document.querySelector(".tabrows.bottom"), right = [".pagetabs", ".ledgertab"].reduce((s, q) => s + document.querySelector(q).offsetWidth, 0);
+    bottom.classList.toggle("collapsed", folds && document.querySelector(".strip-left").scrollWidth + right + 26 > bottom.clientWidth);
+    const top = document.querySelector(".tabrows:not(.bottom)");
+    top.classList.toggle("collapsed", folds && document.querySelector(".weektabs.wk2").offsetWidth + $("fanMenu").offsetWidth + 18 > top.clientWidth);
+  }
+  const rowWatch = new ResizeObserver(() => fitStripRows());   // held here, so it keeps watching: the picker's width, the DEMO badge, a section's buttons
+  [$("fanMenu"), document.querySelector(".strip-left"), document.querySelector(".pagetabs"), document.querySelector(".ledgertab")].forEach(e => rowWatch.observe(e));
 
   // The bottom strip stays the width of the screen; its two tab rows run from the left edge of the game cards to the left edge of the right-hand stack (the wager ticket column).
   function fitSectionTabs() {
-    const bottom = document.querySelector(".tabrows.bottom"), g0 = $("games").getBoundingClientRect(), wager = document.querySelector(".col.left");
+    const g0 = $("games").getBoundingClientRect(), wager = document.querySelector(".col.left");
     if (!(g0.width > 0) || !wager) return;
     // The top strip's tabs stay where they are with tracking off, so they're measured against the column as it would be.
     const rootEl = document.documentElement;
     rootEl.classList.remove("tracking-off");
     const wr = wager.getBoundingClientRect();
     rootEl.classList.toggle("tracking-off", !trackingOn);
-    const g = { left: g0.left, width: wr.left - g0.left };
-    const base = bottom.getBoundingClientRect().left;
-    // the two week rows are as wide as the two section tab rows below (the strips themselves stay the width of the screen)
+    const g = { left: g0.left, width: wr.left > g0.left ? wr.left - g0.left : document.querySelector(".tabrows:not(.bottom)").clientWidth };   // a narrow layout puts the stack above the cards: the weeks take the strip's width, and fitStripRows puts Fan over them
+    // the two week rows are as wide as the game cards (the strips themselves stay the width of the screen)
     document.querySelectorAll(".weektabs.wk2").forEach(r => { r.style.width = g.width + "px"; r.style.setProperty("--cell", (g.width / 9) + "px"); });
     sizeTabRows();
   }

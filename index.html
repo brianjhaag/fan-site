@@ -2,8 +2,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Saira+Stencil+One&family=Sofia+Sans+Extra+Condensed:wght@700&family=Sofia+Sans+Condensed:wght@600&family=Doto:wght@800&family=Chivo+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&family=Montserrat:wght@300;400;500;700&family=Archivo+Black&display=swap">
-<link rel="stylesheet" href="data/images.css?v=mvztogen">
-<link rel="stylesheet" href="fan.css?v=mvztogen">
+<link rel="stylesheet" href="data/images.css?v=mvzty8fa">
+<link rel="stylesheet" href="fan.css?v=mvzty8fa">
 
 <main>
   <div class="tabrows">
@@ -29,8 +29,8 @@
       <button type="button" role="tab" id="tab-w17" aria-controls="panel" aria-selected="false" data-week="17">Week 17</button>
     </div>
     <div class="fan-menu" id="fanMenu">
-      <button type="button" id="fanBtn" aria-haspopup="dialog" aria-label="Fan, settings">Fan<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
       <select id="leaguePick" aria-label="League"></select>
+      <button type="button" id="fanBtn" aria-haspopup="dialog" aria-label="Fan, settings">Fan<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
       <dialog class="fan-window" id="fanWindow" aria-labelledby="fanWinTitle">
         <div class="fan-win-head"><h2 id="fanWinTitle">Settings</h2><span id="appName"></span><button type="button" id="fanClose" aria-label="Close">&times;</button></div>
         <div class="fan-tabs" id="fanTabs" role="tablist" aria-label="Settings"></div>
@@ -152,11 +152,12 @@
     <span class="bye-box"><b class="byeLabel" id="byeLabel">Byes:</b><span class="byes" id="byes"></span></span>
     <small id="infoVer"></small>
   </div>
-  <div class="weektabs pinned sectiontabs" id="sectiontabs1" aria-label="Games, first half"></div>
-  <div class="weektabs pinned sectiontabs" id="sectiontabs2" aria-label="Games, second half"></div>
   <div class="strip-row2">
-    <div class="weektabs pinned sectiontabs grf" role="tablist" aria-label="Graphs">
-      <button type="button" role="tab" id="tab-xy" aria-controls="xy" aria-selected="false">Graphs</button>
+    <div class="strip-left">
+      <div class="weektabs pinned sectiontabs grf" role="tablist" aria-label="Graphs">
+        <button type="button" role="tab" id="tab-xy" aria-controls="xy" aria-selected="false">Graphs</button>
+      </div>
+      <div class="weektabs pinned sectiontabs" id="sectiontabs1" aria-label="Section views"></div>
     </div>
     <div class="weektabs pinned sectiontabs pagetabs" role="tablist" aria-label="Season stats and Playbook">
       <button type="button" role="tab" id="tab-season" aria-controls="season" aria-selected="false">Season stats</button>
@@ -168,4 +169,4 @@
   </div></div>
 <div class="bg-band" id="bgBand" aria-hidden="true"></div>
 
-<script type="module" src="start.js?v=mvztogen"></script>
+<script type="module" src="start.js?v=mvzty8fa"></script>
