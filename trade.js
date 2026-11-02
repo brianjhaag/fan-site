@@ -1,8 +1,9 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvzps0ie";
-import { Fan } from "./hosts.js?v=mvzps0ie";
-import { Calc } from "./calc.js?v=mvzps0ie";
-import { nick, changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzps0ie";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvzqqnju";
+import { Fan } from "./hosts.js?v=mvzqqnju";
+import { Calc } from "./calc.js?v=mvzqqnju";
+import { nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzqqnju";
+import { ABBR, slateDocId } from "./leagues.js?v=mvzqqnju";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -52,7 +53,7 @@ import { nick, changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedg
     const patch = freshPrices(g, q, Date.now());
     Object.assign(g, patch);
     changed("lines");
-    if (Fan.lines) Fan.lines.update("slate", slateId(g), patch).catch(() => {});
+    if (Fan.lines) Fan.lines.update("slate", slateDocId(g), patch).catch(() => {});
   }
   async function refreshPrices(ticker, venue) {
     if (!pricesOn() || venue !== "kalshi") return;   // the page's prices are Kalshi's; another venue's fill has its own ladder to read when it gets one

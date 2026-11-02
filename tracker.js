@@ -1,8 +1,8 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { HELMETS } from "./data/assets.js?v=mvzps0ie";
-import { Fan } from "./hosts.js?v=mvzps0ie";
-import { nick, $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvzps0ie";
-import { setPlaybook } from "./panels.js?v=mvzps0ie";
+import { Fan } from "./hosts.js?v=mvzqqnju";
+import { nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvzqqnju";
+import { TEAM, abbr } from "./leagues.js?v=mvzqqnju";
+import { setPlaybook } from "./panels.js?v=mvzqqnju";
   Object.assign(later, { syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))} ${pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };
@@ -645,7 +645,7 @@ import { setPlaybook } from "./panels.js?v=mvzps0ie";
   // Choosing or leaving Kalshi changes how the price is entered (cents instead of American odds).
   let wasKalshi = false;
   // The game picker: a button and a list over the whole wager card; it drives the hidden select and fires its input event, so the form works as before.
-  const helmetImg = n => HELMETS[n] ? helmImg(n, "hl") : null;
+  const helmetImg = n => TEAM[n] && TEAM[n].art ? helmImg(n, "hl") : null;
   function gameFace(g) {   // helmet, abbreviation and the visitor's spread @ helmet and abbreviation
     const f = el("span", "gface"); f.style.display = "inline-flex"; f.style.alignItems = "center"; f.style.gap = "7px";
     [helmetImg(nick(g, "away")), el("span", null, abbr(nick(g, "away"))), el("span", "sp", g.noLine ? "" : pts(g.line.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1))), el("span", "at", "@"), helmetImg(nick(g, "home")), el("span", null, abbr(nick(g, "home")))].forEach(x => x && f.append(x));

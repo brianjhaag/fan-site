@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mvzps0ie";
-import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvzps0ie";
-import { HELMETS } from "./data/assets.js?v=mvzps0ie";
-import { Fan } from "./hosts.js?v=mvzps0ie";
-import { nick, $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, lumOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzps0ie";
+import { riskGrid } from "./risk.js?v=mvzqqnju";
+import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvzqqnju";
+import { Fan } from "./hosts.js?v=mvzqqnju";
+import { nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzqqnju";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mvzqqnju";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -140,7 +140,7 @@ import { nick, $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, cur
   const helmSizes = new Map();
   function helmetBox(n, h) {
     if (!helmSizes.has(n)) {
-      const uri = HELMETS[n] || "", b = atob(uri.slice(uri.indexOf(",") + 1, uri.indexOf(",") + 45));
+      const uri = (TEAM[n] && TEAM[n].art) || "", b = atob(uri.slice(uri.indexOf(",") + 1, uri.indexOf(",") + 45));
       const u32 = o => ((b.charCodeAt(o) << 24) | (b.charCodeAt(o + 1) << 16) | (b.charCodeAt(o + 2) << 8) | b.charCodeAt(o + 3)) >>> 0;
       helmSizes.set(n, uri ? [u32(16), u32(20)] : [104, 80]);
     }
@@ -148,10 +148,10 @@ import { nick, $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, cur
     return { iw, ih, pad, w: (iw - pad) * h / ih };
   }
   function helmetSvg(add, parent, n, x, y, h) {
-    if (!HELMETS[n]) return;
+    if (!(TEAM[n] && TEAM[n].art)) return;
     const { iw, ih, pad, w } = helmetBox(n, h);
     const box = add("svg", { x, y, width: w, height: h, viewBox: `${pad} 0 ${iw - pad} ${ih}`, overflow: "visible" }, null, parent);
-    add("image", { href: HELMETS[n], x: 0, y: 0, width: iw, height: ih }, null, box);
+    add("image", { href: TEAM[n].art, x: 0, y: 0, width: iw, height: ih }, null, box);
     box.style.pointerEvents = "none";
   }
   function renderXY(again = true) {

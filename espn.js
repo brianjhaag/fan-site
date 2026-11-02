@@ -1,7 +1,7 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { NHL_TEAMS } from "./data/assets.js?v=mvzps0ie";
+import { LEAGUE_DEFS, leagueCodes } from "./leagues.js?v=mvzqqnju";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = Date.UTC(2026, 9, 28, 6), NFL_WEEKS = 18;
@@ -48,7 +48,7 @@ const pullWeek = async w => {
   return rows;
 };
 
-const WEEK_GAMES = {}, GAME_ENV = {}, TEAM_INFO = {}, NBA_INFO = {}, nflRows = {};
+const WEEK_GAMES = {}, GAME_ENV = {}, TEAM_INFO = {}, nflRows = {};
 let pullProblem = "", onRefresh = () => {};
 const setRefresh = fn => { onRefresh = fn; };
 const pullStatus = () => pullProblem;
@@ -145,41 +145,18 @@ async function pullTeams() {
   keepPull("teams", out);
 }
 
-// NBA, only once its league is on: a slate is one Eastern day, from the season's start to 16 days ahead. Codes are Kalshi's, because its tickers end in them.
-const NBA_START = Date.UTC(2026, 9, 20), ESPN_TO_KALSHI = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
+// A daily league's games (the NBA, the NHL), only once it's on: one Eastern day a slate, from its season's start to 16 days ahead, each day kept so a finished one is asked for once.
+// Codes are Kalshi's, because its tickers end in them (leagues.js's espnCodes); a game with a team not in the league's table, an exhibition or an All-Star game, is left out. Every network ESPN names, as for the NFL.
 const ymd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
-const nbaCode = x => ESPN_TO_KALSHI[x.abbreviation] || x.abbreviation;
-async function pullNba() {
+async function pullDaily(l) {
+  const def = LEAGUE_DEFS[l], codes = leagueCodes(l), code = x => def.espnCodes[x.abbreviation] || x.abbreviation;
   const rows = [], today = Math.floor(Date.now() / 864e5) * 864e5;
-  for (let d = NBA_START; d <= today + 16 * 864e5; d += 864e5) {
-    const key = "nba" + ymd(d), had = keptPull(key);
+  for (let d = def.start; d <= today + 16 * 864e5; d += 864e5) {
+    const key = l + ymd(d), had = keptPull(key);
     let day = had && (d < today - 864e5 && had.at > d + 2 * 864e5 || Date.now() - had.at < TEAMS_MS) ? had.data : null;
     if (!day) {
       try {
-        day = ((await getJson(`${SITE}/basketball/nba/scoreboard?dates=${ymd(d)}&limit=40`)).events || []).map(e => ({ e, c: e.competitions && e.competitions[0] })).filter(({ c }) => c && c.competitors.every(x => x.team.abbreviation && Number(x.team.id) < 31)).map(({ e, c }) => {
-          const [A, H] = sides(c);
-          return { t: etIso(e.date), a: nbaCode(A.team), h: nbaCode(H.team), an: [A.team.displayName, "#" + A.team.color, "#" + A.team.alternateColor], hn: [H.team.displayName, "#" + H.team.color, "#" + H.team.alternateColor], tv: (c.broadcasts && c.broadcasts[0] && c.broadcasts[0].names && c.broadcasts[0].names[0]) || "" };
-        });
-        keepPull(key, day);
-      } catch (e) { day = had ? had.data : []; }
-    }
-    rows.push(...day);
-  }
-  rows.forEach(r => { NBA_INFO[r.a] = r.an; NBA_INFO[r.h] = r.hn; });
-  return rows;
-}
-const NBA_SCHEDULE = [];   // pulled only once the NBA is turned on (pullNba)
-
-// NHL, the same way, only once its league is on: one Eastern day a slate, from the season's start [C, Oct 6 2026] to 16 days ahead. Codes are Kalshi's (ESPN's, but UTA for Utah); a team not in NHL_TEAMS (an exhibition) is left out.
-const NHL_START = Date.UTC(2026, 9, 6);
-async function pullNhl() {
-  const rows = [], today = Math.floor(Date.now() / 864e5) * 864e5, code = x => (x.abbreviation === "UTAH" ? "UTA" : x.abbreviation);
-  for (let d = NHL_START; d <= today + 16 * 864e5; d += 864e5) {
-    const key = "nhl" + ymd(d), had = keptPull(key);
-    let day = had && (d < today - 864e5 && had.at > d + 2 * 864e5 || Date.now() - had.at < TEAMS_MS) ? had.data : null;
-    if (!day) {
-      try {
-        day = ((await getJson(`${SITE}/hockey/nhl/scoreboard?dates=${ymd(d)}&limit=40`)).events || []).map(e => ({ e, c: e.competitions && e.competitions[0] })).filter(({ c }) => c && c.competitors.every(x => NHL_TEAMS[code(x.team)])).map(({ e, c }) => {
+        day = ((await getJson(`${SITE}/${def.espn}/scoreboard?dates=${ymd(d)}&limit=40`)).events || []).map(e => ({ e, c: e.competitions && e.competitions[0] })).filter(({ c }) => c && c.competitors.every(x => codes.has(code(x.team)))).map(({ e, c }) => {
           const [A, H] = sides(c);
           return { t: etIso(e.date), a: code(A.team), h: code(H.team), tv: (c.broadcasts || []).flatMap(b => b.names || []).join(" / ") };
         });
@@ -201,4 +178,4 @@ async function pullNcaafb() {
   }).filter(g => g.away.rank || g.home.rank).sort((a, b) => a.t.localeCompare(b.t));
   return { asOf: Date.now(), games };
 }
-export { espnState, GAME_ENV, NBA_INFO, NBA_SCHEDULE, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullNba, pullNcaafb, pullNhl, pullStatus, setRefresh, teamSchedule };
+export { espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule };

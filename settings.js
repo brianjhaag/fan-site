@@ -1,9 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzps0ie";
-import { Fan } from "./hosts.js?v=mvzps0ie";
-import { LEAGUES_LATER, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzps0ie";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzps0ie";
-import { demoAway, setBet } from "./trade.js?v=mvzps0ie";
+import { espnState } from "./espn.js?v=mvzqqnju";
+import { Fan } from "./hosts.js?v=mvzqqnju";
+import { WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzqqnju";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mvzqqnju";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzqqnju";
+import { demoAway, setBet } from "./trade.js?v=mvzqqnju";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -248,8 +249,7 @@ import { demoAway, setBet } from "./trade.js?v=mvzps0ie";
     const GEAR = (() => { const teeth = 10, R = 50, r = 41, w = 0.18, corners = []; for (let i = 0; i < teeth; i++) { const a = (i / teeth) * 2 * Math.PI; [[a - w * 1.4, r], [a - w, R], [a + w, R], [a + w * 1.4, r]].forEach(([t, d]) => corners.push(`${(50 + d * Math.cos(t)).toFixed(2)},${(50 + d * Math.sin(t)).toFixed(2)}`)); } return `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill-rule="evenodd" d="M${corners.join("L")}Z M50,34 a16,16 0 1,0 0.01,0 Z"/></svg>`; })();
     const conFrame = here => el("div", "fan-frame" + (here ? "" : " away"));
     const conGear = () => { const g = el("div", "fan-gear"); g.innerHTML = GEAR; return g; };   // outside the box, level with its bottom section
-    // How this user watches: the watching setup the telecast router will read (PLAN.md E). YouTube TV is the only one so far; more come as manifests.
-    const WATCH_SETUPS = [["youtubetv", "YouTube TV"], ["hdhomerun", "HDHomeRun"]];   // HDHomeRun on the user's word (Nov 2 2026): an antenna's channels, played in VLC
+    // How this user watches (base.js's WATCH_SETUPS): the watching setup the telecast router will read (PLAN.md E).
     const networkPick = () => {
       const s = el("select", "fan-pick");
       WATCH_SETUPS.forEach(([v, name]) => { const o = el("option", null, name); o.value = v; s.append(o); });

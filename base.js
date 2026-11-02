@@ -1,8 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullNhl, pullStatus, setRefresh } from "./espn.js?v=mvzps0ie";
-import { BOOK_ICONS, HELMETS, NBA_LOGOS, NHL_LOGOS, NHL_TEAMS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzps0ie";
-import { Calc } from "./calc.js?v=mvzps0ie";
-import { Fan } from "./hosts.js?v=mvzps0ie";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzqqnju";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzqqnju";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzqqnju";
+import { Calc } from "./calc.js?v=mvzqqnju";
+import { Fan } from "./hosts.js?v=mvzqqnju";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -16,20 +17,12 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     panels.forEach(([draw, on]) => { if (on.some(t => topics.includes(t))) { try { draw(); } catch (e) { console.error(e); } } });
   }
   const changed = (...topics) => { topics.forEach(t => dirtyTopics.add(t)); if (!changeQueued) { changeQueued = true; queueMicrotask(() => { if (changeQueued) drawNow(); }); } };
-  // The page shows one week at a time: GAMES and tickets always hold the selected week's games and wagers.
-  // NBA: a slate is one Eastern-time day, its "week" number is that day as yyyymmdd (so tickets and slate docs work as in the NFL: slate/w20261030-DEN-PHX). Codes are Kalshi's.
-  const addNbaGame = ([t, a, h, tv]) => {
-    const day = Number(t.slice(0, 10).replace(/-/g, ""));
-    (WEEK_GAMES[day] = WEEK_GAMES[day] || []).push({ t, away: NBA_INFO[a][0], home: NBA_INFO[h][0], tv, league: "nba", noLine: true, line: { sp: 0, spj: [-110, -110], tot: 220, toj: [-110, -110], ml: [-110, -110] } });
-    return day;
-  };
-  NBA_SCHEDULE.forEach(addNbaGame);
-  // NHL: one Eastern-time day too, numbered 100000000 plus the day (120261102), so it never shares a tab, a ticket's week or a slate document with an NBA day. Its slate documents are nhl20261102-AWAY-HOME, as the connector writes them. Teams go by full name (nick in calc.js).
-  const NHL_BASE = 1e8;
-  const addNhlGame = ([t, a, h, tv]) => {
-    const day = NHL_BASE + Number(t.slice(0, 10).replace(/-/g, ""));
-    (WEEK_GAMES[day] = WEEK_GAMES[day] || []).push({ t, away: NHL_TEAMS[a][0], home: NHL_TEAMS[h][0], tv, league: "nhl", noLine: true, line: { sp: 0, spj: [-110, -110], tot: 6, toj: [-110, -110], ml: [-110, -110] } });
-    return day;
+  // The page shows one slate at a time, a week or a day: GAMES and tickets always hold the selected slate's games and wagers.
+  // A daily league's game (the NBA, the NHL), from its pull: on its day's slate (leagues.js numbers them), with a neutral line until its own prices come.
+  const addDailyGame = (l, { t, a, h, tv }) => {
+    const w = slateOfDay(l, Number(t.slice(0, 10).replace(/-/g, ""))), g = { t, away: teamName(l, a), home: teamName(l, h), tv, league: l, noLine: true, line: { sp: 0, spj: [-110, -110], tot: LEAGUE_DEFS[l].neutralTotal, toj: [-110, -110], ml: [-110, -110] }, week: w };
+    (WEEK_GAMES[w] = WEEK_GAMES[w] || []).push(g);
+    return g;
   };
   Object.entries(WEEK_GAMES).forEach(([w, list]) => list.forEach(g => { g.week = Number(w); }));
   // The page was called Bet until Oct 31 2026: a browser's settings under the old name carry over once.
@@ -37,7 +30,6 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
   let league = "nfl";   // the league on screen, chosen with the league picker
   const LG = () => Calc.RULES.leagues[league];
   const nbaDay = (add = 0) => Number(new Date(Date.now() + add * 864e5).toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, ""));
-  const slateDay = (l, add = 0) => (l === "nhl" ? NHL_BASE : 0) + nbaDay(add);   // a daily league's slate number for a day
   // The Risk detail icon FILTERS the totals and the saved tickets to that game and draws its graph over the wager ticket.
   let riskGame = null;
   const setRiskGame = g => { riskGame = g; changed("selection"); };
@@ -52,7 +44,6 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
   // The top strip's tabs other than the weeks, and the bottom strip's buttons for each; an entry with `stub` is a placeholder saying what it will show. A section with one view has no bottom buttons. A new section or view is one entry here.
   const SECTIONS = {
     playbook: [{ k: "main", h: "Trends" }],
-    mlb: [{ k: "main", h: "MLB", stub: "Not built yet." }],
     ncaafb: [{ k: "main", h: "NCAA FB", stub: "Not built yet." }],
     season: [{ k: "margins", h: "Margins" },
       { k: "keys", h: "Key numbers", stub: "How often games land on 3, 7, 10 and the other key numbers this season, against the long-run shares." },
@@ -62,7 +53,7 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
       { k: "open", h: "Open bets", stub: "Every bet still undecided, across all weeks and books." },
       { k: "check", h: "Kalshi check" }]
   };
-  const subView = { season: "margins", ledger: "balances", playbook: "main", mlb: "main", ncaafb: "main" };
+  const subView = { season: "margins", ledger: "balances", playbook: "main", ncaafb: "main" };
   // NCAA FB isn't a full league yet: today's games involving a top 25 team, this browser's own read of ESPN, as a read-only list.
   async function drawNcaafb() {
     const box = $("ncaafb");
@@ -109,32 +100,41 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     telecastPref = p;
     try { if (p) localStorage.setItem("fan.telecast", JSON.stringify(p)); else localStorage.removeItem("fan.telecast"); } catch (e) {}
   }
-  // How this browser's user watches (the Application tab's Networks box): YouTube TV, or an HDHomeRun on their network, with the channel each broadcast network is on there. Kept per browser.
+  // How this browser's user watches (the Application tab's Networks box): YouTube TV, with a link pasted per network, or an HDHomeRun on their network, with the channel each broadcast network is on there. Kept per browser.
+  const WATCH_SETUPS = [["youtubetv", "YouTube TV"], ["hdhomerun", "HDHomeRun"]];   // HDHomeRun on the user's word (Nov 2 2026): an antenna's channels, played in VLC
   const BROADCAST = ["CBS", "Fox", "NBC", "ABC", "CW"];   // the networks an antenna gets
   let watchSetup = "youtubetv", hdhr = { ip: "", channels: {} };
   try { watchSetup = localStorage.getItem("fan.watchSetup") || "youtubetv"; const v = JSON.parse(localStorage.getItem("fan.hdhomerun")); if (v && typeof v === "object") hdhr = { ip: String(v.ip || ""), channels: v.channels && typeof v.channels === "object" ? v.channels : {} }; } catch (e) {}
   function setWatchSetup(s) { watchSetup = s; try { localStorage.setItem("fan.watchSetup", s); } catch (e) {} changed("cards"); }
   function setHdhr(patch) { hdhr = { ...hdhr, ...patch }; try { localStorage.setItem("fan.hdhomerun", JSON.stringify(hdhr)); } catch (e) {} changed("cards"); }
-  // A game's HDHomeRun channel: the first of its networks with a channel set, when that's how the user watches. hdhrPick says which network it is.
-  // An antenna's networks for a game: ESPN's Monday night games are on ABC too, which ESPN's data leaves out [U, Nov 2 2026].
+  // A game's networks: ESPN's list ("ESPN / ABC" is two), plus what ESPN's data leaves out, one rule a line: [when, has, add].
   const isMonday = g => new Date(g.t).toLocaleDateString("en-US", { weekday: "short", timeZone: "America/New_York" }) === "Mon";
-  const antennaNets = g => { const nets = String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean); return nets.includes("ESPN") && !nets.includes("ABC") && isMonday(g) ? [...nets, "ABC"] : nets; };
-  const hdhrPick = g => (watchSetup === "hdhomerun" && hdhr.ip ? antennaNets(g).find(n => hdhr.channels[n]) : null) || null;
-  const hdhrChannel = g => { const n = hdhrPick(g); return n ? hdhr.channels[n] : null; };
+  const NETWORK_RULES = [[isMonday, "ESPN", "ABC"]];   // ESPN's Monday night games are on ABC too [U, Nov 2 2026]
+  const gameNetworks = g => { const nets = String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean); NETWORK_RULES.forEach(([when, has, add]) => { if (nets.includes(has) && !nets.includes(add) && when(g)) nets.push(add); }); return nets; };
+  // What a game's Live telecast button does, so also whether it's lit: one decision for both. An HDHomeRun channel for one of its networks, when that's how the user watches;
+  // else a pasted https link for one of them; else null.
+  function telecastFor(g) {
+    const nets = gameNetworks(g), ch = watchSetup === "hdhomerun" && hdhr.ip ? nets.find(n => hdhr.channels[n]) : null;
+    if (ch) return { how: "hdhr", network: ch, channel: hdhr.channels[ch] };
+    const ln = nets.find(n => /^https:\/\//i.test(networkLinks[n] || ""));
+    return ln ? { how: "link", network: ln, url: networkLinks[ln] } : null;
+  }
   // A word at the bottom of the screen for a few seconds, for what a press couldn't do.
   function toast(text) { let t = document.querySelector(".fan-toast"); if (!t) { t = el("div", "fan-toast"); document.body.append(t); } t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 7000); }
-  // A game's telecast button: its HDHomeRun channel, tuned in VLC when that's installed, or else which channel to pick in the HDHomeRun app (which has no documented way to be opened on a channel). Otherwise its network link.
+  // Pressed: the HDHomeRun channel, tuned in VLC when that's installed, or else which channel to pick in the HDHomeRun app (which has no documented way to be opened on a channel);
+  // or the network's link. NCAA FB's list, always on, opens YouTube TV's site when nothing is set.
   function watchGame(g) {
-    const n = hdhrPick(g), ch = n && hdhr.channels[n], say = `${n} is ${ch} on your HDHomeRun: open it in the HDHomeRun app`;
-    if (ch && !Fan.playHdhr) { toast(say); return; }
-    if (ch) { Fan.playHdhr(hdhr.ip, ch).then(r => { if (!r.ok) toast(/VLC isn't installed/.test(r.error) ? say : "HDHomeRun: " + r.error); }, () => toast(say)); return; }
-    Fan.openTelecast(telecastLink(g), telecastPref);
+    const d = telecastFor(g);
+    if (d && d.how === "hdhr") {
+      const say = `${d.network} is ${d.channel} on your HDHomeRun: open it in the HDHomeRun app`;
+      if (!Fan.playHdhr) { toast(say); return; }
+      Fan.playHdhr(hdhr.ip, d.channel).then(r => { if (!r.ok) toast(/VLC isn't installed/.test(r.error) ? say : "HDHomeRun: " + r.error); }, () => toast(say));
+      return;
+    }
+    Fan.openTelecast(d ? d.url : "https://tv.youtube.com/", telecastPref);
   }
-  // Where a game's Live telecast button goes: the first of its networks with a pasted https link ("ESPN / ABC" is two), or else YouTube TV's site.
-  const pastedLink = g => String(g.tv || "").split("/").map(n => networkLinks[n.trim()]).find(u => /^https:\/\//i.test(u || ""));
-  const telecastLink = g => pastedLink(g) || "https://tv.youtube.com/";
-  const LEAGUES = ["mlb"];   // the league picker's leagues that are still stubs. NCAA FB's list (drawNcaafb) is off, on the user's word: adding "ncaafb" here and to LEAGUE_ORDER brings it back
-  const leagueNames = () => ({ ...Object.fromEntries(Object.entries(Calc.RULES.leagues).map(([k, r]) => [k, r.code])), ...Object.fromEntries(LEAGUES.map(k => [k, SECTIONS[k][0].h])) });
+  const LEAGUES = [];   // the league picker's leagues that are stubs: none now. NCAA FB's list (drawNcaafb) is off, on the user's word: adding "ncaafb" here and to leagues.js brings it back
+  const leagueNames = () => Object.fromEntries(LEAGUE_ORDER.map(k => [k, LEAGUE_DEFS[k].name]));
   // The games the Graphs panel plots: those of the selected week still to kick off.
   const graphGames = () => GAMES.filter(g => !g.final && status(g)[0] === "Upcoming");
   const ALL_GAMES = Object.keys(WEEK_GAMES).map(Number).sort((p, q) => p - q).flatMap(w => WEEK_GAMES[w]);
@@ -144,26 +144,13 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
   const { status, settleOf, vigOf, projectedPL, deadFor, shareRisk, shareTerm, extremes, hedgeFor, readTicker, kalshiCheck, ledgerRows } = calc;
   // These take the selected week's tickets.
   const gameBets = g => calc.gameBets(g, tickets), parlayShares = g => calc.parlayShares(g, tickets), spentShares = g => calc.spentShares(g, tickets), gameSettledPL = g => calc.gameSettledPL(g, tickets);
-  // Team colors, read from the team table: [background, text]. A team on a black background gets an outline in its text color.
-  const TEAMS = {
-    Cardinals: ["#FF0000", "#FFFFFF"], Falcons: ["#000000", "#CC4125"], Ravens: ["#000000", "#FFFFFF"], Bills: ["#FFFFFF", "#1155CC"],
-    Panthers: ["#1155CC", "#F3F3F3"], Bears: ["#073763", "#B45F06"], Bengals: ["#E69138", "#000000"], Browns: ["#B45F06", "#000000"],
-    Cowboys: ["#1C4587", "#EFEFEF"], Broncos: ["#0000FF", "#E69138"], Lions: ["#1155CC", "#F3F3F3"], Packers: ["#FFFF00", "#274E13"],
-    Texans: ["#FF0000", "#0B5394"], Colts: ["#FFFFFF", "#1C4587"], Jaguars: ["#000000", "#76A5AF"], Chiefs: ["#A61C00", "#FFFFFF"],
-    Chargers: ["#6D9EEB", "#FFE599"], Rams: ["#0000FF", "#FFFF00"], Raiders: ["#000000", "#FFFFFF"], Dolphins: ["#A2C4C9", "#B45F06"],
-    Vikings: ["#351C75", "#FFFF00"], Patriots: ["#CC0000", "#FFFFFF"], Saints: ["#F1C232", "#000000"], Giants: ["#073763", "#FFFFFF"],
-    Jets: ["#274E13", "#FFFFFF"], Eagles: ["#38761D", "#D9D9D9"], Steelers: ["#000000", "#FFFF00"], Seahawks: ["#00FFFF", "#0B5394"],
-    "49ers": ["#FF0000", "#FFD966"], Buccaneers: ["#B7B7B7", "#CC4125"], Titans: ["#3D85C6", "#20124D"], Commanders: ["#FF0000", "#FFFF00"]
-  };
-  const NFL_TEAMS = Object.keys(TEAMS);
-  Object.values(NBA_INFO).forEach(([name, bg, fg]) => { TEAMS[name.split(" ").pop()] = [bg, fg]; });
+  // A team's colors, from leagues.js's table: background, text, and an outline in its text color on a black background.
   function teamLook(g, side) {
-    const [bg, fg] = TEAMS[nick(g, side)];
+    const { bg, fg } = teamOf(g, side);
     return { bg, fg, outline: bg === "#000000" ? fg : null };
   }
   // The brighter of a team's two colors (by relative luminance): used for its moneyline value on the game cards.
-  const lumOf = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)); return .2126 * r + .7152 * g + .0722 * b; };
-  const brighterOf = (g, side) => { const [a, b] = TEAMS[nick(g, side)]; return lumOf(a) >= lumOf(b) ? a : b; };
+  const brighterOf = (g, side) => { const { bg, fg } = teamOf(g, side); return lumOf(bg) >= lumOf(fg) ? bg : fg; };
   // A team name as a chip in the team's colors.
   function teamChip(g, side, text, cls) {
     const k = teamLook(g, side), c = el("span", "tchip" + (cls ? " " + cls : ""), text);
@@ -178,7 +165,7 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     const [r_, g_, b_] = [1, 3, 5].map(i => { const v = parseInt(look.bg.slice(i, i + 2), 16); return Math.round(v + (255 - v) * .33); }), paper = [26, 31, 38];
     badge.style.background = `rgb(${Math.round((r_ + paper[0]) / 2)} ${Math.round((g_ + paper[1]) / 2)} ${Math.round((b_ + paper[2]) / 2)})`;
     badge.style.color = look.fg;
-    if (HELMETS[nk]) badge.append(helmImg(nk, "bd-bhelm"));
+    if (hasArt(nk)) badge.append(helmImg(nk, "bd-bhelm"));
     badge.append(el("span", "bd-bname", label || last(g[side]).toUpperCase()));
     return badge;
   }
@@ -196,7 +183,7 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     return tag;
   }
 
-  const APP_VERSION = "0.34.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -228,13 +215,10 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
   const marketWanted = () => pricesWanted;
   const pricesOn = () => marketWanted() && !!Fan.lines;
   document.documentElement.classList.toggle("prices-off", !trackingOn || !pricesWanted);   // until the sockets answer: a plain page never flashes the price columns
-  // A league's checkbox in the settings window is the same kind of yes or no: off, the page and the refreshes do nothing for it. NFL is on until the user says otherwise. At least one stays on.
-  const LEAGUE_ORDER = ["nfl", "nba", "nhl", "mlb"];
+  // A league's checkbox in the settings window is the same kind of yes or no: off, the page and the refreshes do nothing for it. NFL is on until the user says otherwise (leagues.js says which can be). At least one stays on.
   let leaguesOn = new Set(["nfl"]);
-  // On the user's word (Nov 2 2026): a first visit has the NFL only; the NBA and NHL can be turned on, and stay as the user left them. MLB waits for next year: struck through in the Leagues tab, not in the league picker.
-  const LEAGUES_READY = ["nfl", "nba", "nhl"], LEAGUES_LATER = ["mlb"];
-  // Which league a ticket belongs to, from its week: an NBA day is yyyymmdd, an NHL day 100000000 more, week 0 is a market in no league.
-  const ticketLeagueOn = t => { const w = weekOf(t); return !w || leaguesOn.has(w > NHL_BASE ? "nhl" : w > 1e7 ? "nba" : "nfl"); };
+  // Which league a ticket belongs to, from its week (leagues.js); week 0 is a market in no league.
+  const ticketLeagueOn = t => { const w = weekOf(t); return !w || leaguesOn.has(leagueOfSlate(w)); };
   const weekTickets = () => (trackingOn ? allTickets.filter(t => weekOf(t) === curWeek) : []);
   // A ticket finds its game by kickoff and teams. The schedule is live, so a moved kickoff has to find it again by the teams and a nearby date. This changes the copy on the page; the saved ticket stays as it was until something else saves it.
   const rekey = k => {
@@ -247,8 +231,7 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
   // Puts a week's games and wagers in view, with nothing redrawn.
   const selectSlate = w => { curWeek = w; GAMES = WEEK_GAMES[w] || (WEEK_GAMES[w] = []); setTickets(allTickets); };
   // The slate (lines and final scores) comes through Fan.lines, one document per game plus "meta". The page follows it, so new lines and scores show as soon as they're saved.
-    const slateId = g => `${leagueId(g) === "nhl" ? "nhl" + (g.week - NHL_BASE) : "w" + g.week}-${ABBR[nick(g, "away")]}-${ABBR[nick(g, "home")]}`;
-  const metaId = w => w === 7 ? "meta" : w > NHL_BASE ? "metanhl" + (w - NHL_BASE) : "meta" + w;   // Week 7's note document predates the tabs
+  // Their ids: leagues.js's slateDocId and metaDocId.
   let slateDocs = [];
   // A problem at the connector takes the note's place until it clears: a stopped line refresh, or no answer at all.
   let noteText = "", hostProblem = "";
@@ -286,8 +269,8 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     let meta = null;
     slateDocs.forEach(d => {
       const v = d.data() || {};
-      if (d.id === metaId(curWeek)) { if (pricesOn()) meta = v; return; }
-      const g = ALL_GAMES.find(x => slateId(x) === d.id);
+      if (d.id === metaDocId(curWeek)) { if (pricesOn()) meta = v; return; }
+      const g = ALL_GAMES.find(x => slateDocId(x) === d.id);
       if (!g) return;
       if (Array.isArray(v.final)) g.final = v.final; else if (v.final === null) delete g.final;
       if (!pricesOn()) return;
@@ -317,35 +300,17 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     return n;
   }
 
-  const ABBR = {
-    Patriots: "NE", Bears: "CHI", Steelers: "PIT", Saints: "NO", Bengals: "CIN", Ravens: "BAL", Browns: "CLE", Titans: "TEN",
-    Colts: "IND", Vikings: "MIN", Dolphins: "MIA", Jets: "NYJ", Giants: "NYG", Texans: "HOU", "49ers": "SF", Falcons: "ATL",
-    Buccaneers: "TB", Panthers: "CAR", Broncos: "DEN", Cardinals: "ARI", Packers: "GB", Lions: "DET", Rams: "LAR", Raiders: "LV",
-    Chiefs: "KC", Seahawks: "SEA", Cowboys: "DAL", Eagles: "PHI", Bills: "BUF", Jaguars: "JAX", Chargers: "LAC", Commanders: "WSH"
-  };
-  Object.entries(NBA_INFO).forEach(([code, [name]]) => { ABBR[last(name)] = code; });
-  // The NHL's teams by full name: colors, codes, home states, and the logo in the helmet's place. A second color too close to the first gives way to white or black, whichever reads better [C].
-  const contrast = (a, b) => { const [x, y] = [lumOf(a), lumOf(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
-  Object.entries(NHL_TEAMS).forEach(([code, [name, st, bg, fg]]) => {
-    TEAMS[name] = [bg, contrast(bg, fg) >= 3 ? fg : contrast(bg, "#ffffff") >= contrast(bg, "#000000") ? "#ffffff" : "#000000"];
-    ABBR[name] = code; TEAM_STATE[name] = st; HELMETS[name] = NHL_LOGOS[code];
-  });
-  Object.assign(HELMETS, NBA_LOGOS);   // the NBA's logos in the helmet's place, by nickname
-  const abbr = n => ABBR[n] || n;
-  // Helmet logos for the team badges (the files are kept in helmets/, from the helmet_left set in github.com/ajreinhard/data-viz, scaled to 80px
-  // tall), embedded as data URIs like the sportsbook icons. Shown at the left of each team badge on the game cards.
 
   // The prices the card shows: the live in-game prices while a game is under way and some have been saved, else the saved pre-game line.
   const lineOf = g => (g.live && status(g)[1] === "live") ? g.live : g.line;
 
-  // Some helmet images carry transparent padding on their left (measured from the alpha channel, % of the image width), so the left edge is trimmed
-  // off (object-view-box) and every helmet starts at its own left edge.
-  const HELM_PAD = { Cardinals: 9.565, Rams: 9.565, Seahawks: 9.565, Lions: 1.887, Titans: .952, Buccaneers: .962, Chiefs: .962, Commanders: .971, Falcons: .962 };
+  // A team's helmet or logo, by its key, for the left of its badge. A helmet with transparent padding on its left is trimmed (leagues.js's HELM_PAD).
   function helmImg(n, cls) {
-    const img = el("img", cls); img.src = HELMETS[n]; img.alt = ""; img.draggable = false;
+    const img = el("img", cls); img.src = TEAM[n].art; img.alt = ""; img.draggable = false;
     if (HELM_PAD[n]) img.style.objectViewBox = `inset(0 0 0 ${HELM_PAD[n]}%)`;
     return img;
   }
+  const hasArt = n => !!(TEAM[n] && TEAM[n].art);
 
   // The game card's gutter: one button per thing a game can open, always all five. Game preview, Live telecast before a game ends and, with tracking on, Risk detail work; the rest are dim. Which are dim when is Claude's guess, for now.
   const CARD_ACTIONS = [
@@ -362,7 +327,7 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
     const st = status(g)[1];
     CARD_ACTIONS.forEach(([name, icon]) => {
-      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && (!!pastedLink(g) || !!hdhrChannel(g)) : name === "Tape" ? st === "final" && leagueOf(g).code === "NFL" : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
+      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!telecastFor(g) : name === "Tape" ? st === "final" && leagueOf(g).code === "NFL" : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
@@ -383,7 +348,7 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
       chip.classList.add("plate");
       chip.style.backgroundColor = k.bg; chip.style.borderColor = k.fg;
       const code = el("b", "pl-no", abbr(nk)), box = el("span", "tn-txt");
-      const state = PLATE_STATES[TEAM_STATE[nk]] || "";
+      const state = PLATE_STATES[TEAM[nk] && TEAM[nk].state] || "";
       box.append(el("small", "pl-st" + (state.length > 11 ? " long" : ""), state), code);
       const old = chip.querySelector(".tn-txt");
       if (old) old.replaceWith(box); else chip.replaceChildren(box);
@@ -406,7 +371,7 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     const name = el("td", "tn");
     const chip = teamChip(g, side, leagueOf(g).codeChips ? abbr(nick(g, side)) : nick(g, side), "tname");
     chip.style.borderColor = "transparent";   // no outline on black badges here (the other views keep it)
-    if (HELMETS[nick(g, side)]) {   // the helmet sits at the left of the badge
+    if (hasArt(nick(g, side))) {   // the helmet or logo sits at the left of the badge
       const img = helmImg(nick(g, side), "helm");
       chip.replaceChildren(img, el("span", "tn-txt", abbr(nick(g, side)))); chip.classList.add("has-helm");
     }
@@ -785,15 +750,15 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
   // The teams not playing this week: every team in the color table that is on no game of the selected week.
   function renderByes() {
     const playing = new Set(GAMES.flatMap(g => [nick(g, "away"), nick(g, "home")]));
-    const off = LG().byes ? NFL_TEAMS.filter(t => !playing.has(t)).sort() : [];   // the NBA has no byes
+    const off = LG().byes ? NFL_NICKS.filter(t => !playing.has(t)).sort() : [];   // only the NFL has byes
     const box = $("byes");
     box.replaceChildren();
     $("byeLabel").hidden = !off.length;
     box.append(...off.map(t => {
       // a team chip like the Graphs badges: team colors, abbreviation, helmet overhanging at the left
-      const [bg, fg] = TEAMS[t] || ["#444", "#fff"], c = el("span", "bye-chip");
+      const { bg, fg } = TEAM[t], c = el("span", "bye-chip");
       c.style.background = bg; c.style.color = fg; c.title = t;
-      if (HELMETS[t]) c.append(helmImg(t, "bye-helm"));
+      if (hasArt(t)) c.append(helmImg(t, "bye-helm"));
       c.append(el("span", null, abbr(t)));
       return c;
     }));
@@ -805,7 +770,7 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
   riskByWeek[7] = riskKey;
   // Graphs is for the current week and the next, while every game still to kick off has a line and at least one is left.
   const nflWeek = () => Math.max(1, Math.min(17, 8 + Math.floor((Date.now() - new Date(2026, 9, 28).getTime()) / 604800000)));
-  const weekNow = () => (LG().daily ? slateDay(league) : nflWeek());   // the current slate of the league on screen
+  const weekNow = () => (LG().daily ? slateOfDay(league, nbaDay()) : nflWeek());   // the current slate of the league on screen
   function graphsOK() {
     if (!LG().graphs || (curWeek !== weekNow() && curWeek !== weekNow() + 1)) return false;   // the graphs are built on the NFL's margins
     const open = graphGames();
@@ -831,14 +796,14 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     tabs.forEach((b, i) => {
       if (!Calc.RULES.leagues[l].daily) { b.dataset.week = String(i + 1); b.textContent = "Week " + (i + 1); return; }
       const d = new Date(Date.now() + (i - 1) * 864e5);
-      b.dataset.week = String(slateDay(l, i - 1));
+      b.dataset.week = String(slateOfDay(l, nbaDay(i - 1)));
       b.textContent = d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
     });
     detailGame = null;
     switchWeek(weekNow());
     renderByes();
   }
-  // The league picker under Fan lists every league, with the ones that are off dimmed and not choosable: NFL and NBA are full panels; the other leagues are stubs for now.
+  // The league picker under Fan lists every league but those waiting for next year, with the ones that are off dimmed and not choosable.
   function syncLeaguePick() {
     const pick = $("leaguePick"), names = leagueNames();
     pick.replaceChildren(...LEAGUE_ORDER.filter(k => !LEAGUES_LATER.includes(k)).map(k => { const o = el("option", null, names[k]); o.value = k; o.disabled = !leaguesOn.has(k); return o; }));
@@ -862,14 +827,8 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     else { detailGame = null; switchWeek(weekNow()); }
   }
   async function setLeagueOn(k, on) {
-    if (on && k === "nhl" && !ALL_GAMES.some(g => g.league === "nhl")) {   // the same for the NHL
-      (await pullNhl()).forEach(r => { const day = addNhlGame([r.t, r.a, r.h, r.tv]), g = WEEK_GAMES[day][WEEK_GAMES[day].length - 1]; g.week = day; ALL_GAMES.push(g); SCHEDULE_LINES.set(g, { line: g.line, noLine: g.noLine }); });
-    }
-    if (on && k === "nba" && !ALL_GAMES.some(g => g.league === "nba")) {   // its games are pulled only once it's on
-      (await pullNba()).forEach(r => {
-        const day = addNbaGame([r.t, r.a, r.h, r.tv]), g = WEEK_GAMES[day][WEEK_GAMES[day].length - 1];
-        g.week = day; ALL_GAMES.push(g); SCHEDULE_LINES.set(g, { line: g.line, noLine: g.noLine }); TEAMS[nick(g, "away")] = [r.an[1], r.an[2]]; TEAMS[nick(g, "home")] = [r.hn[1], r.hn[2]]; ABBR[nick(g, "away")] = r.a; ABBR[nick(g, "home")] = r.h;
-      });
+    if (on && LEAGUE_DEFS[k].slate === "day" && !ALL_GAMES.some(g => g.league === k)) {   // a daily league's games are pulled only once it's on
+      (await pullDaily(k)).forEach(r => { const g = addDailyGame(k, r); ALL_GAMES.push(g); SCHEDULE_LINES.set(g, { line: g.line, noLine: g.noLine }); });
     }
     if (on) leaguesOn.add(k); else if (leaguesOn.size > 1) leaguesOn.delete(k);
     try { localStorage.setItem("fan.leagues", JSON.stringify([...leaguesOn])); } catch (e) {}
@@ -894,9 +853,9 @@ import { Fan } from "./hosts.js?v=mvzps0ie";
     riskKey = riskByWeek[w] || "";
     selectSlate(w);
     $("panel").setAttribute("aria-labelledby", "tab-w" + w);
-    $("slateTitle").textContent = LG().daily ? LG().code + " " + new Date(Date.UTC(Math.floor(w % 1e8 / 1e4), Math.floor(w % 1e4 / 100) - 1, w % 100, 12)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }) : "Week " + w; renderByes();
+    $("slateTitle").textContent = slateTitleOf(w); renderByes();
     later.weekChanged();
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { LEAGUES_LATER, nick, BROADCAST, hdhr, hdhrChannel, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ABBR, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, HELM_PAD, LEAGUES_READY, LG, NETWORKS, RULES, TELECAST_LAYOUTS, abbr, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, lumOf, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, telecastLink, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, slateId, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+export { WATCH_SETUPS, nick, telecastFor, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };

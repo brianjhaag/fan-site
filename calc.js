@@ -12,12 +12,13 @@ const Calc = (() => {
   };
   // One entry per league: a new league is mostly a new entry. sigma and totalSd size the models (the NBA's are estimates, not fitted); keyNumbers: final margins bunch on key numbers;
   // maxMargin: the widest final margin to consider; ties: a game can end level; daily: a slate is one day, not a week; codeChips: team chips show the code, not the nickname;
-  // graphMinMargin: the P/L graph's narrowest margin axis (0 = its default); byes, graphs, stats, gameDetails: what the league has built.
+  // graphMinMargin: the P/L graph's narrowest margin axis (0 = its default); byes, graphs, stats, gameDetails: what the league has built;
+  // fullNames: its teams are keyed by full name, not nickname, because its nicknames meet another league's (the NHL's Panthers, Jets and Kings).
   RULES.leagues = {
-    nfl: { code: "NFL", sigma: 12.25, totalSd: 9, keyNumbers: true, maxMargin: 60, ties: true, liveHours: 3.5, daily: false, codeChips: false, graphMinMargin: 0, byes: true, graphs: true, stats: true, gameDetails: true },
-    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: false },
+    nfl: { code: "NFL", sigma: 12.25, totalSd: 9, keyNumbers: true, maxMargin: 60, ties: true, liveHours: 3.5, daily: false, codeChips: false, graphMinMargin: 0, byes: true, graphs: true, stats: true, gameDetails: true, fullNames: false },
+    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: false, fullNames: false },
     // The NHL's sigma and totalSd are Claude's estimates (goal margins and totals both run about 2.4 goals each way), not fitted; overtime decides every game, so no ties.
-    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: false }
+    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: false, fullNames: true }
   };
   RULES.hedge = { LIFT: RULES.defaults.lift, CAPITAL: RULES.userSet.capital };
   const D = RULES.defaults;
@@ -26,8 +27,8 @@ const Calc = (() => {
 
   /* ==== Names and prices ==== */
   const last = n => n.split(" ").pop();
-  // A team's name as the tables key it: its nickname, or for the NHL, whose nicknames meet the NFL's and NBA's (Panthers, Jets, Kings), its full name.
-  const nick = (g, side) => leagueId(g) === "nhl" ? g[side] : last(g[side]);
+  // A team's name as the tables key it (leagues.js's TEAM): its nickname, or its full name in a league with fullNames.
+  const nick = (g, side) => leagueOf(g).fullNames ? g[side] : last(g[side]);
   const gameLabel = g => `${nick(g, "away")} at ${nick(g, "home")}`;
   const gameKey = g => g.t + "|" + gameLabel(g);
   // A market at 100¢ has no American odds: its price is infinite, and it reaches here as that or, after being saved, as nothing.
