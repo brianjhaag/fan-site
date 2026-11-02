@@ -154,7 +154,7 @@
   .tabrows.bottom #tab-ledger { position: relative; width: auto; height: 41px; padding-inline: 14px; font: 600 20px/1.1 "Source Sans 3", "Segoe UI", system-ui, sans-serif; letter-spacing: .04em; }
   .tabrows.bottom .strip-row2 { position: absolute; left: 0; right: 0; top: 41px; height: 41px; display: flex; align-items: center; gap: 8px; padding-right: 10px; box-sizing: border-box; z-index: 2; }
   .fan-menu { position: absolute; right: 10px; top: 0; height: 41px; display: flex; align-items: center; z-index: 40; }   /* the top strip's upper right */
-  #fanBtn { appearance: none; background: none; border: 0; padding: 0 6px; display: flex; align-items: center; gap: 6px; font: 700 26px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: #12361b; cursor: pointer; }   /* the wager ticket's type */
+  #fanBtn { appearance: none; background: none; border: 0; padding: 0 6px; display: flex; align-items: center; gap: 6px; font: italic 900 26px/1 "Saira", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-stretch: 125%; color: #12361b; cursor: pointer; }   /* ESPN-like, on the user's word: Saira's black italic at its widest */
   .fan-window { position: fixed; inset: 90px auto auto 8px; margin: 0; width: calc(100vw - 16px); max-width: none; height: var(--games-h, 728px); max-height: none; box-sizing: border-box; padding: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--card-rule); border-radius: 3px; }   /* a game preview's size and place */
   .fan-window[open] { display: grid; grid-template: auto minmax(0, 1fr) / max-content minmax(0, 1fr); }   /* the head across the top, the tabs stacked down the left, the open tab beside them */
   .fan-win-head { grid-column: 1 / -1; }
@@ -166,7 +166,7 @@
   #fanClose { appearance: none; background: none; border: 0; width: 32px; height: 32px; padding: 0; font: 400 26px/1 Arial, sans-serif; color: var(--ink); cursor: pointer; border-radius: 2px; }
   #fanClose:hover { background: rgb(255 255 255 / .08); }
   :root.pick-long { --pick: 170px; }
-  #leaguePick { position: relative; flex: none; width: calc(var(--pick, 100px) - 4px); height: 41px; box-sizing: border-box; padding: 0 22px 0 6px; appearance: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2312361b' d='M0 0h12L6 8z'/%3E%3C/svg%3E") no-repeat right 6px center / 12px 8px; border: 0; font: 700 26px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: #12361b; cursor: pointer; }   /* the Fan button's font */
+  #leaguePick { position: relative; flex: none; margin-right: max(0px, calc(var(--pick-room, 0px) / 2 - (var(--pick, 100px) - 4px) / 2)); width: calc(var(--pick, 100px) - 4px); height: 41px; box-sizing: border-box; padding: 0 22px 0 6px; appearance: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2312361b' d='M0 0h12L6 8z'/%3E%3C/svg%3E") no-repeat right 6px center / 12px 8px; border: 0; font: 700 26px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: #12361b; cursor: pointer; }   /* the wager ticket's type; halfway between the column divide and Fan (base.js fitStripRows) */
   #leaguePick option { background: var(--paper); color: var(--ink); }
   #leaguePick option:disabled { color: var(--ink-dim); }
   .cfb-list { width: 100%; border-collapse: collapse; font: 400 15px/1.2 var(--font-mono); color: var(--ink); }

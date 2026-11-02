@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzu90jw";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzu90jw";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzu90jw";
-import { Calc } from "./calc.js?v=mvzu90jw";
-import { Fan } from "./hosts.js?v=mvzu90jw";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzui9s7";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzui9s7";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzui9s7";
+import { Calc } from "./calc.js?v=mvzui9s7";
+import { Fan } from "./hosts.js?v=mvzui9s7";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -205,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvzu90jw";
     return tag;
   }
 
-  const APP_VERSION = "0.35.12";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.13";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -499,12 +499,15 @@ import { Fan } from "./hosts.js?v=mvzu90jw";
   // The rows rule (the user's, Nov 2 2026): buttons go on the top strip's top row and the bottom strip's bottom row. In a portrait or narrow layout a strip whose row doesn't fit
   // collapses: the top strip puts its right side (the league picker and Fan) over its tabs, the bottom strip its left side (Graphs or a section's buttons) over Season stats, Playbook and Ledger.
   // Measured from what doesn't move when it collapses, so it never flips back and forth.
+  // The league picker sits halfway between the column divide and Fan, or just left of Fan with no divide or a collapsed strip.
+  let divideX = null;
   function fitStripRows() {
     const c = document.documentElement.classList, folds = c.contains("lay-portrait") || c.contains("lay-narrow");
     const bottom = document.querySelector(".tabrows.bottom"), right = [".pagetabs", ".ledgertab"].reduce((s, q) => s + document.querySelector(q).offsetWidth, 0);
     bottom.classList.toggle("collapsed", folds && document.querySelector(".strip-left").scrollWidth + right + 26 > bottom.clientWidth);
     const top = document.querySelector(".tabrows:not(.bottom)");
-    top.classList.toggle("collapsed", folds && document.querySelector(".weektabs.wk2").offsetWidth + $("fanMenu").offsetWidth + 18 > top.clientWidth);
+    top.classList.toggle("collapsed", folds && document.querySelector(".weektabs.wk2").offsetWidth + $("leaguePick").offsetWidth + $("fanBtn").offsetWidth + 18 > top.clientWidth);
+    top.style.setProperty("--pick-room", (divideX != null && !top.classList.contains("collapsed") ? Math.max(0, $("fanBtn").getBoundingClientRect().left - divideX) : 0) + "px");
   }
   const rowWatch = new ResizeObserver(() => fitStripRows());   // held here, so it keeps watching: the picker's width, the DEMO badge, a section's buttons
   [$("fanMenu"), document.querySelector(".strip-left"), document.querySelector(".pagetabs"), document.querySelector(".ledgertab")].forEach(e => rowWatch.observe(e));
@@ -518,6 +521,7 @@ import { Fan } from "./hosts.js?v=mvzu90jw";
     rootEl.classList.remove("tracking-off");
     const wr = wager.getBoundingClientRect();
     rootEl.classList.toggle("tracking-off", !trackingOn);
+    divideX = wr.left > g0.left ? wr.left : null;   // the column divide, where there are two columns side by side
     const g = { left: g0.left, width: wr.left > g0.left ? wr.left - g0.left : document.querySelector(".tabrows:not(.bottom)").clientWidth };   // a narrow layout puts the stack above the cards: the weeks take the strip's width, and fitStripRows puts Fan over them
     // the two week rows are as wide as the game cards (the strips themselves stay the width of the screen)
     document.querySelectorAll(".weektabs.wk2").forEach(r => { r.style.width = g.width + "px"; r.style.setProperty("--cell", (g.width / 9) + "px"); });
