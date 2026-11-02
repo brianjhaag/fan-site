@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvyicjkp";
-import { Fan } from "./hosts.js?v=mvyicjkp";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyicjkp";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyicjkp";
-import { setBet } from "./trade.js?v=mvyicjkp";
+import { espnState } from "./espn.js?v=mvyihqk9";
+import { Fan } from "./hosts.js?v=mvyihqk9";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyihqk9";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyihqk9";
+import { setBet } from "./trade.js?v=mvyihqk9";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -104,7 +104,7 @@ import { setBet } from "./trade.js?v=mvyicjkp";
       }
       else step(el("b", null, "Run the file. "), "It isn't signed yet, so your browser may ask whether to keep it, and Windows may warn you: choose More info, then Run anyway. It needs no admin rights.");
       step(el("b", null, "You're moved. "), "It installs and opens Fan from your own computer, at localhost:5180. That's the copy with prices and betting. Settings, telecast links and bets typed on this site stay with this site, so set those up once there.");
-      box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "Always start from this page. When the connector is running, this page finds it and moves you to it. When it isn't, press Start connector. The first time, your browser asks two things: whether to open Fan connector, where you can tick always allow, and whether this site may look for programs on your computer. Say yes to both."), startItem(), el("p", null, "The connector closes itself 30 minutes after your last Fan page closes, unless you tick Start it when I log in, on the Fan tab once you've moved. Reloading the page brings the newest version of it. To update the program, download and run the file again. Your records and key stay where they are."));
+      box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "Always start from this page. When the connector is running, this page finds it and moves you to it. When it isn't, press Start connector. The first time, your browser asks two things: whether to open Fan connector, where you can tick always allow, and whether this site may look for programs on your computer. Say yes to both."), startItem(), el("p", null, "The connector closes itself 30 minutes after your last Fan page closes, unless you tick Start at login, on the Fan tab once you've moved. Reloading the page brings the newest version of it. To update the program, download and run the file again. Your records and key stay where they are."));
       return [box];
     };
     const getOrStart = () => { const box = el("div", "fan-get"), get = el("button", null, "Get the connector"); get.type = "button"; get.addEventListener("click", () => { tab = "connector"; fill(); }); box.append(startItem(), get); return box; };
@@ -113,10 +113,10 @@ import { setBet } from "./trade.js?v=mvyicjkp";
     // The Fan tab: a diagram of what runs where, left the page, then the connector, then the outside services. A card's checkbox is its part's own switch, and greyed where the part can't be changed from here.
     const partCheck = (name, on, change) => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.disabled = !change; if (change) c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, name); return lab; };
     const ABOUT = () => ({
-      watch: [partCheck("Watch", true), "See the slate, live scores, and telecasts.", "Free, no install."],
-      track: [partCheck("Track", trackingOn, on => setTracking(on)), "Enter bets and see scenario risk.", "Free, no install."],
-      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines && !connectorAway ? on => setPrices(on) : null), "Live lines and risk, plus trends and analytics.", "Free, requires the Connector."],
-      bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed && !connectorAway ? on => setBet(on) : null), "Execute directly on prediction markets.", "Requires pricing and API keys."]
+      watch: [partCheck("Watch", true), "See the slate, live scores, and telecasts.", ", no install."],
+      track: [partCheck("Track", trackingOn, on => setTracking(on)), "Enter bets and see scenario risk.", ", no install."],
+      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines && !connectorAway ? on => setPrices(on) : null), "Live lines and risk, plus trends and analytics.", ", requires the Connector."],
+      bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed && !connectorAway ? on => setBet(on) : null), "Execute directly on prediction markets.", ", requires the Connector and API keys."]
     });
     // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
     let stopPressed = false;   // pressed Stop on this page, so its silence is expected
@@ -153,7 +153,7 @@ import { setBet } from "./trade.js?v=mvyicjkp";
       const ctl = document.querySelector(".fan-con-ctl");   // the connector's own controls sit on it, in the diagram
       if (!ctl || ctl.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
       if (away !== connectorAway) { connectorAway = away; fill(); return; }   // the diagram above changes too, and this list is drawn again with it
-      box.replaceChildren(el("h3", null, "Status"), ...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
+      box.replaceChildren(...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
       ctl.replaceChildren();
       if (away && Fan.startLink) ctl.append(startItem());
       if (hi && hi.stop) ctl.append(stopItem(box));
@@ -161,7 +161,7 @@ import { setBet } from "./trade.js?v=mvyicjkp";
         const lab = el("label", "fan-check"), c = el("input");
         c.type = "checkbox"; c.checked = hi.login;
         c.addEventListener("change", () => { Fan.setLogin(c.checked).catch(() => {}).then(() => drawStatus(box)); });
-        lab.append(c, "Start it when I log in");
+        lab.append(c, "Start at login");
         ctl.append(lab);
       }
     };
@@ -170,7 +170,7 @@ import { setBet } from "./trade.js?v=mvyicjkp";
       const box = el("div", "fan-about"), parts = ABOUT();
       const here = !!Fan.lines && !connectorAway;   // the connector is on this page and answering
       const at = (node, row, col) => { node.style.setProperty("--r", row); node.style.setProperty("--c", col); return node; };
-      const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; d.append(toggle, el("p", null, what), el("p", null, needs)); return at(d, row, 1); };
+      const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("p"); cost.append(el("b", "fan-free", "Free"), needs); d.append(toggle, el("p", null, what), cost); return at(d, row, 1); };
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
       const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
       const job = (text, row) => at(el("p", "fan-job", text), row, 3);
@@ -178,7 +178,7 @@ import { setBet } from "./trade.js?v=mvyicjkp";
       const con = el("div", "fan-con"), state = el("div", "fan-st " + (here ? "ok" : connectorAway && !stopPressed ? "bad" : "off"));
       state.append(el("i"), el("span", null, here ? "Running" : connectorAway ? (stopPressed ? "Stopped" : "Not answering") : "Not on this page"));
       con.append(el("b", null, "Fan connector"), state);
-      if (!Fan.lines && Fan.startLink) con.append(getOrStart());
+      if (!Fan.lines && Fan.startLink) con.append(getOrStart());   // on the name's line where it fits, like the controls below
       con.append(el("div", "fan-con-ctl"));
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Outside"), 1, 5),
@@ -191,7 +191,7 @@ import { setBet } from "./trade.js?v=mvyicjkp";
       );
       const status = el("div", "fan-status");
       drawStatus(status);
-      return [box, status];
+      return [box, status, el("p", "fan-yours", "Fan does not track, keep, or use your data in any way, other than local storage of the things you want, which is only used internally. There is nothing to sign or agree on: your data is yours.")];
     };
     const SETTINGS_TABS = [
       ["about", "Fan", aboutRows],
