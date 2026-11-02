@@ -236,6 +236,8 @@
   .fan-con-ctl .fan-check:hover { background: none; }
   /* A part's card: its checkbox and name, what it does, what it needs. On, it carries the accent: a band down the left, a wash, its border. A large dim icon of what it is sits at the right. */
   .fan-part { box-sizing: border-box; height: 106px; align-self: center; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; padding: 8px 64px 8px 16px; background: linear-gradient(135deg, rgb(255 255 255 / .035), transparent 60%), var(--paper); border: 1px solid var(--card-rule); border-radius: 6px; transition: background .3s, box-shadow .3s, border-color .3s; }
+  .fan-part-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; }
+  .fan-cost { font: 400 15px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-part:not(.off) { background: linear-gradient(135deg, rgb(95 208 166 / .11), transparent 65%), var(--paper); box-shadow: inset 4px 0 0 var(--accent); }
   .fan-part::after { content: ""; position: absolute; right: 14px; top: 50%; width: 40px; height: 40px; transform: translateY(-50%); background: var(--ink-dim); opacity: .14; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; pointer-events: none; }
   .fan-part:not(.off)::after { background: var(--accent); opacity: .3; }
