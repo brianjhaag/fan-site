@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzh3i3n";
-import { Fan } from "./hosts.js?v=mvzh3i3n";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzh3i3n";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzh3i3n";
-import { demoAway, setBet } from "./trade.js?v=mvzh3i3n";
+import { espnState } from "./espn.js?v=mvzhol41";
+import { Fan } from "./hosts.js?v=mvzhol41";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzhol41";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzhol41";
+import { demoAway, setBet } from "./trade.js?v=mvzhol41";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -55,7 +55,18 @@ import { demoAway, setBet } from "./trade.js?v=mvzh3i3n";
       Fan.screens.list().then(draw, () => box.replaceChildren(el("p", "fan-note", "Couldn't read the monitors.")));
       return box;
     };
-    const telecastRows = () => { const grid = el("div", "fan-telecasts"), links = el("div"); links.append(...networkRows()); grid.append(screenPicker(), links); return [grid]; };
+    const telecastRows = () => { const grid = el("div", "fan-telecasts"), links = el("div"); links.append(...networkRows(), ...captureRows()); grid.append(screenPicker(), links); return [grid]; };
+    // The telecast router's probe (PLAN.md E): one press on a Sunday morning saves what Sunday Ticket's page shows in Fan's TV window, so Claude can build the link finder from it.
+    const captureRows = () => {
+      if (!Fan.captureTelecast) return [];
+      const b = el("button", "fan-start", "Capture the TV window"), note = el("p", "fan-note", "For Sunday Ticket links. On a Sunday morning, open any telecast from Fan, go to Sunday Ticket in that window so the games show, then press this. It saves what the page shows on this computer, and presses nothing.");
+      b.type = "button";
+      b.addEventListener("click", () => {
+        b.disabled = true; note.textContent = "Capturing…";
+        Fan.captureTelecast().then(r => { note.textContent = r.ok ? `Saved: ${r.pages.map(p => `"${p.title}", ${p.links} links, ${p.games} labelled like games`).join("; ")}. Tell Claude it's there.` : "Couldn't: " + r.error; }, e => { note.textContent = "Couldn't: " + e.message; }).then(() => { b.disabled = false; });
+      });
+      return [el("h3", null, "Sunday Ticket"), note, b];
+    };
     const networkRows = () => [el("h3", null, "Network links"), el("p", "fan-note", "YouTube TV links. Open a channel in your browser, copy its address and paste it here."), ...NETWORKS.map(n => {
       const row = el("label", "fan-net"), c = el("input");
       c.type = "url"; c.value = networkLinks[n] || ""; c.placeholder = "https://tv.youtube.com/watch/..."; c.spellcheck = false;
