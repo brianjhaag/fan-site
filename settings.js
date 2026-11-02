@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvznusuq";
-import { Fan } from "./hosts.js?v=mvznusuq";
-import { switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvznusuq";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvznusuq";
-import { demoAway, setBet } from "./trade.js?v=mvznusuq";
+import { espnState } from "./espn.js?v=mvznytuy";
+import { Fan } from "./hosts.js?v=mvznytuy";
+import { switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvznytuy";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvznytuy";
+import { demoAway, setBet } from "./trade.js?v=mvznytuy";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -206,7 +206,7 @@ import { demoAway, setBet } from "./trade.js?v=mvznusuq";
         lab.append(c, "Start at login");
         ctl.append(lab);
       }
-      drawPageChoice(hi);
+      releaseHeld(hi);
       drawRoutes(hi);
     };
     // Each venue's switches, on the user's word (Nov 2 2026): prices from Kalshi and Polymarket US, and where orders may go. A venue the connector can't send orders to yet says why. They're the connector's to keep, so they show only with one that knows them.
@@ -238,32 +238,15 @@ import { demoAway, setBet } from "./trade.js?v=mvznusuq";
     const showStates = (box, states) => {
       box.querySelectorAll("[data-st][data-plain]").forEach(s => { const t = s.parentElement && s.parentElement.querySelector(":scope > b"), [state, checked] = states.get(s.dataset.st) || ["off"]; if (!t) return; t.dataset.state = state; if (checked) t.dataset.checked = "1"; else delete t.dataset.checked; });
     };
-    // The user's say over page updates: hold what this computer has, take the newest when they choose, or go back one. Pressed, it says so until the page reloads with what the connector now serves.
-    const drawPageChoice = hi => {
-      const line = document.querySelector(".fan-con-page"), p = hi && hi.page;
-      if (!line || line.querySelector("small")) return;
-      line.replaceChildren();
-      if (!p || !Fan.pageChoice) return;
-      const num = v => { const n = String(v || "").split(" ")[0]; return /^d+.d+.d+$/.test(n) ? n : ""; };   // the site's version.txt is "0.28.2 <hash>"; one from before 0.28.2 is a bare hash
-      const act = (action, saying) => {
-        line.querySelectorAll("button, input").forEach(x => { x.disabled = true; });
-        line.append(el("small", null, saying));
-        Fan.pageChoice(action).then(() => location.reload(), e => { line.querySelector("small").textContent = "Couldn't: " + (e && e.message); line.querySelectorAll("button, input").forEach(x => { x.disabled = false; }); });   // the note stays until the next press or reload
-      };
-      const lab = el("label", "fan-check"), c = el("input");
-      c.type = "checkbox"; c.checked = !!p.held;
-      c.addEventListener("change", () => act(c.checked ? "hold" : "release", c.checked ? "Holding…" : "Following the site…"));
-      lab.append(c, p.held ? `Hold at ${APP_VERSION}` : "Hold page updates");   // the page knows its own number
-      line.append(lab);
-      const button = (text, action, saying) => { const b = el("button", "fan-start", text); b.type = "button"; b.addEventListener("click", () => act(action, saying)); line.append(b); };
-      if (p.held && p.available && p.available !== p.version) { const n = num(p.available); button(n ? "Take " + n : "Take the newest", "take", "Taking " + (n || "the newest") + "…"); }
-      // Going back one is built in the connector, and kept off the tab until the user decides how rollback should look
-    };
+    // Holding page updates is gone, on the user's word (Nov 2 2026): every copy follows the site. A connector still holding is let go once, which reloads the page.
+    let released = false;
+    const releaseHeld = hi => { if (released || !(hi && hi.page && hi.page.held) || !Fan.pageChoice) return; released = true; Fan.pageChoice("release").then(() => location.reload(), () => {}); };
     setInterval(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
     new MutationObserver(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }).observe($("feedNote"), { attributes: true, childList: true, characterData: true, subtree: true });   // the fill feed's dot changes when the feed does
-    // The connector, one box in four sections, its three jobs and its program, with a small gear outside its upper left, on the user's word (Nov 2 2026). The gear turns, green, while the whole system is healthy (drawStatus): the user knows it's all well if it's turning.
+    // The connector, one box in four sections, its three jobs and its program, with a small gear outside it, level with the bottom section, on the user's word (Nov 2 2026). The gear turns, green, while the whole system is healthy (drawStatus): the user knows it's all well if it's turning.
     const GEAR = (() => { const teeth = 10, R = 50, r = 41, w = 0.18, corners = []; for (let i = 0; i < teeth; i++) { const a = (i / teeth) * 2 * Math.PI; [[a - w * 1.4, r], [a - w, R], [a + w, R], [a + w * 1.4, r]].forEach(([t, d]) => corners.push(`${(50 + d * Math.cos(t)).toFixed(2)},${(50 + d * Math.sin(t)).toFixed(2)}`)); } return `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill-rule="evenodd" d="M${corners.join("L")}Z M50,34 a16,16 0 1,0 0.01,0 Z"/></svg>`; })();
-    const conFrame = here => { const f = el("div", "fan-frame" + (here ? "" : " away")), gear = el("div", "fan-gear"); gear.innerHTML = GEAR; f.append(gear); return f; };
+    const conFrame = here => el("div", "fan-frame" + (here ? "" : " away"));
+    const conGear = () => { const g = el("div", "fan-gear"); g.innerHTML = GEAR; return g; };   // outside the box, level with its bottom section
     // How this user watches: the watching setup the telecast router will read (PLAN.md E). YouTube TV is the only one so far; more come as manifests.
     const WATCH_SETUPS = [["youtubetv", "YouTube TV"], ["hdhomerun", "HDHomeRun"]];   // HDHomeRun on the user's word (Nov 2 2026): an antenna's channels, played in VLC
     const networkPick = () => {
@@ -332,12 +315,12 @@ import { demoAway, setBet } from "./trade.js?v=mvznusuq";
       const con = el("div", "fan-con");
       con.append(el("b", null, "Fan connector"), slot("Connector", true));
       if (!Fan.lines && Fan.startLink) con.append(getOrStart());   // on the name's line where it fits, like the controls below
-      con.append(el("div", "fan-con-ctl"), el("div", "fan-con-page"));
+      con.append(el("div", "fan-con-ctl"), conGear());
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Everywhere else"), 1, 5),
         at(conFrame(here), "3 / 7", 3),   // the box around the connector's three jobs and its program
         card("watch", 2), wire("scores, networks", true, false, 2, "2 / 5"), at(stack(outBox("ESPN", true, slot("ESPN", true)), outBox("Networks", true, ...networkPick(), slot("Networks", true))), 2, 5),
-        at(con, 6, 3),   // the box's bottom section: its badge, Stop or Update, Start at login, page updates
+        at(con, 6, 3),   // the box's bottom section: its badge, Stop or Update, Start at login
         card("track", 3), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 3, 2) : at(el("span"), 3, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 3),
         card("price", 4), wire("lines", here && pricesWanted, false, 4, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 4), wire("prices", here && pricesWanted, false, 4, 4), service("Kalshi, Polymarket US", 4, here && pricesWanted, routeBox("prices")),
         card("bet", 5), wire("orders, fills", here && !!Fan.trader, true, 5, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 5), wire("orders, fills", here && !!Fan.keyed, true, 5, 4), service("Kalshi", 5, here && !!Fan.keyed, slot("Kalshi", true), routeBox("orders"), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))

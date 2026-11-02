@@ -181,15 +181,15 @@
   .fan-about { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(96px, .45fr) minmax(0, .85fr) minmax(96px, .45fr) minmax(0, .8fr);   /* the connector's column narrower, its links longer, so they stay attached */ gap: 8px 0; padding: 6px 12px; }   /* the page, a wire, the connector, a wire, the outside services */
   .fan-about > * { grid-row: var(--r); grid-column: var(--c); min-width: 0; }
   .fan-about h3 { margin: 0; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); text-align: center; }
-  /* The connector: one box in four sections, its three jobs and its program, dashed when it isn't running. A small gear outside its upper left, half a card high, is dim and still, and turns, green, while everything is healthy. */
+  /* The connector: one box in four sections, its three jobs and its program, dashed when it isn't running. A small gear outside its left edge, level with the bottom section, half a card high, is dim and still, and turns, green, while everything is healthy. */
   .fan-frame { position: relative; pointer-events: none; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 6px; }
   .fan-frame.away { border-style: dashed; }
-  .fan-gear { position: absolute; right: calc(100% + 4px); bottom: calc(100% + 4px); width: 44px; height: 44px; }
+  .fan-gear { position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%); width: 44px; height: 44px; pointer-events: none; }
   .fan-gear svg { width: 100%; height: 100%; fill: var(--ink-dim); opacity: .35; transition: opacity .6s, fill .6s, filter .6s; }
   .fan-about.healthy .fan-gear svg { fill: var(--accent); opacity: .9; filter: drop-shadow(0 0 6px rgb(95 208 166 / .45)); animation: fan-turn 12s linear infinite; }
   @keyframes fan-turn { to { transform: rotate(360deg); } }
   .fan-con { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; margin-top: -4px; padding: 10px 12px; border-top: 1px solid var(--card-rule); }   /* the box's bottom section */
-  .fan-con > .fan-con-ctl, .fan-con > .fan-con-page { justify-content: center; }
+  .fan-con > .fan-con-ctl { justify-content: center; }
   .fan-con > b { font-size: 18px; color: var(--ink); }
   .fan-free { font-size: 19px; line-height: 1; color: var(--accent); }
   .fan-list:has(.fan-yours) { min-height: 100%; grid-template-rows: auto 1fr; }   /* the statement takes what's left of the window */
@@ -232,11 +232,6 @@
   .fan-routes .fan-check { padding: 0; font-size: 14px; }
   .fan-routes .fan-check:hover { background: none; }
   .fan-routes .fan-check:has(input:disabled) { color: var(--ink-dim); cursor: default; }
-  .fan-con-page { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-  .fan-con-page:empty { display: none; }
-  .fan-con-page .fan-check { padding: 0; font-size: 14px; }
-  .fan-con-page .fan-check:hover { background: none; }
-  .fan-con-page small { color: var(--ink-dim); }
   .fan-con-ctl .fan-check { padding: 0; font-size: 14px; }
   .fan-con-ctl .fan-check:hover { background: none; }
   /* A part's card: its checkbox and name, what it does, what it needs. On, it carries the accent: a band down the left, a wash, its border. A large dim icon of what it is sits at the right. */
@@ -1013,6 +1008,7 @@
     .fan-job, .fan-out { margin-left: 16px; }
     .fan-job { padding: 0 0 0 10px; border-left: 1px solid var(--card-rule); }
     .fan-con { padding: 8px 0 0; margin-top: 0; border-top: 0; }
+    .fan-gear { display: none; }
     .fan-job { margin-top: 0; }
     .top { display: block; }
     .games, .games.strip { display: block; height: auto; overflow: visible; }
