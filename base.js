@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzgs6c0";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzgs6c0";
-import { Calc } from "./calc.js?v=mvzgs6c0";
-import { Fan } from "./hosts.js?v=mvzgs6c0";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzh3i3n";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzh3i3n";
+import { Calc } from "./calc.js?v=mvzh3i3n";
+import { Fan } from "./hosts.js?v=mvzh3i3n";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -168,7 +168,7 @@ import { Fan } from "./hosts.js?v=mvzgs6c0";
     return tag;
   }
 
-  const APP_VERSION = "0.31.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.31.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -839,6 +839,14 @@ import { Fan } from "./hosts.js?v=mvzgs6c0";
     syncLeaguePick();
     changed("leagues");
   }
+  // THE KEYS. One layer in front of every key, on the user's word (Nov 2 2026): a key Fan hasn't chosen does nothing, so a stray one can't press a focused Place or scroll the page.
+  // Through: typing in a text or number field, a part that handles its own keys (data-keys), the browser's own shortcuts (Ctrl, Cmd or Alt, and the F keys), and the hotkeys below. A new hotkey is a line in HOTKEYS.
+  const HOTKEYS = new Set(["Escape", "Tab"]);   // Escape closes what's open (each part listens for it); Tab moves between controls
+  const typing = t => t && (t.isContentEditable || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || (t.tagName === "INPUT" && !["checkbox", "radio", "button", "submit", "reset", "range", "color", "file"].includes(t.type)));
+  document.addEventListener("keydown", e => {
+    if (HOTKEYS.has(e.key) || e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.key) || typing(e.target) || (e.target && e.target.closest && e.target.closest("[data-keys]"))) return;
+    e.preventDefault(); e.stopPropagation();
+  }, true);   // before anything else hears it
   document.addEventListener("keydown", e => { if (e.key === "Escape" && detailGame) { detailGame = null; showView("week"); } });   // back from a game preview to the cards
   function clearRiskQuietly() { const col = document.querySelector(".col.left"), rc = $("riskCard"); col.classList.remove("has-sel"); rc.classList.add("rk-off"); rc.classList.remove("rk-over"); rc.setAttribute("aria-hidden", "true"); }
   function switchWeek(w) {
