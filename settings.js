@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzeo2o9";
-import { Fan } from "./hosts.js?v=mvzeo2o9";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzeo2o9";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzeo2o9";
-import { demoAway, setBet } from "./trade.js?v=mvzeo2o9";
+import { espnState } from "./espn.js?v=mvzet1ri";
+import { Fan } from "./hosts.js?v=mvzet1ri";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzet1ri";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzet1ri";
+import { demoAway, setBet } from "./trade.js?v=mvzet1ri";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -192,15 +192,9 @@ import { demoAway, setBet } from "./trade.js?v=mvzeo2o9";
       }
       drawPageChoice(hi);
     };
-    // Each part of the diagram lit by its state, so the state reads at a glance: the box a status sits in, and each part's card by the statuses of its row. The worst wins; "live" is fine and moving. A card that's turned off stays plain.
-    const STATE_RANK = { off: 0, ok: 1, live: 2, wait: 3, warn: 4, bad: 5 };
-    const CARD_STATES = { watch: ["ESPN", "Leagues", "Telecasts"], track: ["Records"], price: ["Prices"], bet: ["Fill feed", "Kalshi"] };
-    const worst = list => list.filter(Boolean).reduce((a, b) => (STATE_RANK[b] > STATE_RANK[a] ? b : a), "off");
+    // A status shown under its own title, the connector's and Kalshi's, puts its state on that title, which then wears it as the other names do (fan.css).
     const showStates = (box, states) => {
-      const hosts = new Map();
-      box.querySelectorAll("[data-st]").forEach(s => { const h = s.closest(".fan-part, .fan-job, .fan-out, .fan-con"); if (h) hosts.set(h, [...(hosts.get(h) || []), states.get(s.dataset.st)]); });
-      hosts.forEach((list, h) => { h.dataset.state = worst(list); });
-      Object.entries(CARD_STATES).forEach(([k, names]) => { const c = box.querySelector(`[data-part=${k}]`); if (!c) return; if (c.classList.contains("off")) delete c.dataset.state; else c.dataset.state = worst(names.map(n => states.get(n))); });
+      box.querySelectorAll("[data-st][data-plain]").forEach(s => { const t = s.parentElement && s.parentElement.querySelector(":scope > b"); if (t) t.dataset.state = states.get(s.dataset.st) || "off"; });
     };
     // The user's say over page updates: hold what this computer has, take the newest when they choose, or go back one. Pressed, it says so until the page reloads with what the connector now serves.
     const drawPageChoice = hi => {
@@ -233,7 +227,7 @@ import { demoAway, setBet } from "./trade.js?v=mvzeo2o9";
       const slot = (name, plain) => { const s = el("div", "fan-slot"); s.dataset.st = name; if (plain) s.dataset.plain = "1"; return s; };
       const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("p"); cost.append(el("b", "fan-free", "Free"), needs); d.append(toggle, el("p", null, what), cost); return at(d, row, 1); };
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
-      const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "") + (both ? " both" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
+      const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
       const job = (text, status, row) => { const d = el("div", "fan-job"); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
       const service = (name, row, on, ...rest) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), ...rest); return at(d, row, 5); };
       const con = el("div", "fan-con");
