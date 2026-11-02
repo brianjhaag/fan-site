@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvyluc8p";
-import { Fan } from "./hosts.js?v=mvyluc8p";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyluc8p";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyluc8p";
-import { demoAway, setBet } from "./trade.js?v=mvyluc8p";
+import { espnState } from "./espn.js?v=mvym6mo9";
+import { Fan } from "./hosts.js?v=mvym6mo9";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvym6mo9";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvym6mo9";
+import { demoAway, setBet } from "./trade.js?v=mvym6mo9";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -122,7 +122,7 @@ import { demoAway, setBet } from "./trade.js?v=mvyluc8p";
     let stopPressed = false;   // pressed Stop on this page, so its silence is expected
     let connectorAway = false;   // this page's connector isn't answering: Price and Bet keep their ticks, greyed
     const stopItem = box => {
-      const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Stop connector");
+      const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Stop");
       b.type = "button";
       b.addEventListener("click", () => {
         stopPressed = true; b.hidden = true;
@@ -132,13 +132,15 @@ import { demoAway, setBet } from "./trade.js?v=mvyluc8p";
       wrap.append(b);
       return wrap;
     };
+    // A new connector program is a new minor version, so the page's own major.minor says what's newest. A program too old to say its version is behind.
+    const programBehind = v => { const minor = s => s.split(".").slice(0, 2).map(Number); if (!v) return true; const [a, b] = minor(v), [c, d] = minor(APP_VERSION); return a < c || (a === c && b < d); };
     const statusRows = async () => {
       let hi = null, away = false;
       if (stopPressed) away = true;
       else if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
       const espn = espnState(), feed = $("feedNote"), nets = Object.values(networkLinks).filter(u => /^https:\/\//i.test(u)).length, time = at => timeZoned(new Date(at));
       return { hi, away, rows: [
-        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? ["ok", "Running" + (hi.version ? " " + hi.version : "")] : ["off", "Not on this page"]],
+        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? programBehind(hi.version) ? ["warn", `${hi.version ? hi.version + ", u" : "U"}pdate to ${APP_VERSION.replace(/\d+$/, "0")}`] : ["ok", "Running " + hi.version] : ["off", "Not on this page"]],
         ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at)] : ["ok", "Using this browser's saved copy"]],
         ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : away && Fan.lines === Fan.store ? ["off", "Kept by the connector, which isn't running"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
         ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : ["ok", "Lines from " + time(slateAt)]],
