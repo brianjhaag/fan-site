@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzty8fa";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzty8fa";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzty8fa";
-import { Calc } from "./calc.js?v=mvzty8fa";
-import { Fan } from "./hosts.js?v=mvzty8fa";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzu90jw";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzu90jw";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzu90jw";
+import { Calc } from "./calc.js?v=mvzu90jw";
+import { Fan } from "./hosts.js?v=mvzu90jw";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -29,17 +29,17 @@ import { Fan } from "./hosts.js?v=mvzty8fa";
   try { for (const k of ["tracking", "leagues", "badges", "tickets", "game"]) { const v = localStorage.getItem("bet." + k); if (v != null && localStorage.getItem("fan." + k) == null) localStorage.setItem("fan." + k, v); } } catch (e) {}
   let league = "nfl";   // the league on screen, chosen with the league picker
   document.documentElement.dataset.league = league;   // fan.css dresses a league's page by it (the NHL's rink and boards)
-  // The layout (Look/feel's Layout, on the user's word, Nov 2 2026): Auto follows the window as before, or the user picks Landscape, Portrait or Phone. It's classes on the page that
+  // The layout (Look/feel's Layout, on the user's word, Nov 2 2026): Auto follows the window as before, or the user picks Landscape or Portrait. Phone isn't a choice: a phone is too tight to be of use, so only Auto reaches the phone rules, kept as they are. It's classes on the page that
   // fan.css's layout rules hang on: lay-narrow (920px or less), lay-phone (760px or less), lay-portrait (a portrait window over 920px). Kept per browser.
-  const LAYOUTS = [["auto", "Auto"], ["landscape", "Landscape"], ["portrait", "Portrait"], ["phone", "Phone"]];
+  const LAYOUTS = [["auto", "Auto"], ["landscape", "Landscape"], ["portrait", "Portrait"]];   // a saved "phone" falls back to Auto
   let layoutPref = "auto";
   try { const v = localStorage.getItem("fan.layout"); if (LAYOUTS.some(([k]) => k === v)) layoutPref = v; } catch (e) {}
   const mq = q => matchMedia(q).matches;
   const LAYOUT_QUERIES = { phone: "(max-width: 760px)", narrow: "(max-width: 920px)", portrait: "(orientation: portrait) and (min-width: 921px)" };
   function applyLayout() {
     const auto = layoutPref === "auto", c = document.documentElement.classList;
-    c.toggle("lay-phone", auto ? mq(LAYOUT_QUERIES.phone) : layoutPref === "phone");
-    c.toggle("lay-narrow", auto ? mq(LAYOUT_QUERIES.narrow) : layoutPref === "phone");
+    c.toggle("lay-phone", auto && mq(LAYOUT_QUERIES.phone));
+    c.toggle("lay-narrow", auto && mq(LAYOUT_QUERIES.narrow));
     c.toggle("lay-portrait", auto ? mq(LAYOUT_QUERIES.portrait) : layoutPref === "portrait");
   }
   applyLayout();
@@ -49,7 +49,7 @@ import { Fan } from "./hosts.js?v=mvzty8fa";
   function setLayoutPref(k) { layoutPref = k; try { localStorage.setItem("fan.layout", k); } catch (e) {} applyLayout(); changed("size", "cards"); }
   const isPhone = () => document.documentElement.classList.contains("lay-phone");
   // A tall window, for the panels that run down to the bottom strip: a portrait one, or a phone held upright.
-  const isTall = () => (layoutPref === "auto" || layoutPref === "phone" ? mq("(orientation: portrait)") : layoutPref === "portrait");
+  const isTall = () => (layoutPref === "auto" ? mq("(orientation: portrait)") : layoutPref === "portrait");
   const LG = () => Calc.RULES.leagues[league];
   const nbaDay = (add = 0) => Number(new Date(Date.now() + add * 864e5).toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, ""));
   // The Risk detail icon FILTERS the totals and the saved tickets to that game and draws its graph over the wager ticket.
@@ -205,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvzty8fa";
     return tag;
   }
 
-  const APP_VERSION = "0.35.11";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.12";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
