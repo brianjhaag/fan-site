@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvyhyxux";
-import { Fan } from "./hosts.js?v=mvyhyxux";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyhyxux";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyhyxux";
-import { setBet } from "./trade.js?v=mvyhyxux";
+import { espnState } from "./espn.js?v=mvyia6wn";
+import { Fan } from "./hosts.js?v=mvyia6wn";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyia6wn";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyia6wn";
+import { setBet } from "./trade.js?v=mvyia6wn";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -113,10 +113,10 @@ import { setBet } from "./trade.js?v=mvyhyxux";
     // The Fan tab: a diagram of what runs where, left the page, then the connector, then the outside services. A card's checkbox is its part's own switch, and greyed where the part can't be changed from here.
     const partCheck = (name, on, change) => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.disabled = !change; if (change) c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, name); return lab; };
     const ABOUT = () => ({
-      watch: [partCheck("Watch", true), "Games, live scores, telecasts."],
-      track: [partCheck("Track", trackingOn, on => setTracking(on)), "Bets you type in, risk, the Ledger."],
-      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines && !connectorAway ? on => setPrices(on) : null), "Lines, Graphs, the Playbook."],
-      bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed && !connectorAway ? on => setBet(on) : null), "Orders on Kalshi from the game card."]
+      watch: [partCheck("Watch", true), "See the slate, live scores, and telecasts. Free, no install."],
+      track: [partCheck("Track", trackingOn, on => setTracking(on)), "Enter bets and see scenario risk. Free, no install."],
+      price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines && !connectorAway ? on => setPrices(on) : null), "Live lines and risk, plus trends and analytics. Free, requires the Connector."],
+      bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed && !connectorAway ? on => setBet(on) : null), "Execute directly on prediction markets. Requires pricing and API keys."]
     });
     // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
     let stopPressed = false;   // pressed Stop on this page, so its silence is expected

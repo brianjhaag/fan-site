@@ -171,7 +171,7 @@
   .fan-list .fan-lay button:disabled, .fan-list .fan-show:disabled { color: var(--ink-dim); cursor: default; }
   .fan-list .fan-show { margin: 0 12px 4px; border: 1px solid var(--accent); color: var(--accent); }
   .fan-records { display: flex; flex-direction: column; align-items: flex-start; }
-  .fan-about { display: grid; grid-template-columns: minmax(0, 1.25fr) 96px minmax(0, 1.1fr) 96px minmax(0, .8fr); gap: 6px 0; padding: 6px 12px; }   /* the page, a wire, the connector, a wire, the outside services */
+  .fan-about { display: grid; grid-template-columns: minmax(0, 1.45fr) 96px minmax(0, 1.05fr) 96px minmax(0, .7fr); gap: 6px 0; padding: 6px 12px; }   /* the page, a wire, the connector, a wire, the outside services */
   .fan-about > * { grid-row: var(--r); grid-column: var(--c); min-width: 0; }
   .fan-about h3 { margin: 0; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-frame { border: 1px solid var(--accent); border-radius: 3px; background: rgb(255 255 255 / .02); }
