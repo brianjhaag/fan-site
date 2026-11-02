@@ -261,7 +261,7 @@
   .gwrap:hover .garrow.on:hover { opacity: 1; border-color: var(--accent); }
   .games.strip { overscroll-behavior: none; scroll-behavior: auto; display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--paper-edge) transparent; padding-bottom: 6px; box-sizing: border-box; }
   .games.strip .slot { flex: none; display: flex; flex-direction: column; gap: 4px; }
-  .games.strip .slot-h { margin: 0; height: 16px; font: 500 11px/16px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: #fff; white-space: nowrap; }
+  .games.strip .slot-h { margin: 0; height: 16px; font: 500 11px/16px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: #bcc4ce; white-space: nowrap; }
   .games.strip .slot-cards .sun-h { align-self: end; grid-column: 1; }   /* the Sunday morning heading sits at the bottom of the empty row above its card */
   .games.strip .slot-cards { display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows), var(--card-h, 165px)); grid-auto-columns: var(--cw, 376px); gap: 4px; }
   .games.strip.flat { display: block; overflow: hidden; }   /* every game final: a plain grid, scaled to the box */

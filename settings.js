@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvylpss1";
-import { Fan } from "./hosts.js?v=mvylpss1";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvylpss1";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvylpss1";
-import { demoAway, setBet } from "./trade.js?v=mvylpss1";
+import { espnState } from "./espn.js?v=mvyluc8p";
+import { Fan } from "./hosts.js?v=mvyluc8p";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyluc8p";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyluc8p";
+import { demoAway, setBet } from "./trade.js?v=mvyluc8p";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -166,6 +166,7 @@ import { demoAway, setBet } from "./trade.js?v=mvylpss1";
       }
     };
     setInterval(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
+    new MutationObserver(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }).observe($("feedNote"), { attributes: true, childList: true, characterData: true, subtree: true });   // the fill feed's dot changes when the feed does
     const aboutRows = () => {
       const box = el("div", "fan-about"), parts = ABOUT();
       const here = !!Fan.lines && !connectorAway;   // the connector is on this page and answering

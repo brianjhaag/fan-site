@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvylpss1";
-import { Fan } from "./hosts.js?v=mvylpss1";
-import { Calc } from "./calc.js?v=mvylpss1";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvylpss1";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvyluc8p";
+import { Fan } from "./hosts.js?v=mvyluc8p";
+import { Calc } from "./calc.js?v=mvyluc8p";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvyluc8p";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -133,7 +133,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     let boot, after, tries = 0;
     for (;;) {
       try {
-        const r = await reader().call("wait_fill", { ...(boot ? { boot, after } : {}), timeout_ms: 20000 });
+        const r = await reader().call("wait_fill", { ...(boot ? { boot, after } : {}), timeout_ms: boot ? 20000 : 1 });   // the first call is only to learn the feed's state, so it doesn't wait for a fill. A fill after it is still caught, by its place in the stream
         boot = r.boot; after = r.seq; tries = 0;
         // Fills from every venue arrive in one shape (see the server's venues/host.js). A catch-up fill was missed while disconnected or closed: it is logged, but it says nothing about the book now.
         (r.fills || []).forEach(x => {
