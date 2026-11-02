@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzuvc2w";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzuvc2w";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzuvc2w";
-import { Calc } from "./calc.js?v=mvzuvc2w";
-import { Fan } from "./hosts.js?v=mvzuvc2w";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzv5woj";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzv5woj";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzv5woj";
+import { Calc } from "./calc.js?v=mvzv5woj";
+import { Fan } from "./hosts.js?v=mvzv5woj";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -205,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvzuvc2w";
     return tag;
   }
 
-  const APP_VERSION = "0.35.16";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.17";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -270,9 +270,14 @@ import { Fan } from "./hosts.js?v=mvzuvc2w";
     const W = wager.getBoundingClientRect().right - line.getBoundingClientRect().left;
     if (!(W > 0)) return;
     line.style.width = W + "px";
-    line.style.setProperty("--slate-fs", "16px");
-    const need = note.scrollWidth + document.querySelector(".bye-box").scrollWidth + $("infoVer").scrollWidth + 38 + ($("demoBadge") ? $("demoBadge").offsetWidth + 14 : 0);
-    line.style.setProperty("--slate-fs", Math.max(8, Math.min(16, 16 * W / need)) + "px");
+    const box = document.querySelector(".bye-box"), byes = () => box.scrollWidth + 24, rest = () => note.scrollWidth + $("infoVer").scrollWidth + 14 + ($("demoBadge") ? $("demoBadge").offsetWidth + 14 : 0);
+    // Type from 16px down to 8 until it fits; the byes' helmets don't shrink with it, so the first guess can run over.
+    const shrink = (holder, need) => { holder.style.setProperty("--slate-fs", "16px"); let fs = Math.max(8, Math.min(16, 16 * W / need())); holder.style.setProperty("--slate-fs", fs + "px"); while (fs > 8 && need() > W) { fs = Math.max(8, fs - .5); holder.style.setProperty("--slate-fs", fs + "px"); } };
+    box.style.removeProperty("--slate-fs"); line.style.setProperty("--slate-fs", "16px");
+    // A narrow layout folds a line that doesn't fit (the user's, Nov 2 2026): the byes over the rest, each line then shrinking on its own only if it still doesn't fit.
+    const fold = document.documentElement.classList.contains("lay-narrow") && byes() + rest() > W;
+    line.classList.toggle("folded", fold);
+    if (fold) { shrink(line, rest); shrink(box, byes); } else shrink(line, () => byes() + rest());
   }
   window.addEventListener("resize", () => fitSlateLine());
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitSlateLine());

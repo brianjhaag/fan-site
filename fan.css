@@ -121,6 +121,9 @@
   .games + .sec-title.one-line { margin: 4px 0 0; }
   /* the bottom text uses the same type as the game cards column headers (.slot-h): label font, 700, spaced caps, 16px */
   .one-line #slateNote, .bye-box, .byeLabel { font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .tabrows.bottom .sec-title.one-line.folded { height: 70px; flex-wrap: wrap; align-content: space-between; }   /* a narrow layout's info line that doesn't fit, folded (base.js fitSlateLine): the byes over the rest */
+  .one-line.folded .bye-box { width: calc(100% - 14px); margin-right: 0; }
+  :where(.lay-narrow) body:has(.one-line.folded) main { padding-bottom: 156px; }   /* room for the folded line over the pinned strip */
   .tabrows.bottom .sec-title.one-line { position: absolute; left: 0; right: auto; bottom: calc(100% + 2px); top: auto; margin: 0; height: 36px; overflow: visible; }   /* the byes / update row belongs to the bottom strip: it rides on its top edge, never behind it */ /* the slate line (Refresh, note, byes) sits under the game cards */
   .sec-title.one-line { justify-content: flex-end; flex-wrap: nowrap; align-items: center; gap: 0 24px; height: 28px; overflow: hidden; position: relative; top: 8px; }   /* byes at the left, the update text at the right: the row hugs the top edge of the bottom tab strip, the text above Refresh */
   .one-line #slateHead { flex: none; display: flex; align-items: baseline; gap: .6em; }
@@ -1056,6 +1059,7 @@
     #fanMenu { right: 16px; }
     .tabrows:not(.bottom) .weektabs.pinned.wk2 button { flex: none; width: auto !important; position: relative !important; top: 0; left: auto !important; height: 41px; font-size: 16px; padding-inline: 10px; }
     .tabrows.bottom { position: relative; inset: auto; margin-top: 46px; }   /* the info line rides on its top edge here too, in the room above it (static, it sat above the page's top) */
+    .tabrows.bottom:has(.one-line.folded) { margin-top: 80px; }
     .tabrows.bottom :is(#tab-xy, #tab-season, #tab-playbook, #tab-ledger, #sectiontabs1 button) { font-size: 16px; padding-inline: 10px; }
     .tabrows.bottom #sectiontabs1 { grid-auto-columns: auto; }
     .tabrows.bottom .strip-left { overflow-x: auto; scrollbar-width: none; }   /* a section's buttons scroll sideways when they don't fit their row */
