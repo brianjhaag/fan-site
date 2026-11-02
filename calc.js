@@ -82,6 +82,55 @@ const Calc = (() => {
     const list = Object.values(trades), C = list.reduce((s, r) => s + r.n, 0), cost = list.reduce((s, r) => s + r.n * r.p, 0), fee = list.reduce((s, r) => s + r.fee, 0), total = cost + fee, dec = C / total;
     return { contracts: C, cost, fee, total, american: dec >= 2 ? Math.round((dec - 1) * 100) : -Math.round(100 / (dec - 1)), cents: Math.round(cost / C * 1000) / 10 };
   }
+  // Kalshi's fills against the records, as tools/dev/check-records.js and the connector's timed check both run it: is each fill saved, does each order have one ticket, and do contracts and dollars agree.
+  // fills: Kalshi's (the fills_list tool), wagers and saved: the records' wagers and fills, as { id, data }. since: tickets older than this aren't looked for. `bad` counts what doesn't agree.
+  function reconcile(fills, wagers, saved, since) {
+    const orders = new Map();
+    fills.forEach(x => { if (!orders.has(x.order_id)) orders.set(x.order_id, { order: x.order_id, client: x.client_order_id || null, ticker: x.ticker, trades: {} }); const { price } = fillSide(x); orders.get(x.order_id).trades[x.trade_id] = { n: x.count, p: price, fee: x.fee }; });
+    const out = { orders: orders.size, fills: fills.length, notSaved: [], noTicket: [], twoTickets: [], differ: [], matched: 0, byAmount: 0, merged: [] };
+    const savedIds = new Set(saved.map(r => r.id)), clientOf = new Map();
+    saved.forEach(r => { if (r.data.order && r.data.client) clientOf.set(r.data.order, r.data.client); });   // Kalshi's list of fills leaves out the client id; the feed's record keeps it
+    fills.forEach(x => { if (!savedIds.has("feed-" + x.trade_id)) out.notSaved.push(x); });
+    const used = new Set();
+    // First by id. Then, for tickets older than the ids, one ticket of the same contracts and dollars.
+    const byId = new Map();
+    orders.forEach(o => {
+      const client = o.client || clientOf.get(o.order);
+      const found = wagers.filter(w => w.id === "fill-kalshi-" + o.order || (client && w.data.fillId === client));
+      found.forEach(w => used.add(w.id));
+      byId.set(o.order, found);
+    });
+    orders.forEach(o => {
+      const a = fillAmounts(o.trades), found = byId.get(o.order);
+      if (found.length) return;
+      const same = wagers.find(w => !used.has(w.id) && w.data.book === "Kalshi" && w.data.kalshi && Math.abs(w.data.kalshi.contracts - a.contracts) <= 0.005 && Math.abs(w.data.amount - a.total) < 0.05);
+      if (same) { used.add(same.id); found.push(same); out.byAmount++; }
+    });
+    orders.forEach(o => {
+      const found = byId.get(o.order);
+      const a = fillAmounts(o.trades), row = { order: o.order, ticker: o.ticker, contracts: a.contracts, paid: a.total };
+      if (!found.length) return out.noTicket.push(row);
+      if (found.length > 1) return out.twoTickets.push({ ...row, tickets: found.map(w => w.id) });
+      const k = found[0].data.kalshi || {}, c = k.contracts, amt = found[0].data.amount;
+      if (Math.abs(c - a.contracts) > 0.005 || Math.abs(amt - a.total) >= 0.05) return out.differ.push({ ...row, ticket: found[0].id, ticketContracts: c, ticketAmount: amt });
+      out.matched++;
+    });
+    // One hand-booked ticket can hold several orders of one market.
+    const byTicker = new Map();
+    out.noTicket.forEach(x => byTicker.set(x.ticker, [...(byTicker.get(x.ticker) || []), x]));
+    byTicker.forEach(group => {
+      if (group.length < 2) return;
+      const contracts = group.reduce((s, x) => s + x.contracts, 0), paid = group.reduce((s, x) => s + x.paid, 0);
+      const same = wagers.find(w => !used.has(w.id) && w.data.book === "Kalshi" && Math.abs(w.data.amount - paid) < 0.05 && (!w.data.kalshi || Math.abs(w.data.kalshi.contracts - contracts) <= 0.005));
+      if (!same) return;
+      used.add(same.id);
+      out.noTicket = out.noTicket.filter(x => !group.includes(x));
+      out.merged.push({ ticket: same.id, orders: group.length, paid });
+    });
+    out.ticketsWithNoFill = wagers.filter(w => w.data.book === "Kalshi" && !w.data.parlay && !used.has(w.id) && (w.data.createdAt || 0) >= since);
+    out.bad = out.notSaved.length + out.noTicket.length + out.twoTickets.length + out.differ.length;
+    return out;
+  }
   // The Kalshi market for a bet on game g: { tk, side }, or { why } when there is none. leg = { type, side, line }.
   function kalshiMarket(g, l) {
     const lad = g.lad && g.lad.v === 2 ? g.lad : null, an = last(g.away), hn = last(g.home);
@@ -515,6 +564,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, placeLimit, armDecision, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, placeLimit, armDecision, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
 })();
 export { Calc };
