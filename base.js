@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzn1urc";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzn1urc";
-import { Calc } from "./calc.js?v=mvzn1urc";
-import { Fan } from "./hosts.js?v=mvzn1urc";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzn4ppv";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzn4ppv";
+import { Calc } from "./calc.js?v=mvzn4ppv";
+import { Fan } from "./hosts.js?v=mvzn4ppv";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -109,7 +109,10 @@ import { Fan } from "./hosts.js?v=mvzn1urc";
   function setWatchSetup(s) { watchSetup = s; try { localStorage.setItem("fan.watchSetup", s); } catch (e) {} changed("cards"); }
   function setHdhr(patch) { hdhr = { ...hdhr, ...patch }; try { localStorage.setItem("fan.hdhomerun", JSON.stringify(hdhr)); } catch (e) {} changed("cards"); }
   // A game's HDHomeRun channel: the first of its networks with a channel set, when that's how the user watches. hdhrPick says which network it is.
-  const hdhrPick = g => (watchSetup === "hdhomerun" && hdhr.ip ? String(g.tv || "").split("/").map(n => n.trim()).find(n => hdhr.channels[n]) : null) || null;
+  // An antenna's networks for a game: ESPN's Monday night games are on ABC too, which ESPN's data leaves out [U, Nov 2 2026].
+  const isMonday = g => new Date(g.t).toLocaleDateString("en-US", { weekday: "short", timeZone: "America/New_York" }) === "Mon";
+  const antennaNets = g => { const nets = String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean); return nets.includes("ESPN") && !nets.includes("ABC") && isMonday(g) ? [...nets, "ABC"] : nets; };
+  const hdhrPick = g => (watchSetup === "hdhomerun" && hdhr.ip ? antennaNets(g).find(n => hdhr.channels[n]) : null) || null;
   const hdhrChannel = g => { const n = hdhrPick(g); return n ? hdhr.channels[n] : null; };
   // A word at the bottom of the screen for a few seconds, for what a press couldn't do.
   function toast(text) { let t = document.querySelector(".fan-toast"); if (!t) { t = el("div", "fan-toast"); document.body.append(t); } t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 7000); }
@@ -122,7 +125,7 @@ import { Fan } from "./hosts.js?v=mvzn1urc";
   }
   // The Live telecast button's hover: everything that decides whether it's lit, to be read aloud when debugging someone else's setup [U, Nov 2 2026].
   function telecastInfo(g, st, live) {
-    const nets = String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean), set = Object.entries(hdhr.channels).map(([n, c]) => `${n} ${c}`).join(", ");
+    const nets = watchSetup === "hdhomerun" ? antennaNets(g) : String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean), set = Object.entries(hdhr.channels).map(([n, c]) => `${n} ${c}`).join(", ");
     const why = live ? "on" : st === "final" ? "off: the game is over" : !nets.length ? "off: ESPN lists no network" : watchSetup !== "hdhomerun" ? "off: no YouTube TV link pasted for " + nets.join(" or ") : !hdhr.ip ? "off: no HDHomeRun address" : "off: no channel set for " + nets.join(" or ");
     return ["Live telecast: " + why, `Game: ${g.away} @ ${g.home}, ${st || "upcoming"}`, "Networks: " + (nets.join(", ") || "none"), "Watching with: " + (watchSetup === "hdhomerun" ? "HDHomeRun" : "YouTube TV"),
       ...(watchSetup === "hdhomerun" ? ["HDHomeRun address: " + (hdhr.ip || "none"), "Channels set: " + (set || "none"), "Matched: " + (hdhrPick(g) ? `${hdhrPick(g)} on ${hdhrChannel(g)}` : "none"), "Plays in VLC: " + (Fan.playHdhr ? "yes, if VLC is installed" : "no, needs a connector of 0.33 or later")] : ["Link: " + (pastedLink(g) || "none")]),
@@ -194,7 +197,7 @@ import { Fan } from "./hosts.js?v=mvzn1urc";
     return tag;
   }
 
-  const APP_VERSION = "0.33.7";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.33.8";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
