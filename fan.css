@@ -71,6 +71,7 @@
   .tabrows.bottom { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: 0; z-index: 30; }   /* pinned to the viewport bottom */
   /* The NHL's page (Nov 2 2026, the user's photos): the rink behind everything, and the tab strips as its boards, red line to kick plate, the bottom one flipped (src/data/images.css). */
   :root[data-league="nhl"] body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-rink) center / cover no-repeat, color-mix(in srgb, #1d3f63 40%, var(--bg)); }
+  :root[data-league="nba"] body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-court) center / cover no-repeat, color-mix(in srgb, #8a5a2b 40%, var(--bg)); }   /* the NBA's page: the user's court photo */
   :root[data-league="nhl"] .tabrows { background: var(--img-boards) left top / auto 100% repeat-x; }
   :root[data-league="nhl"] .tabrows.bottom { background-image: var(--img-boards-flip); }
   :root[data-league="nhl"] .weektabs button { color: rgb(24 36 58 / .85); }
