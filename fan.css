@@ -219,15 +219,16 @@
   #fanBtn.due { position: relative; }
   #fanBtn.due::after { content: ""; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
   .fan-tabs { display: grid; grid-auto-rows: max-content; align-content: start; gap: 2px; padding: 8px 0; border-right: 1px solid var(--paper-edge); }
-  .fan-tabs button { appearance: none; background: none; border: 0; border-left: 3px solid transparent; width: 248px; height: 71px; padding: 0 12px; text-align: center; font: 500 22px/1.1 var(--font-display); color: var(--ink-dim); cursor: pointer; }   /* twice the old size, on the user's word (Nov 2 2026) */
+  .fan-tabs button { appearance: none; background: none; border: 0; border-left: 3px solid transparent; width: 124px; height: 71px; padding: 0 6px; text-align: center; font: 500 20px/1.1 var(--font-display); color: var(--ink-dim); cursor: pointer; }   /* down the left in a landscape window, half the width they had (the user's, Nov 2 2026), so the open tab has room */
   .fan-tabs button:hover { color: var(--ink); }
   .fan-tabs button[aria-selected="true"] { color: var(--accent); border-left-color: var(--accent); background: rgb(95 208 166 / .06); }
-  :where(.lay-phone, .lay-portrait, .lay-narrow) {   /* a tall or narrow window, and a phone: the tabs go across the top (the rows rule), so the open tab gets the full width */
+  :where(.lay-phone, .lay-portrait, .lay-narrow) {   /* a portrait or narrow window, and a phone: the tabs go across the top (the user's, Nov 2 2026), so the open tab gets the full width */
     .fan-window[open] { grid-template: auto auto minmax(0, 1fr) / minmax(0, 1fr); }
     .fan-tabs { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding: 0 8px; border-right: 0; border-bottom: 1px solid var(--paper-edge); }
     .fan-tabs button { width: auto; height: auto; border-left: 0; border-bottom: 2px solid transparent; padding: 10px 12px 8px; font-size: 16px; background: none; }
     .fan-tabs button[aria-selected="true"] { border-bottom-color: var(--accent); background: none; }
   }
+  :where(.lay-portrait, .lay-narrow:not(.lay-phone)) .fan-tabs button { height: 36px; padding: 0 16px; font-size: 20px; }   /* half the height of a landscape tab, in its type */
   .fan-list { display: grid; align-content: start; box-sizing: border-box; padding: 4px; }
   .fan-list[hidden] { display: none; }
   .fan-telecasts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 460px); gap: 24px; padding: 8px; }
