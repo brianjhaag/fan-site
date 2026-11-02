@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvykt8gb";
-import { Fan } from "./hosts.js?v=mvykt8gb";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvykt8gb";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvykt8gb";
-import { demoAway, setBet } from "./trade.js?v=mvykt8gb";
+import { espnState } from "./espn.js?v=mvyl0po8";
+import { Fan } from "./hosts.js?v=mvyl0po8";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyl0po8";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyl0po8";
+import { demoAway, setBet } from "./trade.js?v=mvyl0po8";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -174,7 +174,7 @@ import { demoAway, setBet } from "./trade.js?v=mvykt8gb";
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
       const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
       const job = (text, row) => at(el("p", "fan-job", text), row, 3);
-      const service = (name, what, row) => { const d = el("div", "fan-out"); d.append(el("b", null, name), typeof what === "string" ? el("small", null, what) : what); return at(d, row, 5); };
+      const service = (name, what, row, on) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), typeof what === "string" ? el("small", null, what) : what); return at(d, row, 5); };
       const con = el("div", "fan-con"), state = el("div", "fan-st " + (here ? "ok" : connectorAway && !stopPressed ? "bad" : "off"));
       state.append(el("i"), el("span", null, here ? "Running" : connectorAway ? (stopPressed ? "Stopped" : "Not answering") : "Not on this page"));
       con.append(el("b", null, "Fan connector"), state);
@@ -183,11 +183,11 @@ import { demoAway, setBet } from "./trade.js?v=mvykt8gb";
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Outside"), 1, 5),
         at(el("div", "fan-frame" + (here ? "" : " away")), "3 / 7", 3),
-        card("watch", "2 / span 2"), wire("scores, telecasts", true, false, 2, "2 / 5"), service("ESPN, YouTube TV", "Your own pull, and your own links.", 2),
+        card("watch", "2 / span 2"), wire("scores, telecasts", true, false, 2, "2 / 5"), service("ESPN, YouTube TV", "Your own pull, and your own links.", 2, true),
         at(con, 3, 3),
         card("track", 4), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 4, 2) : at(el("span"), 4, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", 4),
-        card("price", 5), wire("lines", here && pricesWanted, false, 5, 2), job("Pulls lines on a timer, over your own connection.", 5), wire("prices", here && pricesWanted, false, 5, 4), service("Kalshi, Polymarket", "Public prices.", 5),
-        card("bet", 6), wire("orders, fills", here && !!Fan.trader, true, 6, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", 6), wire("orders, fills", here && !!Fan.keyed, true, 6, 4), service("Kalshi", Fan.account && !Fan.keyed ? keysItem() : el("small", null, "Your account, your money."), 6)
+        card("price", 5), wire("lines", here && pricesWanted, false, 5, 2), job("Pulls lines on a timer, over your own connection.", 5), wire("prices", here && pricesWanted, false, 5, 4), service("Kalshi, Polymarket", "Public prices.", 5, here && pricesWanted),
+        card("bet", 6), wire("orders, fills", here && !!Fan.trader, true, 6, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", 6), wire("orders, fills", here && !!Fan.keyed, true, 6, 4), service("Kalshi", Fan.account && !Fan.keyed ? keysItem() : el("small", null, "Your account, your money."), 6, here && !!Fan.keyed)
       );
       const status = el("div", "fan-status");
       drawStatus(status);
