@@ -1,7 +1,7 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { NHL_TEAMS } from "./data/assets.js?v=mvzp7gj4";
+import { NHL_TEAMS } from "./data/assets.js?v=mvzpkved";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = Date.UTC(2026, 9, 28, 6), NFL_WEEKS = 18;
@@ -168,7 +168,7 @@ async function pullNba() {
   rows.forEach(r => { NBA_INFO[r.a] = r.an; NBA_INFO[r.h] = r.hn; });
   return rows;
 }
-const NBA_SCHEDULE = [];   // only the NFL can be turned on for now
+const NBA_SCHEDULE = [];   // pulled only once the NBA is turned on (pullNba)
 
 // NHL, the same way, only once its league is on: one Eastern day a slate, from the season's start [C, Oct 6 2026] to 16 days ahead. Codes are Kalshi's (ESPN's, but UTA for Utah); a team not in NHL_TEAMS (an exhibition) is left out.
 const NHL_START = Date.UTC(2026, 9, 6);

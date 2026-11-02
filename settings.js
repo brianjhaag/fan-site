@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzp7gj4";
-import { Fan } from "./hosts.js?v=mvzp7gj4";
-import { bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzp7gj4";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzp7gj4";
-import { demoAway, setBet } from "./trade.js?v=mvzp7gj4";
+import { espnState } from "./espn.js?v=mvzpkved";
+import { Fan } from "./hosts.js?v=mvzpkved";
+import { LEAGUES_LATER, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzpkved";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzpkved";
+import { demoAway, setBet } from "./trade.js?v=mvzpkved";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -17,10 +17,11 @@ import { demoAway, setBet } from "./trade.js?v=mvzp7gj4";
     const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) { win.close(); toNow(); } };
     let tab = "about";
     const leagueRows = () => Object.entries(leagueNames()).map(([k, h]) => {
-      const row = el("label", "fan-lg"), c = el("input");
+      const row = el("label", "fan-lg" + (LEAGUES_LATER.includes(k) ? " later" : "")), c = el("input");
       c.type = "checkbox"; c.checked = leaguesOn.has(k); c.disabled = !LEAGUES_READY.includes(k) || (c.checked && leaguesOn.size === 1); c.setAttribute("aria-label", "Use " + h);
-      c.addEventListener("change", () => { setLeagueOn(k, c.checked); fill(); });
+      c.addEventListener("change", () => { if (c.checked) { c.disabled = true; row.append(el("small", null, "getting its games from ESPN…")); } setLeagueOn(k, c.checked).then(fill, fill); });   // a league's first turn-on pulls its season from ESPN, which takes a few seconds: it says so
       row.append(c, h);
+      if (LEAGUES_LATER.includes(k)) { row.title = "Next year"; row.append(el("small", null, "next year")); }
       return row;
     });
     // The monitor map: drawn to scale in Windows' arrangement. The selected monitor shows the layout's spots, numbered in the order they fill.

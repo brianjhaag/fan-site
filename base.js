@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullNhl, pullStatus, setRefresh } from "./espn.js?v=mvzp7gj4";
-import { BOOK_ICONS, HELMETS, NHL_LOGOS, NHL_TEAMS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzp7gj4";
-import { Calc } from "./calc.js?v=mvzp7gj4";
-import { Fan } from "./hosts.js?v=mvzp7gj4";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullNhl, pullStatus, setRefresh } from "./espn.js?v=mvzpkved";
+import { BOOK_ICONS, HELMETS, NHL_LOGOS, NHL_TEAMS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzpkved";
+import { Calc } from "./calc.js?v=mvzpkved";
+import { Fan } from "./hosts.js?v=mvzpkved";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -196,7 +196,7 @@ import { Fan } from "./hosts.js?v=mvzp7gj4";
     return tag;
   }
 
-  const APP_VERSION = "0.34.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.34.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -231,7 +231,8 @@ import { Fan } from "./hosts.js?v=mvzp7gj4";
   // A league's checkbox in the settings window is the same kind of yes or no: off, the page and the refreshes do nothing for it. NFL is on until the user says otherwise. At least one stays on.
   const LEAGUE_ORDER = ["nfl", "nba", "nhl", "mlb"];
   let leaguesOn = new Set(["nfl"]);
-  const LEAGUES_READY = ["nfl", "nhl"];   // the rest show in the Leagues tab, off and disabled, on the user's word. The NHL on the user's word (Nov 2 2026)
+  // On the user's word (Nov 2 2026): a first visit has the NFL only; the NBA and NHL can be turned on, and stay as the user left them. MLB waits for next year: struck through in the Leagues tab, not in the league picker.
+  const LEAGUES_READY = ["nfl", "nba", "nhl"], LEAGUES_LATER = ["mlb"];
   // Which league a ticket belongs to, from its week: an NBA day is yyyymmdd, an NHL day 100000000 more, week 0 is a market in no league.
   const ticketLeagueOn = t => { const w = weekOf(t); return !w || leaguesOn.has(w > NHL_BASE ? "nhl" : w > 1e7 ? "nba" : "nfl"); };
   const weekTickets = () => (trackingOn ? allTickets.filter(t => weekOf(t) === curWeek) : []);
@@ -839,7 +840,7 @@ import { Fan } from "./hosts.js?v=mvzp7gj4";
   // The league picker under Fan lists every league, with the ones that are off dimmed and not choosable: NFL and NBA are full panels; the other leagues are stubs for now.
   function syncLeaguePick() {
     const pick = $("leaguePick"), names = leagueNames();
-    pick.replaceChildren(...LEAGUE_ORDER.map(k => { const o = el("option", null, names[k]); o.value = k; o.disabled = !leaguesOn.has(k); return o; }));
+    pick.replaceChildren(...LEAGUE_ORDER.filter(k => !LEAGUES_LATER.includes(k)).map(k => { const o = el("option", null, names[k]); o.value = k; o.disabled = !leaguesOn.has(k); return o; }));
     pick.value = LEAGUES.includes(view) ? view : league;
     document.documentElement.classList.toggle("pick-long", names[pick.value].length > 3);
   }
@@ -897,4 +898,4 @@ import { Fan } from "./hosts.js?v=mvzp7gj4";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { nick, BROADCAST, hdhr, hdhrChannel, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ABBR, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, HELM_PAD, LEAGUES_READY, LG, NETWORKS, RULES, TELECAST_LAYOUTS, abbr, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, lumOf, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, telecastLink, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, slateId, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+export { LEAGUES_LATER, nick, BROADCAST, hdhr, hdhrChannel, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ABBR, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, HELM_PAD, LEAGUES_READY, LG, NETWORKS, RULES, TELECAST_LAYOUTS, abbr, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, lumOf, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, telecastLink, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, slateId, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
