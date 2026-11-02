@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzibtlm";
-import { Fan } from "./hosts.js?v=mvzibtlm";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzibtlm";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzibtlm";
-import { demoAway, setBet } from "./trade.js?v=mvzibtlm";
+import { espnState } from "./espn.js?v=mvzijc69";
+import { Fan } from "./hosts.js?v=mvzijc69";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzijc69";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzijc69";
+import { demoAway, setBet } from "./trade.js?v=mvzijc69";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -181,7 +181,7 @@ import { demoAway, setBet } from "./trade.js?v=mvzibtlm";
         ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : book && book.note ? ["warn", book.note[0].toUpperCase() + book.note.slice(1)] : [book && book.live && book.games ? "live" : "ok", "Lines from " + time(slateAt) + (book && book.live && book.games ? `, live on ${book.games} game${book.games === 1 ? "" : "s"}` : ""), true]],
         ["Kalshi", !hi ? ["off", "Needs the connector"] : hi.keyError ? ["bad", hi.keyError] : !hi.env ? ["off", "No key connected"] : ["ok", `${feed.classList.contains("on") ? "Signed in" : "Connected"}${hi.env === "demo" ? " to demo, fake money" : ""}, orders ${hi.orders ? "on" : "off"}`, feed.classList.contains("on")]],   // the fill feed's connection is signed with the key, so Kalshi taking it proves the key
         ["Fill feed", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "Waits for a Kalshi key"] : !feed.textContent || feed.classList.contains("wait") ? ["wait", "Starting"] : feed.classList.contains("on") ? ["live", "Live"] : ["bad", feed.textContent]],
-        ["Telecasts", nets ? ["ok", nets + (nets === 1 ? " network linked" : " networks linked")] : ["off", "No links pasted"]],
+        ["Networks", nets ? ["ok", nets + (nets === 1 ? " network linked" : " networks linked")] : ["off", "No links pasted"]],
         ["Leagues", ["ok", [...leaguesOn].map(k => leagueNames()[k]).join(", ")]]
       ] };
     };
@@ -262,6 +262,16 @@ import { demoAway, setBet } from "./trade.js?v=mvzibtlm";
     // The connector, drawn as a circle with a gear behind it, on the user's word (Nov 2 2026). The gear turns, faintly green, while the whole system is healthy (drawStatus): the user knows it's all well if it's turning.
     const GEAR = (() => { const teeth = 10, R = 50, r = 41, w = 0.18, corners = []; for (let i = 0; i < teeth; i++) { const a = (i / teeth) * 2 * Math.PI; [[a - w * 1.4, r], [a - w, R], [a + w, R], [a + w * 1.4, r]].forEach(([t, d]) => corners.push(`${(50 + d * Math.cos(t)).toFixed(2)},${(50 + d * Math.sin(t)).toFixed(2)}`)); } return `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill-rule="evenodd" d="M${corners.join("L")}Z M50,34 a16,16 0 1,0 0.01,0 Z"/></svg>`; })();
     const gearFrame = here => { const f = el("div", "fan-frame" + (here ? "" : " away")), circle = el("div", "fan-gear"); circle.innerHTML = GEAR; f.append(circle); return f; };
+    // How this user watches: the watching setup the telecast router will read (PLAN.md E). YouTube TV is the only one so far; more come as manifests.
+    const WATCH_SETUPS = [["youtubetv", "YouTube TV"]];
+    const networkPick = () => {
+      const s = el("select", "fan-pick");
+      WATCH_SETUPS.forEach(([v, name]) => { const o = el("option", null, name); o.value = v; s.append(o); });
+      try { s.value = localStorage.getItem("fan.watchSetup") || "youtubetv"; } catch (e) {}
+      s.setAttribute("aria-label", "How you watch");
+      s.addEventListener("change", () => { try { localStorage.setItem("fan.watchSetup", s.value); } catch (e) {} });
+      return s;
+    };
     const aboutRows = () => {
       const box = el("div", "fan-about"), parts = ABOUT();
       const here = !!Fan.lines && !connectorAway;   // the connector is on this page and answering
@@ -272,15 +282,17 @@ import { demoAway, setBet } from "./trade.js?v=mvzibtlm";
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
       const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
       const job = (text, status, row) => { const d = el("div", "fan-job"); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
-      const service = (name, row, on, ...rest) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), ...rest); return at(d, row, 5); };
+      const outBox = (name, on, ...rest) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), ...rest); return d; };
+      const service = (name, row, on, ...rest) => at(outBox(name, on, ...rest), row, 5);
+      const stack = (...boxes) => { const s = el("div", "fan-outs"); s.append(...boxes); return s; };
       const con = el("div", "fan-con");
       con.append(el("b", null, "Fan connector"), slot("Connector", true));
       if (!Fan.lines && Fan.startLink) con.append(getOrStart());   // on the name's line where it fits, like the controls below
       con.append(el("div", "fan-con-ctl"), el("div", "fan-con-page"));
       box.append(
-        at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Outside"), 1, 5),
+        at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Everywhere else"), 1, 5),
         at(gearFrame(here), "3 / 7", 3),
-        card("watch", "2 / span 2"), wire("scores, telecasts", true, false, 2, "2 / 5"), service("ESPN, YouTube TV", 2, true, slot("ESPN"), slot("Telecasts")),
+        card("watch", "2 / span 2"), wire("scores, networks", true, false, 2, "2 / 5"), at(stack(outBox("ESPN", true, slot("ESPN", true)), outBox("Networks", true, networkPick(), slot("Networks", true))), 2, 5),
         at(con, 3, 3),
         card("track", 4), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 4, 2) : at(el("span"), 4, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 4),
         card("price", 5), wire("lines", here && pricesWanted, false, 5, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 5), wire("prices", here && pricesWanted, false, 5, 4), service("Kalshi, Polymarket US", 5, here && pricesWanted, routeBox("prices")),

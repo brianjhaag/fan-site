@@ -207,6 +207,8 @@
   .fan-wire.lit i.r { border-left-color: var(--accent); }
   .fan-out { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; padding: 5px 10px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; }
   .fan-out b { font-size: 16px; color: var(--ink); }
+  .fan-outs { display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+  .fan-pick { appearance: auto; padding: 3px 6px; background: var(--bg); color: var(--ink); border: 1px solid var(--card-rule); border-radius: 2px; font: 400 14px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
   .fan-out small { font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-list .fan-out button, .fan-list .fan-con button { appearance: none; padding: 6px 10px; background: none; border: 1px solid var(--accent); border-radius: 2px; font-size: 14px; line-height: 1.3; color: var(--accent); cursor: pointer; }
   .fan-con-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
