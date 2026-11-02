@@ -188,7 +188,8 @@
   .fan-gear svg { width: 86%; height: 86%; fill: var(--ink-dim); opacity: .1; transition: opacity .6s, fill .6s, filter .6s; }
   .fan-about.healthy .fan-gear svg { fill: var(--accent); opacity: .22; filter: drop-shadow(0 0 10px rgb(95 208 166 / .45)); animation: fan-turn 24s linear infinite; }
   @keyframes fan-turn { to { transform: rotate(360deg); } }
-  .fan-con { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 8px 12px 0; }
+  .fan-con { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; margin-top: 8px; padding: 10px 12px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; }   /* under the gear, a space of its own */
+  .fan-con > .fan-con-ctl, .fan-con > .fan-con-page { justify-content: center; }
   .fan-con > b { font-size: 18px; color: var(--ink); }
   .fan-free { font-size: 19px; line-height: 1; color: var(--accent); }
   .fan-list:has(.fan-yours) { min-height: 100%; grid-template-rows: auto 1fr; }   /* the statement takes what's left of the window */
