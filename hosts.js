@@ -162,8 +162,12 @@ Fan.connectStore = async () => {
     const r = await (await window.fetch("/connector/stop", { method: "POST" })).json();
     if (!r.ok) throw new Error(r.error);
   };
+  if (hi && hi.update) Fan.updateConnector = async () => {   // the Update button. The connector fetches the new program and replaces itself
+    const r = await (await window.fetch("/connector/update", { method: "POST" })).json();
+    if (!r.ok) throw new Error(r.error);
+  };
   if (hi && hi.telecast) {
-    const send = (path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+    const send =(path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };
     if (hi.screens) Fan.screens = { list: () => window.fetch("/connector/screens").then(r => r.json()), show: pref => send("/connector/spots", { pref }) };
   }

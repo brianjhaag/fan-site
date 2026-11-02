@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvym6mo9";
-import { Fan } from "./hosts.js?v=mvym6mo9";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvym6mo9";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvym6mo9";
-import { demoAway, setBet } from "./trade.js?v=mvym6mo9";
+import { espnState } from "./espn.js?v=mvyn6i6d";
+import { Fan } from "./hosts.js?v=mvyn6i6d";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyn6i6d";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyn6i6d";
+import { demoAway, setBet } from "./trade.js?v=mvyn6i6d";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -134,13 +134,34 @@ import { demoAway, setBet } from "./trade.js?v=mvym6mo9";
     };
     // A new connector program is a new minor version, so the page's own major.minor says what's newest. A program too old to say its version is behind.
     const programBehind = v => { const minor = s => s.split(".").slice(0, 2).map(Number); if (!v) return true; const [a, b] = minor(v), [c, d] = minor(APP_VERSION); return a < c || (a === c && b < d); };
+    const newestProgram = () => APP_VERSION.replace(/\d+$/, "0");
+    // The Update button: the connector replaces itself, and this page reloads when the new one answers. A failure says why, and it can be pressed again.
+    const updateItem = from => {
+      const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Update to " + newestProgram());
+      b.type = "button";
+      b.addEventListener("click", () => {
+        b.hidden = true;
+        wrap.querySelector("small")?.remove();
+        const note = el("small", null, "Updating…"), fail = text => { note.textContent = text; b.hidden = false; };
+        wrap.append(note);
+        Fan.updateConnector().then(() => {
+          let tries = 0;
+          const t = setInterval(() => {
+            if (++tries > 60) { clearInterval(t); fail("It didn't come back. Press Update again, or start the connector from the web link."); return; }
+            Fan.hostHello().then(hi => { if (hi.version !== from) { clearInterval(t); location.reload(); } }, () => {});
+          }, 2000);
+        }, e => fail("Couldn't update: " + (e && e.message)));
+      });
+      wrap.append(b);
+      return wrap;
+    };
     const statusRows = async () => {
       let hi = null, away = false;
       if (stopPressed) away = true;
       else if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
       const espn = espnState(), feed = $("feedNote"), nets = Object.values(networkLinks).filter(u => /^https:\/\//i.test(u)).length, time = at => timeZoned(new Date(at));
       return { hi, away, rows: [
-        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? programBehind(hi.version) ? ["warn", `${hi.version ? hi.version + ", u" : "U"}pdate to ${APP_VERSION.replace(/\d+$/, "0")}`] : ["ok", "Running " + hi.version] : ["off", "Not on this page"]],
+        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? programBehind(hi.version) ? ["warn", hi.update ? hi.version : `${hi.version ? hi.version + ", u" : "U"}pdate to ${newestProgram()}`] : ["ok", "Running " + hi.version] : ["off", "Not on this page"]],
         ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at)] : ["ok", "Using this browser's saved copy"]],
         ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : away && Fan.lines === Fan.store ? ["off", "Kept by the connector, which isn't running"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
         ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : ["ok", "Lines from " + time(slateAt)]],
@@ -158,7 +179,8 @@ import { demoAway, setBet } from "./trade.js?v=mvym6mo9";
       rows.forEach(([name, [state, text]]) => { const at = box.querySelector(`[data-st="${name}"]`), r = el("div", "fan-st " + state); r.append(el("i")); if (!at.dataset.plain) r.append(el("b", null, name)); r.append(el("span", null, text)); at.replaceChildren(r); });
       ctl.replaceChildren();
       if (away && Fan.startLink) ctl.append(startItem());
-      if (hi && hi.stop) ctl.append(stopItem(box));
+      if (hi && hi.update && programBehind(hi.version)) ctl.append(updateItem(hi.version));   // in Stop's place: there's room on the line for one
+      else if (hi && hi.stop) ctl.append(stopItem(box));
       if (hi && hi.login != null) {   // an installed connector's own checkbox
         const lab = el("label", "fan-check"), c = el("input");
         c.type = "checkbox"; c.checked = hi.login;
