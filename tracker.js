@@ -1,11 +1,11 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { HELMETS } from "./data/assets.js?v=mvzo9izr";
-import { Fan } from "./hosts.js?v=mvzo9izr";
-import { $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvzo9izr";
-import { setPlaybook } from "./panels.js?v=mvzo9izr";
+import { HELMETS } from "./data/assets.js?v=mvzp7gj4";
+import { Fan } from "./hosts.js?v=mvzp7gj4";
+import { nick, $, FAN_CLASSES, GAMES, LG, abbr, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mvzp7gj4";
+import { setPlaybook } from "./panels.js?v=mvzp7gj4";
   Object.assign(later, { syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
-  const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(last(g.away))} ${pts(g.line.sp)} @ ${n(last(g.home))}`; };
+  const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))} ${pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };
   const vigText = v => v < -0.5 ? "−" + money(-v) : money(Math.max(0, v));
   // One-time copy of this browser's saved wagers into the database, then the database becomes the source.
   async function startRecords() {
@@ -427,7 +427,7 @@ import { setPlaybook } from "./panels.js?v=mvzo9izr";
       return;
     }
     const g = GAMES[gameSel.value];
-    const names = type.value === "Total" ? ["Over", "Under"] : [last(g.away), last(g.home)];
+    const names = type.value === "Total" ? ["Over", "Under"] : [nick(g, "away"), nick(g, "home")];
     // A parlay has one price for the whole ticket, so its legs carry no price (and a moneyline leg has nothing to enter).
     const parlay = mode === "parlay", kal = isKalshi() && !parlay;
     const price = parlay || (type.value === "Moneyline" && !kal) ? null : el("input");
@@ -648,7 +648,7 @@ import { setPlaybook } from "./panels.js?v=mvzo9izr";
   const helmetImg = n => HELMETS[n] ? helmImg(n, "hl") : null;
   function gameFace(g) {   // helmet, abbreviation and the visitor's spread @ helmet and abbreviation
     const f = el("span", "gface"); f.style.display = "inline-flex"; f.style.alignItems = "center"; f.style.gap = "7px";
-    [helmetImg(last(g.away)), el("span", null, abbr(last(g.away))), el("span", "sp", g.noLine ? "" : pts(g.line.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1))), el("span", "at", "@"), helmetImg(last(g.home)), el("span", null, abbr(last(g.home)))].forEach(x => x && f.append(x));
+    [helmetImg(nick(g, "away")), el("span", null, abbr(nick(g, "away"))), el("span", "sp", g.noLine ? "" : pts(g.line.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1))), el("span", "at", "@"), helmetImg(nick(g, "home")), el("span", null, abbr(nick(g, "home")))].forEach(x => x && f.append(x));
     return f;
   }
   function syncGame() {

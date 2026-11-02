@@ -15,7 +15,9 @@ const Calc = (() => {
   // graphMinMargin: the P/L graph's narrowest margin axis (0 = its default); byes, graphs, stats, gameDetails: what the league has built.
   RULES.leagues = {
     nfl: { code: "NFL", sigma: 12.25, totalSd: 9, keyNumbers: true, maxMargin: 60, ties: true, liveHours: 3.5, daily: false, codeChips: false, graphMinMargin: 0, byes: true, graphs: true, stats: true, gameDetails: true },
-    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: false }
+    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: false },
+    // The NHL's sigma and totalSd are Claude's estimates (goal margins and totals both run about 2.4 goals each way), not fitted; overtime decides every game, so no ties.
+    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: false }
   };
   RULES.hedge = { LIFT: RULES.defaults.lift, CAPITAL: RULES.userSet.capital };
   const D = RULES.defaults;
@@ -24,7 +26,9 @@ const Calc = (() => {
 
   /* ==== Names and prices ==== */
   const last = n => n.split(" ").pop();
-  const gameLabel = g => `${last(g.away)} at ${last(g.home)}`;
+  // A team's name as the tables key it: its nickname, or for the NHL, whose nicknames meet the NFL's and NBA's (Panthers, Jets, Kings), its full name.
+  const nick = (g, side) => leagueId(g) === "nhl" ? g[side] : last(g[side]);
+  const gameLabel = g => `${nick(g, "away")} at ${nick(g, "home")}`;
   const gameKey = g => g.t + "|" + gameLabel(g);
   // A market at 100¢ has no American odds: its price is infinite, and it reaches here as that or, after being saved, as nothing.
   const atFull = od => !od || !Number.isFinite(od);
@@ -133,7 +137,7 @@ const Calc = (() => {
   }
   // The Kalshi market for a bet on game g: { tk, side }, or { why } when there is none. leg = { type, side, line }.
   function kalshiMarket(g, l) {
-    const lad = g.lad && g.lad.v === 2 ? g.lad : null, an = last(g.away), hn = last(g.home);
+    const lad = g.lad && g.lad.v === 2 ? g.lad : null, an = nick(g, "away"), hn = nick(g, "home");
     if (l.type === "Moneyline") { const m = lad && lad.ml && lad.ml[l.side === hn ? "home" : "away"], tk = m && m.tk; return tk ? { tk, side: "yes" } : { why: "No Kalshi market saved for this bet" }; }
     if (l.type === "Spread" && lad) {
       const row = (lad.sp || []).find(([fav, K, , , t]) => t && K === Math.abs(l.line) && (l.line < 0 ? l.side === (fav === "home" ? hn : an) : l.side === (fav === "home" ? an : hn)));
@@ -254,7 +258,7 @@ const Calc = (() => {
   function fairLeg(l, g) {
     const L = g && !g.noLine && g.line;
     if (!L) return { win: 0.5, push: 0 };
-    const awaySide = l.side === last(g.away);
+    const awaySide = l.side === nick(g, "away");
     if (l.type === "Moneyline") return { win: noVig(L.ml, awaySide), push: 0 };
     if (l.type === "Spread") return coverChances(g, awaySide ? L.sp : -L.sp, l.line);
     const sd = totalSd(g), over = 1 - normCdf((l.line - L.tot) / sd), push = Number.isInteger(l.line) ? normCdf((l.line + .5 - L.tot) / sd) - normCdf((l.line - .5 - L.tot) / sd) : 0;
@@ -328,7 +332,7 @@ const Calc = (() => {
     return t.line < 0 ? "Favorite" : "Underdog";
   }
 
-  const shared = { leagueId, leagueOf, outcomes, last, gameLabel, gameKey, profitOf, bonusFactor, riskOf, decimalOf, ticketPrice, winChance, legResult, ticketPL, marginModel, liveModel, totalSd, normCdf, fairLeg, lineOk, FAN_CLASSES, betClass };
+  const shared = { leagueId, leagueOf, outcomes, last, nick, gameLabel, gameKey, profitOf, bonusFactor, riskOf, decimalOf, ticketPrice, winChance, legResult, ticketPL, marginModel, liveModel, totalSd, normCdf, fairLeg, lineOk, FAN_CLASSES, betClass };
 
   /* ==== What depends on the schedule and the clock ==== */
   function make(deps) {
@@ -347,7 +351,7 @@ const Calc = (() => {
       legsOf(t).forEach(l => {
         const g = gameOf(l.key);
         if (g && g.final) {
-          const r = legResult(l, last(g.away), g.final[1] - g.final[0], g.final[0] + g.final[1]);
+          const r = legResult(l, nick(g, "away"), g.final[1] - g.final[0], g.final[0] + g.final[1]);
           if (r < 0) lost = true; else if (r === 0) pushed = true;
         } else pending++;
       });
@@ -365,7 +369,7 @@ const Calc = (() => {
     // on the live spread (spread bets), or a normal curve around the live total (total bets). Parlays keep their own price. Null without live prices.
     function liveChances(t, g) {
       if (t.parlay || !g || !g.live || status(g)[1] !== "live") return null;
-      const L = g.live, awaySide = t.side === last(g.away);
+      const L = g.live, awaySide = t.side === nick(g, "away");
       if (t.type === "Moneyline") { const p = noVig(L.ml, awaySide); return { win: p, lose: 1 - p }; }
       if (t.type === "Spread") { const { win, push } = coverChances(g, awaySide ? L.sp : -L.sp, t.line); return { win, lose: 1 - win - push }; }
       if (t.type === "Total") { const over = 1 - normCdf((t.line - L.tot) / totalSd(g)), p = t.side === "Over" ? over : 1 - over; return { win: p, lose: 1 - p }; }
@@ -414,7 +418,7 @@ const Calc = (() => {
     // A parlay is settled as soon as a leg loses, or once all its legs are decided; a pending one adds nothing yet.
     function gameSettledPL(g, tickets) {
       if (!g.final) return null;
-      const x = g.final[1] - g.final[0], T = g.final[0] + g.final[1], an = last(g.away), bets = gameBets(g, tickets);
+      const x = g.final[1] - g.final[0], T = g.final[0] + g.final[1], an = nick(g, "away"), bets = gameBets(g, tickets);
       let v = bets.reduce((s, t) => s + ticketPL(t, an, x, T, true), 0), any = bets.length > 0;
       parlayShares(g, tickets).forEach(s => { const st = settleOf(s.t); if (st.state !== "pending") { any = true; v += st.net * s.f; } });
       return any ? v : null;
@@ -423,14 +427,14 @@ const Calc = (() => {
     // Max win assumes the best case for a multi-game parlay's other legs: the parlay pays its profit share when its legs on this game
     // win and loses its stake share when one of them loses. Max risk takes the opposite view and counts the share as lost (shareRisk).
     function shareTerm(g, shares, x, T) {
-      const an = last(g.away), key = gameKey(g);
+      const an = nick(g, "away"), key = gameKey(g);
       return shares.reduce((s, q) => {
         const rs = q.t.legs.filter(l => l.key === key).map(l => legResult(l, an, x, T));
         return s + (rs.includes(-1) ? -riskOf(q.t, q.t.odds) * q.f : rs.includes(0) ? 0 : profitOf(q.t.amount, q.t.odds) * q.f);
       }, 0);
     }
     function extremes(g, bets, shares = []) {
-      const an = last(g.away);
+      const an = nick(g, "away");
       let min = 0, max = 0;
       outcomes(g, bets, shares).forEach(({ x, T }) => {
         const v = bets.reduce((s, t) => s + ticketPL(t, an, x, T), 0), best = v + (shares.length ? shareTerm(g, shares, x, T) : 0);
@@ -457,7 +461,7 @@ const Calc = (() => {
       return { wagered, bonusTotal, risk, win, pl, plAny, expected: tickets.reduce((s, t) => s + projectedPL(t), 0), theo: -wagered * RULES.userSet.theoCash + bonusTotal * RULES.userSet.theoBonus };
     }
     // A multi-game parlay's share of this game in cash, its other legs assumed to win (a lost bonus share costs nothing).
-    const shareCash = (g, t, fr, x, T) => { const rs = t.legs.filter(l => l.key === gameKey(g)).map(l => legResult(l, last(g.away), x, T)); return rs.includes(-1) ? (t.bonus ? 0 : -riskOf(t, t.odds) * fr) : rs.includes(0) ? 0 : profitOf(t.amount, t.odds) * fr; };
+    const shareCash = (g, t, fr, x, T) => { const rs = t.legs.filter(l => l.key === gameKey(g)).map(l => legResult(l, nick(g, "away"), x, T)); return rs.includes(-1) ? (t.bonus ? 0 : -riskOf(t, t.odds) * fr) : rs.includes(0) ? 0 : profitOf(t.amount, t.odds) * fr; };
     // A suggested bet, from the Kalshi ladder (`g.lad`) and the margin model. Straight bets and same-game parlays plus each multi-game parlay's share.
     // The money for a hedge comes from YOUR BETS: a price better than the market (a boost, a line since moved) or a bonus bet leaves the position with an edge, and a hedge may spend
     // that edge but never more of it than there is. A position with no edge gets no suggestion: closing it would just turn an expected loss into a certain one.
@@ -466,7 +470,7 @@ const Calc = (() => {
     function hedgeFor(g, bets, shares = []) {
       const live = status(g)[1] === "live", lad = g.lad, L = live ? g.live : g.line;   // under way: the live prices; before kickoff: the saved line
       if (!lad || lad.v !== 2 || !L || !(bets.length || shares.length) || g.final || g.noLine) return null;
-      const an = last(g.away), hn = last(g.home), q = liveModel(g).detail(L.sp === 0 ? 0.001 : L.sp);
+      const an = nick(g, "away"), hn = nick(g, "home"), q = liveModel(g).detail(L.sp === 0 ? 0.001 : L.sp);
       const list = outcomes(g, bets, shares, { tot: L.tot, ties: false }), xs = list.map(o => o.x), ts = list.map(o => o.T), p = list.map(o => q.P(o.x) * o.w);
       const pTot = p.reduce((a, b) => a + b, 0) || 1;
       const own = xs.map((x, i) => bets.reduce((s, t) => s + ticketPL(t, an, x, ts[i], true), 0));   // cash results: a lost bonus bet costs nothing
@@ -522,9 +526,9 @@ const Calc = (() => {
       const m = TICKER.exec(String(tk));
       if (!m) return null;
       const [, lg, kind, yy, mon, dd, teams, team, num] = m, day = `20${yy}-${String("JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC".indexOf(mon) / 3 + 1).padStart(2, "0")}-${dd}`;
-      const g = ALL_GAMES.find(x => leagueId(x) === lg.toLowerCase() && x.t.slice(0, 10) === day && kxCodes(last(x.away)).some(a => kxCodes(last(x.home)).some(h => a + h === teams)));
+      const g = ALL_GAMES.find(x => leagueId(x) === lg.toLowerCase() && x.t.slice(0, 10) === day && kxCodes(nick(x, "away")).some(a => kxCodes(nick(x, "home")).some(h => a + h === teams)));
       if (!g) return null;
-      const an = last(g.away), hn = last(g.home), K = Number(num) - .5, yes = side === "yes";
+      const an = nick(g, "away"), hn = nick(g, "home"), K = Number(num) - .5, yes = side === "yes";
       if (kind === "TOTAL") return num && !team ? { g, type: "Total", side: yes ? "Over" : "Under", line: K } : null;
       const named = kxCodes(an).includes(team) ? an : kxCodes(hn).includes(team) ? hn : null, other = named === an ? hn : an;
       if (!named) return null;
@@ -548,7 +552,7 @@ const Calc = (() => {
       const rows = new Map();
       const row = (key, label) => { if (!rows.has(key)) rows.set(key, { key, label, fillN: 0, fillPaid: 0, ticketN: 0, ticketPaid: 0 }); return rows.get(key); };
       const betKey = (k, type, side, line) => k + "|" + type + "|" + side + (type === "Moneyline" ? "" : "|" + line);
-      const name = (g, type, side, line) => `${abbr(last(g.away))}@${abbr(last(g.home))} ${side}${type === "Moneyline" ? " ML" : " " + (type === "Total" ? line : (line > 0 ? "+" : "−") + Math.abs(line))}`;
+      const name = (g, type, side, line) => `${abbr(nick(g, "away"))}@${abbr(nick(g, "home"))} ${side}${type === "Moneyline" ? " ML" : " " + (type === "Total" ? line : (line > 0 ? "+" : "−") + Math.abs(line))}`;
       fills.forEach(x => {
         const { side, price } = fillSide(x), b = readTicker(x.ticker, side);
         const r = b ? row(betKey(gameKey(b.g), b.type, b.side, b.line), name(b.g, b.type, b.side, b.line)) : row("ticker|" + x.ticker + "|" + side, x.ticker + " " + side.toUpperCase());

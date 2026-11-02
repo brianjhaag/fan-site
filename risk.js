@@ -1,9 +1,9 @@
 // The risk detail and the totals: the payoff grid, the selected game's card, the week's sums.
-import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitTicketColumn, gameBets, gameKey, gameLabel, gamesInView, hedgeFor, last, later, leagueOf, legResult, legText, money, odds, parlayShares, profitOf, projectedPL, pts, resultCell, riskGame, riskKey, riskOf, setRiskGame, shareRisk, shareTerm, shortDayFmt, signedMoney, spentShares, status, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, updateGameArrows } from "./base.js?v=mvzo9izr";
+import { nick, pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitTicketColumn, gameBets, gameKey, gameLabel, gamesInView, hedgeFor, last, later, leagueOf, legResult, legText, money, odds, parlayShares, profitOf, projectedPL, pts, resultCell, riskGame, riskKey, riskOf, setRiskGame, shareRisk, shareTerm, shortDayFmt, signedMoney, spentShares, status, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, updateGameArrows } from "./base.js?v=mvzp7gj4";
   // extLegs: legs on this game from parlays that also span other games, as { t, l }. Their win zones are shaded over the grid
   // (they say nothing about profit, since a parlay needs its other legs too), and where every wager here wins is outlined.
   function riskGrid(g, bets, W, extLegs = [], shares = [], minHX = 0, shrink = 0, lfs = 18) {   // lfs: the figures' font size (13 over the wager ticket), for spacing them apart   // shrink takes that many px off the plot height (the Graphs popup is shorter)   // minHX widens the margin axis (the Graphs popup needs its band and blowout regions in view)
-    const an = last(g.away), hn = last(g.home);
+    const an = nick(g, "away"), hn = nick(g, "home");
     const c = g.line.sp, tc = g.line.tot, PL = 58, PR = W - 20, PT = 30, PB = 205 - shrink;
     const xs = [], Ts = [];
     // Zoom. Margin is centered on zero (pregame spreads rarely pass 10). The total axis is centered on where the total-based wagers on this game are
@@ -181,7 +181,7 @@ import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitT
       return m;
     };
     const sideBox = (side, row) => {
-      const box = el("div", "rk-side"), books = booksOn(last(g[side]));
+      const box = el("div", "rk-side"), books = booksOn(nick(g, side));
       const list = el("small", "rk-books");
       books.forEach((e, b) => {
         const item = el("span", "rk-bk"); item.append(bookTag(b, false, true));
@@ -251,7 +251,7 @@ import { pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitT
 
     const top = el("div", "rk-top");
     const title = el("span", "rk-game");
-    title.append(bdBadge(g, "away", `${last(g.away).toUpperCase()} ${pts(g.line.sp)}`), el("span", "rk-at", " @ "), bdBadge(g, "home"));
+    title.append(bdBadge(g, "away", `${nick(g, "away").toUpperCase()} ${pts(g.line.sp)}`), el("span", "rk-at", " @ "), bdBadge(g, "home"));
     title.style.setProperty("--pc", grid.pc + "%");   // the plot's center (margin 0), where the "@" goes
     top.append(title);
     const stats = el("div", "rk-stats");

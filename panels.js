@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mvzo9izr";
-import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvzo9izr";
-import { HELMETS } from "./data/assets.js?v=mvzo9izr";
-import { Fan } from "./hosts.js?v=mvzo9izr";
-import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, lumOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzo9izr";
+import { riskGrid } from "./risk.js?v=mvzp7gj4";
+import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvzp7gj4";
+import { HELMETS } from "./data/assets.js?v=mvzp7gj4";
+import { Fan } from "./hosts.js?v=mvzp7gj4";
+import { nick, $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, lumOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzp7gj4";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -251,7 +251,7 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, 
       const free = (cx, cy) => placed.every(q => Math.abs(q[0] - cx) >= CW + GAP || Math.abs(q[1] - cy) >= CH + GAP);
       const lines = add("g", {}), marks = add("g", {});
       list.slice().sort((a, b) => a.ml - b.ml || a.sp - b.sp).forEach(p => {
-        const k = teamLook(p.g, p.side), name = last(p.g[p.side]), tx = SX(p.sp), ty = MY(p.ml);
+        const k = teamLook(p.g, p.side), name = nick(p.g, p.side), tx = SX(p.sp), ty = MY(p.ml);
         const hw = helmetBox(name, HH).w;   // the helmet's width at this height, with its empty left margin trimmed
         const lo = plotL + CW / 2 + HO, hi = plotR - CW / 2;
         const bx = Math.max(lo, Math.min(hi, tx + (showsML(p) ? -NUDGE : NUDGE)));   // kept inside the plot so it never covers the axis labels
@@ -324,9 +324,9 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, 
         pop = el("div", "xypair");
         pop.dataset.game = chip.dataset.game;
         const dogPts = pts(dog.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1));
-        const S = Math.abs(dog.sp), start = Math.floor(S) + 1, favName = last(g[fav.side]), dogName = last(g[dog.side]);
+        const S = Math.abs(dog.sp), start = Math.floor(S) + 1, favName = nick(g, fav.side), dogName = nick(g, dog.side);
         const K2 = Math.floor(S) + 4.5, K3 = 3.5, k2f = Math.floor(K2);   // the step function's second rung (the blowout starts past it) and the small-upset rung
-        const F = fav.side === "home" ? 1 : -1, an = last(g.away), T0 = Math.round(g.line.tot);   // x = home margin = F * the favorite's margin M
+        const F = fav.side === "home" ? 1 : -1, an = nick(g, "away"), T0 = Math.round(g.line.tot);   // x = home margin = F * the favorite's margin M
         const usd = v => "$" + Math.round(v).toLocaleString("en-US"), sgn = v => (v < 0 ? "−" : "+") + usd(Math.abs(v));
         // EXISTING position on this game: its straight bets and same-game parlays. Multi-game parlays are NOT counted: they need other games to win too, and the
         // game detail graph only values their share by assuming those other legs win, which would flatter the position (they are listed so you can see them).
@@ -449,7 +449,7 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, 
   }
   // GAME SCRIPT: statistics and trends for each team, then injury impact, schedule spot and motivation. Returns [{cls, label, text}] (class sx, not stat: .stat b is a card rule).
   function scriptLines(g, side) {
-    const nick = last(g[side]), opNick = last(g[side === "away" ? "home" : "away"]), t = TEAM_INFO[nick], op = TEAM_INFO[opNick], all = Object.values(TEAM_INFO);
+    const nk = nick(g, side), opNick = nick(g, side === "away" ? "home" : "away"), t = TEAM_INFO[nk], op = TEAM_INFO[opNick], all = Object.values(TEAM_INFO);
     const rk = (fn, high) => { const v = fn(t); return v === null ? "–" : "#" + (1 + all.filter(x => { const y = fn(x); return y !== null && (high ? y > v : y < v); }).length); };
     const per = (n, k) => (k ? n / k : 0), f1 = v => v.toFixed(1), sg = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1);
     const out = [], wp = r => { const [w, l, ti = 0] = (r || "0-0").split("-").map(Number); return w + l + ti ? (w + ti / 2) / (w + l + ti) : 0; };
@@ -478,11 +478,11 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, 
     if (nextE) {
       if (nextE[0] > wk + 1) spot.push("bye next week (all-in spot)");
       const nn = nickOf(nextE[1]), nt = nn && TEAM_INFO[nn];
-      if (nn && nt) { const rival = divOf(nn) === divOf(nick), strong = wp(nt.r) >= 0.7; if (rival || strong) spot.push("look-ahead: " + (nextE[2] ? "v " : "@ ") + nextE[1] + " in Wk " + nextE[0] + " (" + [rival ? "division rival" : "", nt.r].filter(Boolean).join(", ") + "), letdown risk"); }
+      if (nn && nt) { const rival = divOf(nn) === divOf(nk), strong = wp(nt.r) >= 0.7; if (rival || strong) spot.push("look-ahead: " + (nextE[2] ? "v " : "@ ") + nextE[1] + " in Wk " + nextE[0] + " (" + [rival ? "division rival" : "", nt.r].filter(Boolean).join(", ") + "), letdown risk"); }
     }
     const prevMeet = sch.find(x => x[0] < wk && x[1] === abbrOf(opNick) && x[3] !== null);
     if (prevMeet) spot.push("rematch: " + (prevMeet[3] > prevMeet[4] ? "won " : "lost ") + prevMeet[3] + "–" + prevMeet[4] + " in Wk " + prevMeet[0]);
-    else if (divOf(nick) === divOf(opNick)) spot.push("division game");
+    else if (divOf(nk) === divOf(opNick)) spot.push("division game");
     if (spot.length) add("spot", "Spot", spot.join(", "));
     // 8. motivation
     const rec = wp(t.r);
@@ -491,14 +491,14 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, 
     return out;
   }
   function renderGameDetail(box, g) {
-    if (!leagueOf(g).gameDetails) { box.replaceChildren(el("div", "pg-stub", `${abbr(last(g.away))} @ ${abbr(last(g.home))}`), el("p", "pg-stub-t", `${leagueOf(g).code} game details are not built yet.`)); return; }
-    if (!TEAM_INFO[last(g.away)] || !TEAM_INFO[last(g.home)]) {   // this browser's own pull, the first time a game detail opens
-      box.replaceChildren(el("div", "pg-stub", `${abbr(last(g.away))} @ ${abbr(last(g.home))}`), el("p", "pg-stub-t", "Asking ESPN for team stats and injuries…"));
-      ensureTeams().then(ok => { if (detailGame !== g) return; if (ok && TEAM_INFO[last(g.away)]) changed("cards"); else box.replaceChildren(el("div", "pg-stub", `${abbr(last(g.away))} @ ${abbr(last(g.home))}`), el("p", "pg-stub-t", "Couldn't reach ESPN for team stats.")); });
+    if (!leagueOf(g).gameDetails) { box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", `${leagueOf(g).code} game details are not built yet.`)); return; }
+    if (!TEAM_INFO[nick(g, "away")] || !TEAM_INFO[nick(g, "home")]) {   // this browser's own pull, the first time a game detail opens
+      box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", "Asking ESPN for team stats and injuries…"));
+      ensureTeams().then(ok => { if (detailGame !== g) return; if (ok && TEAM_INFO[nick(g, "away")]) changed("cards"); else box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", "Couldn't reach ESPN for team stats.")); });
       return;
     }
     ensureTeams();
-    const A = TEAM_INFO[last(g.away)], H = TEAM_INFO[last(g.home)], conf = t => (t || "").replace("National Football Conference", "NFC").replace("American Football Conference", "AFC");
+    const A = TEAM_INFO[nick(g, "away")], H = TEAM_INFO[nick(g, "home")], conf = t => (t || "").replace("National Football Conference", "NFC").replace("American Football Conference", "AFC");
     const all = Object.values(TEAM_INFO);
     const rank = (fn, high, v) => 1 + all.filter(t => { const x = fn(t); return x !== null && (high ? x > v : x < v); }).length;
     const per = (n, gp) => (gp ? n / gp : null);
@@ -541,7 +541,7 @@ import { $, ABBR, HELM_PAD, RULES, abbr, americanOf, bdBadge, changed, curWeek, 
     if (g.final) part(el("b", null, "FINAL " + g.final[0] + " – " + g.final[1]));
     part(el("span", null, `${shortDayFmt.format(new Date(g.t))} · ${timeZoned(new Date(g.t))}`));
     if (g.tv) part(el("span", null, g.tv));
-    const env = GAME_ENV[g.week + "|" + last(g.away) + "|" + last(g.home)];
+    const env = GAME_ENV[g.week + "|" + nick(g, "away") + "|" + nick(g, "home")];
     if (env) {
       if (env[0]) part(el("span", null, env[0]));
       if (env[1]) part(el("span", null, env[1]));

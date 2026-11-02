@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvzo9izr";
-import { Fan } from "./hosts.js?v=mvzo9izr";
-import { Calc } from "./calc.js?v=mvzo9izr";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzo9izr";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvzp7gj4";
+import { Fan } from "./hosts.js?v=mvzp7gj4";
+import { Calc } from "./calc.js?v=mvzp7gj4";
+import { nick, changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzp7gj4";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -47,7 +47,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
   const priceBusy = new Map();   // event key -> ticker to read again when the read in flight ends
   function applyFreshPrices(q) {
     if (!pricesOn()) return;
-    const g = ALL_GAMES.find(x => leagueId(x) === (q.league || "nfl") && ABBR[last(x.away)] === q.away && ABBR[last(x.home)] === q.home && (!q.start || Math.abs(Date.parse(x.t) - q.start) < 864e5));
+    const g = ALL_GAMES.find(x => leagueId(x) === (q.league || "nfl") && ABBR[nick(x, "away")] === q.away && ABBR[nick(x, "home")] === q.home && (!q.start || Math.abs(Date.parse(x.t) - q.start) < 864e5));
     if (!g || g.final) return;
     const patch = freshPrices(g, q, Date.now());
     Object.assign(g, patch);
