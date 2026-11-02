@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvyk8kne";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvyk8kne";
-import { Calc } from "./calc.js?v=mvyk8kne";
-import { Fan } from "./hosts.js?v=mvyk8kne";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvykt8gb";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvykt8gb";
+import { Calc } from "./calc.js?v=mvykt8gb";
+import { Fan } from "./hosts.js?v=mvykt8gb";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -168,9 +168,9 @@ import { Fan } from "./hosts.js?v=mvyk8kne";
     return tag;
   }
 
-  const APP_VERSION = "0.20.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.21.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
-  document.title = "Fan";
+  document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
   $("fanVer").textContent = APP_VERSION;   // and on its button
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;   // times show in the viewer's own zone
