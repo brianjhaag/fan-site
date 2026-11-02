@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzqqnju";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzqqnju";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzqqnju";
-import { Calc } from "./calc.js?v=mvzqqnju";
-import { Fan } from "./hosts.js?v=mvzqqnju";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzrikx2";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzrikx2";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzrikx2";
+import { Calc } from "./calc.js?v=mvzrikx2";
+import { Fan } from "./hosts.js?v=mvzrikx2";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -28,6 +28,26 @@ import { Fan } from "./hosts.js?v=mvzqqnju";
   // The page was called Bet until Oct 31 2026: a browser's settings under the old name carry over once.
   try { for (const k of ["tracking", "leagues", "badges", "tickets", "game"]) { const v = localStorage.getItem("bet." + k); if (v != null && localStorage.getItem("fan." + k) == null) localStorage.setItem("fan." + k, v); } } catch (e) {}
   let league = "nfl";   // the league on screen, chosen with the league picker
+  document.documentElement.dataset.league = league;   // fan.css dresses a league's page by it (the NHL's rink and boards)
+  // The layout (Look/feel's Layout, on the user's word, Nov 2 2026): Auto follows the window as before, or the user picks Landscape, Portrait or Phone. It's classes on the page that
+  // fan.css's layout rules hang on: lay-narrow (920px or less), lay-phone (760px or less), lay-portrait (a portrait window over 920px). Kept per browser.
+  const LAYOUTS = [["auto", "Auto"], ["landscape", "Landscape"], ["portrait", "Portrait"], ["phone", "Phone"]];
+  let layoutPref = "auto";
+  try { const v = localStorage.getItem("fan.layout"); if (LAYOUTS.some(([k]) => k === v)) layoutPref = v; } catch (e) {}
+  const mq = q => matchMedia(q).matches;
+  const LAYOUT_QUERIES = { phone: "(max-width: 760px)", narrow: "(max-width: 920px)", portrait: "(orientation: portrait) and (min-width: 921px)" };
+  function applyLayout() {
+    const auto = layoutPref === "auto", c = document.documentElement.classList;
+    c.toggle("lay-phone", auto ? mq(LAYOUT_QUERIES.phone) : layoutPref === "phone");
+    c.toggle("lay-narrow", auto ? mq(LAYOUT_QUERIES.narrow) : layoutPref === "phone");
+    c.toggle("lay-portrait", auto ? mq(LAYOUT_QUERIES.portrait) : layoutPref === "portrait");
+  }
+  applyLayout();
+  Object.values(LAYOUT_QUERIES).forEach(q => matchMedia(q).addEventListener("change", applyLayout));
+  function setLayoutPref(k) { layoutPref = k; try { localStorage.setItem("fan.layout", k); } catch (e) {} applyLayout(); changed("size", "cards"); }
+  const isPhone = () => document.documentElement.classList.contains("lay-phone");
+  // A tall window, for the panels that run down to the bottom strip: a portrait one, or a phone held upright.
+  const isTall = () => (layoutPref === "auto" || layoutPref === "phone" ? mq("(orientation: portrait)") : layoutPref === "portrait");
   const LG = () => Calc.RULES.leagues[league];
   const nbaDay = (add = 0) => Number(new Date(Date.now() + add * 864e5).toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, ""));
   // The Risk detail icon FILTERS the totals and the saved tickets to that game and draws its graph over the wager ticket.
@@ -183,7 +203,7 @@ import { Fan } from "./hosts.js?v=mvzqqnju";
     return tag;
   }
 
-  const APP_VERSION = "0.35.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -497,14 +517,13 @@ import { Fan } from "./hosts.js?v=mvzqqnju";
   }
   // The week view must not scroll vertically: if the page is taller than the window, the games area (and the card height) shrinks by the overflow. It always tries the full size
   // first, so a window that grows later gets the room back at the next render; nothing is sized from the window directly, which is what made an auto-sized frame run away before.
-  const PHONE = "(max-width: 760px)";
   // On a phone the week tabs scroll sideways, so the open week is brought into view.
-  function showOpenWeek() { if (matchMedia(PHONE).matches) document.querySelectorAll(".weektabs.wk2 [aria-selected=true]").forEach(b => { const r = b.closest(".tabrows"); r.scrollLeft = b.getBoundingClientRect().left - r.getBoundingClientRect().left + r.scrollLeft - 40; }); }
+  function showOpenWeek() { if (isPhone()) document.querySelectorAll(".weektabs.wk2 [aria-selected=true]").forEach(b => { const r = b.closest(".tabrows"); r.scrollLeft = b.getBoundingClientRect().left - r.getBoundingClientRect().left + r.scrollLeft - 40; }); }
   function fitViewportHeight() {
     showOpenWeek();
     if (view !== "week") return;
     const root = document.documentElement;
-    if (matchMedia(PHONE).matches) { root.style.setProperty("--card-h", "150px"); return; }   // a phone's page scrolls
+    if (isPhone()) { root.style.setProperty("--card-h", "150px"); return; }   // a phone's page scrolls
     // measured with the wager ticket in place (not the selected game's graph card), so selecting a game never changes the card sizes
     const col = document.querySelector(".col.left"), rc = $("riskCard"), sel = col.classList.contains("has-sel");
     if (sel) { col.classList.remove("has-sel"); rc.classList.add("rk-off"); rc.classList.remove("rk-over"); }
@@ -532,7 +551,7 @@ import { Fan } from "./hosts.js?v=mvzqqnju";
     if (document.documentElement.scrollHeight > window.innerHeight + 1) bottom = Math.min(bottom, window.innerHeight - strip.offsetHeight - 36 - 8);
     if (cr.length || allDone) fitTicketColumn.bottom = bottom; else if (fitTicketColumn.bottom != null) bottom = fitTicketColumn.bottom;   // game detail: same bottom as the cards view
     // a narrowed ticket column in a portrait window takes the height it has down to the bottom row, so the saved tickets get room
-    if (!allDone && matchMedia("(orientation: portrait) and (min-width: 921px) and (max-width: 1347px)").matches) { col.style.alignSelf = "start"; col.style.height = Math.max(r.height, window.innerHeight - strip.offsetHeight - 36 - 8 - (r.top + window.scrollY)) + "px"; return; }
+    if (!allDone && document.documentElement.classList.contains("lay-portrait") && mq("(max-width: 1347px)")) { col.style.alignSelf = "start"; col.style.height = Math.max(r.height, window.innerHeight - strip.offsetHeight - 36 - 8 - (r.top + window.scrollY)) + "px"; return; }
     const h = bottom - (r.top + window.scrollY);
     if (h > 0 && h < r.height - 1) { col.style.alignSelf = "start"; col.style.height = Math.max(300, h) + "px"; }
   }
@@ -792,6 +811,7 @@ import { Fan } from "./hosts.js?v=mvzqqnju";
   // The week tabs follow the league: Weeks 1-17, or for a daily league (the NBA, the NHL) 17 days from yesterday.
   function setLeague(l) {
     league = l;
+    document.documentElement.dataset.league = l;
     const tabs = [...document.querySelectorAll(".weektabs [data-week]")];
     tabs.forEach((b, i) => {
       if (!Calc.RULES.leagues[l].daily) { b.dataset.week = String(i + 1); b.textContent = "Week " + (i + 1); return; }
@@ -858,4 +878,4 @@ import { Fan } from "./hosts.js?v=mvzqqnju";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { WATCH_SETUPS, nick, telecastFor, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+export { LAYOUTS, isTall, layoutPref, setLayoutPref, WATCH_SETUPS, nick, telecastFor, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };

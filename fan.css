@@ -54,14 +54,21 @@
   .col.left .ticket { flex: none; }
   .col.left.all-final .ticket { display: none; }   /* every game of the week is final: no wagers to place, the saved tickets card takes the room */
   .col.left .saved, .col.left .ticket { border-top-color: var(--paper-edge); }   /* a faint rule at each join of the totals / wagers / wager stack */
-  @media (min-width: 921px) { .col.left { order: 2; } }   /* the game cards run on the left, the totals/wagers stack on the right */
-  @media (max-width: 920px) { .top { grid-template-columns: minmax(0, 1fr); } .saved { flex: none; max-height: 320px; } }
+  /* The layout is classes on the page (base.js's applyLayout): lay-narrow (920px or less), lay-phone (760px or less), lay-portrait (a portrait window over 920px), from the window on Auto, or from Look/feel's Layout. */
+  :where(:root:not(.lay-narrow)) .col.left { order: 2; }   /* the game cards run on the left, the totals/wagers stack on the right */
+  :where(.lay-narrow) { .top { grid-template-columns: minmax(0, 1fr); } .saved { flex: none; max-height: 320px; } }
   .col:has(#games.strip) { grid-template-columns: minmax(0, 1fr); }   /* the strip scrolls inside its column instead of widening the page */
   /* the selected game's risk detail sits where the wager ticket was (same height); the ticket steps aside */
   .col.left.has-sel .ticket { display: none; }
 
   /* ===== Tab strips and the slate line ===== */
   .tabrows.bottom { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: 0; z-index: 30; }   /* pinned to the viewport bottom */
+  /* The NHL's page (Nov 2 2026, the user's photos): the rink behind everything, and the tab strips as its boards, red line to kick plate, the bottom one flipped (src/data/images.css). */
+  :root[data-league="nhl"] body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-rink) center / cover no-repeat, color-mix(in srgb, #1d3f63 40%, var(--bg)); }
+  :root[data-league="nhl"] .tabrows { background: var(--img-boards) left top / auto 100% repeat-x; }
+  :root[data-league="nhl"] .tabrows.bottom { background-image: var(--img-boards-flip); }
+  :root[data-league="nhl"] .weektabs button { color: rgb(24 36 58 / .85); }
+  :root[data-league="nhl"] .weektabs button[aria-selected="true"] { color: rgb(12 20 34); }
   .tabrows { display: grid; gap: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .28 0 0 0 0 .22 0 0 0 1.3 -.38'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .42 0 0 0 0 .34 0 0 0 1.6 -.62'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .25' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .42 0 0 0 1.5 -.62'/%3E%3C/filter%3E%3Crect width='360' height='360' filter='url(%23n)'/%3E%3C/svg%3E"), #eceae0; border-radius: 3px; position: relative; }   /* the tab strip is turf green with white paint (stencil type, a white line along the top of each row) */ /* a white painted line along the top of each row (inset, so the row keeps its height) */
   .weektabs { display: grid; grid-template-columns: repeat(auto-fill, 20px); grid-auto-rows: 41px; min-height: 41px; }   /* tabs snap to a coarse grid of 20px steps, each as wide as its title and can be dragged between slots and rows (tabGrid) */
   /* the selected tab: a thick orange bar at each edge that ends in a point at the bottom */
@@ -154,7 +161,7 @@
   .fan-tabs button { appearance: none; background: none; border: 0; border-left: 3px solid transparent; width: 248px; height: 71px; padding: 0 12px; text-align: center; font: 400 22px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink-dim); cursor: pointer; }   /* twice the old size, on the user's word (Nov 2 2026) */
   .fan-tabs button:hover { color: var(--ink); }
   .fan-tabs button[aria-selected="true"] { color: var(--accent); border-left-color: var(--accent); background: rgb(95 208 166 / .06); }
-  @media (max-width: 760px) {   /* a phone: the tabs go back across the top */
+  :where(.lay-phone) {   /* a phone: the tabs go back across the top */
     .fan-window[open] { grid-template: auto auto minmax(0, 1fr) / minmax(0, 1fr); }
     .fan-tabs { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding: 0 8px; border-right: 0; border-bottom: 1px solid var(--paper-edge); }
     .fan-tabs button { width: auto; height: auto; border-left: 0; border-bottom: 2px solid transparent; padding: 10px 12px 8px; font-size: 16px; background: none; }
@@ -221,6 +228,7 @@
   .fan-outs { display: flex; gap: 6px; align-items: stretch; }   /* ESPN and Networks side by side, so Watch's row is no taller than the others */
   .fan-outs > .fan-out { flex: 1 1 0; min-width: 0; justify-content: flex-start; }
   .fan-outs .fan-pick { max-width: 100%; }
+  .fan-layout { display: flex; align-items: center; gap: 10px; padding: 8px 12px; font: 400 18px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink); }   /* Look/feel's Layout */
   .fan-pick { appearance: auto; padding: 3px 6px; background: var(--bg); color: var(--ink); border: 1px solid var(--card-rule); border-radius: 2px; font: 400 14px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
   .fan-out small { font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
   .fan-list .fan-out button, .fan-list .fan-con button { appearance: none; padding: 6px 10px; background: none; border: 1px solid var(--accent); border-radius: 2px; font-size: 14px; line-height: 1.3; color: var(--accent); cursor: pointer; }
@@ -750,7 +758,7 @@
   .rk-hedge .hxres.err { color: #ff6b6b; }
   .col.left .riskcard.rk-over.has-arm { height: auto; min-height: var(--tk-h, 411px); }
   #fanVer { font-weight: 500; font-size: 13px; }
-  @media (max-width: 920px) { #fanVer { display: none; } #fanBtn .demo-badge { position: absolute; top: 100%; right: 6px; } }   /* no room beside the week tabs: the version is still in the settings window, and DEMO hangs below */
+  :where(.lay-narrow) { #fanVer { display: none; } #fanBtn .demo-badge { position: absolute; top: 100%; right: 6px; } }   /* no room beside the week tabs: the version is still in the settings window, and DEMO hangs below */
   .demo-badge[hidden] { display: none; }
   .demo-badge { padding: 3px 7px; font: 700 12px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; color: #231400; background: #ffb020; border-radius: 3px; pointer-events: none; }
   .rk-arm { display: grid; gap: 3px; padding: 4px 6px; border: 1px solid var(--card-rule); border-radius: 3px; font-size: 11.5px; line-height: 1.25; color: var(--ink-dim); }
@@ -1009,8 +1017,8 @@
   #fanWindow .fan-about b, #fanWindow h3 { font-weight: 700 !important; }
 
   /* ===== Phones ===== */
-  @media (max-width: 760px) {
-    html, body { height: auto !important; overflow-x: hidden; }
+  :where(.lay-phone) {
+    &, & body { height: auto !important; overflow-x: hidden; }
     .tabrows:not(.bottom) { position: static !important; display: flex; overflow-x: auto; scrollbar-width: none; padding-top: 82px; }   /* Fan and the league picker above one row of tabs */
     .tabrows:not(.bottom) .weektabs.pinned.wk2 { display: contents; }
     #tab-season { position: relative !important; top: 0; left: auto !important; width: auto !important; flex: none; }
@@ -1047,8 +1055,8 @@
   /* ===== Windows and motion ===== */
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } #fanWindow .fan-st b, #fanWindow .fan-about b[data-state], .fan-gear svg { animation: none !important; } }
   /* Portrait window: the ticket column gives up width so two full columns of game cards fit (2 x 376 + 12 gap = 764), never under 400px. Landscape windows never see this. */
-  @media (orientation: portrait) and (min-width: 921px) { .top { grid-template-columns: minmax(0, 1fr) clamp(352px, calc(100vw - 16px - 20px - 764px), 620px); } }
-  @media (orientation: portrait) and (min-width: 921px) and (max-width: 1347px) {   /* the narrowed ticket column: tighter type, and the Straight / Parlay tabs get their own row */
+  :where(.lay-portrait) .top { grid-template-columns: minmax(0, 1fr) clamp(352px, calc(100vw - 16px - 20px - 764px), 620px); }
+  :where(.lay-portrait) { @media (max-width: 1347px) {   /* the narrowed ticket column: tighter type, and the Straight / Parlay tabs get their own row */
     .ticket .amt-row .tabs button, .ticket .amt-row .check { font-size: 13px; letter-spacing: 0; padding-inline: 2px; }   /* amount, Bonus, Straight, Parlay: four equal cells, the same as the wide layout */
     .ticket .amt-row .check { gap: 4px; }
     .ticket .amt-row .check input { width: 14px; height: 14px; }
@@ -1070,4 +1078,4 @@
     .sum table { font-size: 10px; }
     .sum th { font-size: 11px; letter-spacing: 0; white-space: normal; line-height: 1.05; vertical-align: bottom; }
     .sum th, .sum td { padding-inline: 2px; }
-  }
+  } }

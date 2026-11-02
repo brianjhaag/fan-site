@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mvzqqnju";
-import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvzqqnju";
-import { Fan } from "./hosts.js?v=mvzqqnju";
-import { nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzqqnju";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mvzqqnju";
+import { riskGrid } from "./risk.js?v=mvzrikx2";
+import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mvzrikx2";
+import { Fan } from "./hosts.js?v=mvzrikx2";
+import { isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvzrikx2";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mvzrikx2";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -207,7 +207,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mvzqqnju";
 
     // dir +1: underdogs (positive spreads, +S at the left, 0 at the right); dir -1: favorites (negative spreads, 0 at the left, -S at the right).
     // Hg keeps the whole panel inside the viewport (no vertical scrolling at 1710x940); a portrait window runs it down to the bottom strip's text row
-    const portraitH = matchMedia("(orientation: portrait)").matches ? window.innerHeight - document.querySelector(".tabrows.bottom").offsetHeight - 36 - 8 - (box.getBoundingClientRect().top + window.scrollY) : 0;
+    const portraitH = isTall() ? window.innerHeight - document.querySelector(".tabrows.bottom").offsetHeight - 36 - 8 - (box.getBoundingClientRect().top + window.scrollY) : 0;
     const Wg = Math.max(260, Math.floor((W - gap) / 2) - pad), Hg = Math.max(768, Math.floor(portraitH)), m = { l: 84, r: 80, t: 24, b: 104 };
     function graph(list, dir, label) {
       const { svg, add } = mkSvg(Wg, Hg, label);
