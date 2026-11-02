@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzvdspt";
-import { Fan } from "./hosts.js?v=mvzvdspt";
-import { LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzvdspt";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mvzvdspt";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzvdspt";
-import { demoAway, setBet } from "./trade.js?v=mvzvdspt";
+import { espnState } from "./espn.js?v=mvzw6hz7";
+import { Fan } from "./hosts.js?v=mvzw6hz7";
+import { LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzw6hz7";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mvzw6hz7";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzw6hz7";
+import { demoAway, setBet } from "./trade.js?v=mvzw6hz7";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -16,6 +16,20 @@ import { demoAway, setBet } from "./trade.js?v=mvzvdspt";
     let firstClose = true;   // closing the window that opens on load shows the current week [U, Nov 2 2026]
     const toNow = () => { if (firstClose) { firstClose = false; switchWeek(weekNow()); } };
     const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) { win.close(); toNow(); } };
+    // The open tab fits the window (the user's layout rules, Nov 2 2026): laid out wider and scaled down until it doesn't run over, to 60% at most; past that #fanList scrolls.
+    const overflows = () => list.scrollHeight > list.clientHeight + 1 || list.scrollWidth > list.clientWidth + 1;
+    const fitList = () => {
+      const p = list.querySelector(".fan-list:not([hidden])");
+      if (!p || !win.open) return;
+      p.style.zoom = "";
+      for (let z = 1; z > .6 && overflows(); ) { z = Math.round((z - .05) * 100) / 100; p.style.zoom = String(z); }
+    };
+    // Fitted again, once a frame at most, when the window changes size (it follows the strips, base.js fitBand), when its text changes (the statuses update in place) and when fonts arrive.
+    let fitQueued = false;
+    const refit = () => { if (!fitQueued) { fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fitList(); }); } };
+    const listWatch = new ResizeObserver(refit), textWatch = new MutationObserver(refit);   // held here, so they keep watching
+    listWatch.observe(list); textWatch.observe(list, { childList: true, characterData: true, subtree: true });
+    if (document.fonts) document.fonts.addEventListener("loadingdone", refit);
     let tab = "about";
     const leagueRows = () => Object.entries(leagueNames()).map(([k, h]) => {
       const row = el("label", "fan-lg" + (LEAGUES_LATER.includes(k) ? " later" : "")), c = el("input");
@@ -362,6 +376,7 @@ import { demoAway, setBet } from "./trade.js?v=mvzvdspt";
         return b;
       }));
       list.replaceChildren(...tabs.map(([k, , rows]) => { const p = el("div", "fan-list"); p.setAttribute("role", "tabpanel"); p.hidden = k !== tab; p.append(...rows()); return p; }));
+      fitList();
     };
     btn.addEventListener("click", () => { fill(); open(!win.open); });
     $("fanClose").addEventListener("click", () => open(false));
