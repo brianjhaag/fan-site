@@ -32,13 +32,13 @@ const sides = c => [c.competitors.find(x => x.homeAway === "away"), c.competitor
 function nflRow(e) {
   const c = e.competitions[0], [A, H] = sides(c), v = c.venue || {}, a = v.address || {}, wx = e.weather || c.weather || null, fin = !!e.status.type.completed, ms = Date.parse(e.date);
   return {
-    ms, t: etIso(e.date), away: A.team.displayName, home: H.team.displayName, aa: A.team.abbreviation, ha: H.team.abbreviation,
+    ms, eid: e.id, t: etIso(e.date), away: A.team.displayName, home: H.team.displayName, aa: A.team.abbreviation, ha: H.team.abbreviation,
     tv: [...new Set((c.broadcasts || []).flatMap(b => b.names))].map(tvName).join(" / "),
     final: fin ? [Number(A.score), Number(H.score)] : null, now: e.status.type.state === "in" ? { score: [Number(A.score), Number(H.score)], clock: e.status.type.shortDetail || "" } : null, note: c.neutralSite && a.city ? a.city : "",
     env: [v.fullName || "", [a.city, a.state || a.country].filter(Boolean).join(", "), v.indoor ? 1 : 0, wx ? wx.displayValue : "", wx && typeof wx.temperature === "number" ? wx.temperature : null, wx ? String(wx.conditionId || "") : ""]
   };
 }
-const gameOfRow = r => ({ t: r.t, away: r.away, home: r.home, tv: r.tv, ...(r.note ? { note: r.note } : {}), ...(r.final ? { final: r.final } : { noLine: true }), ...(r.now ? { now: r.now } : {}), line: NEUTRAL_LINE() });
+const gameOfRow = r => ({ eid: r.eid, t: r.t, away: r.away, home: r.home, tv: r.tv, ...(r.note ? { note: r.note } : {}), ...(r.final ? { final: r.final } : { noLine: true }), ...(r.now ? { now: r.now } : {}), line: NEUTRAL_LINE() });
 const lastName = n => n.split(" ").pop();
 const envKey = (w, r) => `${w}|${lastName(r.away)}|${lastName(r.home)}`;
 const pullWeek = async w => {
@@ -70,6 +70,7 @@ async function refreshWeek(w) {
     GAME_ENV[envKey(w, r)] = r.env;
     const g = list.find(x => x.away === r.away && x.home === r.home);
     if (!g) return;
+    g.eid = r.eid;
     g.tv = r.tv;
     if (r.final) g.final = r.final;
     if (r.now) g.now = r.now; else delete g.now;
@@ -80,7 +81,7 @@ async function refreshStale() {
   const now = espnWeek(), due = [];
   for (let w = 1; w <= NFL_WEEKS; w++) {
     const had = keptPull("nfl" + w), rows = nflRows[w] || [];
-    if (!had || w === now || w === now + 1 || (!rows.every(r => r.final) && Date.now() - had.at > STALE_MS)) due.push(w);
+    if (!had || w === now || w === now + 1 || rows.some(r => !r.eid) || (!rows.every(r => r.final) && Date.now() - had.at > STALE_MS)) due.push(w);   // a week kept before rows had ESPN's id is asked for once more
   }
   try { for (const w of due) await refreshWeek(w); onRefresh(); } catch (e) {}
 }
