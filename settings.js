@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzjt0a4";
-import { Fan } from "./hosts.js?v=mvzjt0a4";
-import { BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzjt0a4";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzjt0a4";
-import { demoAway, setBet } from "./trade.js?v=mvzjt0a4";
+import { espnState } from "./espn.js?v=mvzjxyvb";
+import { Fan } from "./hosts.js?v=mvzjxyvb";
+import { BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzjxyvb";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzjxyvb";
+import { demoAway, setBet } from "./trade.js?v=mvzjxyvb";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -333,12 +333,12 @@ import { demoAway, setBet } from "./trade.js?v=mvzjt0a4";
       con.append(el("div", "fan-con-ctl"), el("div", "fan-con-page"));
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Everywhere else"), 1, 5),
-        at(gearFrame(here), "4 / 7", 3),   // the gear behind the connector's three jobs
-        card("watch", "2 / span 2"), wire("scores, networks", true, false, 2, "2 / 5"), at(stack(outBox("ESPN", true, slot("ESPN", true)), outBox("Networks", true, ...networkPick(), slot("Networks", true))), 2, 5),
-        at(con, 7, 3),   // under the gear, in a space of its own: its badge, Stop or Update, Start at login, page updates
-        card("track", 4), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 4, 2) : at(el("span"), 4, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 4),
-        card("price", 5), wire("lines", here && pricesWanted, false, 5, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 5), wire("prices", here && pricesWanted, false, 5, 4), service("Kalshi, Polymarket US", 5, here && pricesWanted, routeBox("prices")),
-        card("bet", 6), wire("orders, fills", here && !!Fan.trader, true, 6, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 6), wire("orders, fills", here && !!Fan.keyed, true, 6, 4), service("Kalshi", 6, here && !!Fan.keyed, slot("Kalshi", true), routeBox("orders"), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))
+        at(gearFrame(here), "3 / 6", 3),   // the gear behind the connector's three jobs
+        card("watch", 2), wire("scores, networks", true, false, 2, "2 / 5"), at(stack(outBox("ESPN", true, slot("ESPN", true)), outBox("Networks", true, ...networkPick(), slot("Networks", true))), 2, 5),
+        at(con, 6, 3),   // under the gear, in a space of its own: its badge, Stop or Update, Start at login, page updates
+        card("track", 3), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 3, 2) : at(el("span"), 3, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 3),
+        card("price", 4), wire("lines", here && pricesWanted, false, 4, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 4), wire("prices", here && pricesWanted, false, 4, 4), service("Kalshi, Polymarket US", 4, here && pricesWanted, routeBox("prices")),
+        card("bet", 5), wire("orders, fills", here && !!Fan.trader, true, 5, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 5), wire("orders, fills", here && !!Fan.keyed, true, 5, 4), service("Kalshi", 5, here && !!Fan.keyed, slot("Kalshi", true), routeBox("orders"), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))
       );
       box.querySelector("[data-part=watch]").append(slot("Leagues"));
       drawStatus(box);
