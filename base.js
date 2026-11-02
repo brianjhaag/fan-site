@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzsdp9p";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzsdp9p";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzsdp9p";
-import { Calc } from "./calc.js?v=mvzsdp9p";
-import { Fan } from "./hosts.js?v=mvzsdp9p";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzsmb4u";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzsmb4u";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzsmb4u";
+import { Calc } from "./calc.js?v=mvzsmb4u";
+import { Fan } from "./hosts.js?v=mvzsmb4u";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -43,7 +43,9 @@ import { Fan } from "./hosts.js?v=mvzsdp9p";
     c.toggle("lay-portrait", auto ? mq(LAYOUT_QUERIES.portrait) : layoutPref === "portrait");
   }
   applyLayout();
-  Object.values(LAYOUT_QUERIES).forEach(q => matchMedia(q).addEventListener("change", applyLayout));
+  const layoutLists = Object.values(LAYOUT_QUERIES).map(q => matchMedia(q));   // kept: a media list nothing holds can be dropped with its listener, and the layout then stuck where the page loaded
+  layoutLists.forEach(m => m.addEventListener("change", applyLayout));
+  addEventListener("resize", applyLayout);
   function setLayoutPref(k) { layoutPref = k; try { localStorage.setItem("fan.layout", k); } catch (e) {} applyLayout(); changed("size", "cards"); }
   const isPhone = () => document.documentElement.classList.contains("lay-phone");
   // A tall window, for the panels that run down to the bottom strip: a portrait one, or a phone held upright.
@@ -203,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvzsdp9p";
     return tag;
   }
 
-  const APP_VERSION = "0.35.6";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.7";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -833,6 +835,7 @@ import { Fan } from "./hosts.js?v=mvzsdp9p";
   }
   $("leaguePick").addEventListener("change", e => {
     const k = e.target.value;
+    e.target.blur();   // its focus ring would stay behind after the pick
     if (LEAGUES.includes(k)) showView(k);
     else if (k !== league) setLeague(k);
     else if (LEAGUES.includes(view)) { detailGame = null; switchWeek(weekNow()); }

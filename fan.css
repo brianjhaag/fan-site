@@ -104,6 +104,7 @@
   .weektabs.pinned button:disabled { color: rgb(44 107 60 / .25); cursor: default; }
   .weektabs.pinned button[aria-selected="true"]::before, .weektabs.pinned button[aria-selected="true"]::after { width: 8px; }   /* the dividers (orange bars) are 8px, were 12px */
   .weektabs.pinned button[aria-selected="true"]::before { left: -4px; }
+  .weektabs.pinned > button:first-child[aria-selected="true"]::before { left: 0; }   /* a strip's first cell keeps its marker inside the strip */
   .weektabs.pinned button[aria-selected="true"]::after { right: -4px; }
   /* on the bottom strip the bars are upside down: flat at the bottom, pointing up */
   .tabrows.bottom .weektabs button[aria-selected="true"]::before, .tabrows.bottom .weektabs button[aria-selected="true"]::after { top: auto; bottom: 7px; clip-path: polygon(0 100%, 100% 100%, 100% 30%, 50% 0, 0 30%); }
