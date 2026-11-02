@@ -254,6 +254,8 @@
   .fan-frame { position: relative; pointer-events: none; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 6px; }
   .fan-frame.away { border-style: dashed; }
   .fan-gear { position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%); width: 44px; height: 44px; pointer-events: none; }
+  .fan-gear-note { display: flex; align-items: flex-start; gap: 6px; margin: -2px 0 0; font: 400 15px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }   /* under the connector's box: its arrow points up and left, at the gear */
+  .fan-gear-note svg { flex: none; width: 28px; height: 34px; margin: -22px 0 0 -22px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .fan-gear svg { width: 100%; height: 100%; fill: var(--ink-dim); opacity: .35; transition: opacity .6s, fill .6s, filter .6s; }
   .fan-about.healthy .fan-gear svg { fill: var(--accent); opacity: .9; filter: drop-shadow(0 0 6px rgb(95 208 166 / .45)); animation: fan-turn 12s linear infinite; }
   @keyframes fan-turn { to { transform: rotate(360deg); } }
@@ -1096,7 +1098,7 @@
     .fan-job, .fan-out { margin-left: 16px; }
     .fan-job { padding: 0 0 0 10px; border-left: 1px solid var(--card-rule); }
     .fan-con { padding: 8px 0 0; margin-top: 0; border-top: 0; }
-    .fan-gear { display: none; }
+    .fan-gear, .fan-gear-note { display: none; }
     .fan-job { margin-top: 0; }
     .top { display: block; }
     .games, .games.strip { display: block; height: auto; overflow: visible; }
