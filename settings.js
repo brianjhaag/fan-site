@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvyihqk9";
-import { Fan } from "./hosts.js?v=mvyihqk9";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyihqk9";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyihqk9";
-import { setBet } from "./trade.js?v=mvyihqk9";
+import { espnState } from "./espn.js?v=mvyjmygp";
+import { Fan } from "./hosts.js?v=mvyjmygp";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyjmygp";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyjmygp";
+import { demoAway, setBet } from "./trade.js?v=mvyjmygp";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -152,7 +152,7 @@ import { setBet } from "./trade.js?v=mvyihqk9";
       const { hi, away, rows } = await statusRows();
       const ctl = document.querySelector(".fan-con-ctl");   // the connector's own controls sit on it, in the diagram
       if (!ctl || ctl.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
-      if (away !== connectorAway) { connectorAway = away; fill(); return; }   // the diagram above changes too, and this list is drawn again with it
+      if (away !== connectorAway) { connectorAway = away; demoAway(away); fill(); return; }   // the diagram above changes too, and this list is drawn again with it
       box.replaceChildren(...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
       ctl.replaceChildren();
       if (away && Fan.startLink) ctl.append(startItem());

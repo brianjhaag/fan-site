@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvyihqk9";
-import { Fan } from "./hosts.js?v=mvyihqk9";
-import { Calc } from "./calc.js?v=mvyihqk9";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvyihqk9";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvyjmygp";
+import { Fan } from "./hosts.js?v=mvyjmygp";
+import { Calc } from "./calc.js?v=mvyjmygp";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvyjmygp";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -23,6 +23,14 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     b.id = "demoBadge"; b.title = "Kalshi's demo, fake money";
     $("fanBtn").prepend(b);
     $("fanBtn").setAttribute("aria-label", "Fan, settings, on Kalshi's demo with fake money");
+  }
+  // A connector that isn't answering holds no key that this page can see, so the badge goes until it's back.
+  function demoAway(away) {
+    const b = $("demoBadge");
+    if (!b) return;
+    b.hidden = away;
+    document.documentElement.classList.toggle("demo", !away);
+    document.title = (away ? "" : "DEMO ") + document.title.replace(/^DEMO /, "");
   }
   let feedWaiting = Date.now();   // when the feed last stopped being connected
   const reader = () => Fan.trader || Fan.reads;   // what can read the venue, whether or not it takes orders
@@ -362,4 +370,4 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     if (lastExec.cls === "ok") clearTicket();
     syncPlace();
   });
-export { watchAuto, armControls, armOf, armOn, armStep, showDemo, pendingFills, execControls, handleFill, placeSpec, refreshPrices, renderKalshiCheck, setBet, syncPlace };
+export { watchAuto, armControls, armOf, armOn, armStep, showDemo, demoAway, pendingFills, execControls, handleFill, placeSpec, refreshPrices, renderKalshiCheck, setBet, syncPlace };
