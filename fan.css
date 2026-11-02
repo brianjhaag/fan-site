@@ -207,6 +207,11 @@
   .fan-wire.lit i.r { border-left-color: var(--accent); }
   .fan-out { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; padding: 5px 10px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; }
   .fan-out b { font-size: 16px; color: var(--ink); }
+  .fan-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; max-width: 70vw; padding: 10px 16px; background: var(--paper); color: var(--ink); border: 1px solid var(--live); border-radius: 3px; font: 400 15px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; box-shadow: 0 6px 24px rgb(0 0 0 / .5); }
+  .fan-toast[hidden] { display: none; }
+  .fan-hdhr { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .fan-hdhr input { width: 130px; padding: 3px 6px; background: var(--bg); color: var(--ink); border: 1px solid var(--card-rule); border-radius: 2px; font: 400 14px/1.2 var(--font-mono); }
+  .fan-hdhr small { color: var(--ink-dim); }
   .fan-outs { display: flex; flex-direction: column; gap: 6px; justify-content: center; }
   .fan-pick { appearance: auto; padding: 3px 6px; background: var(--bg); color: var(--ink); border: 1px solid var(--card-rule); border-radius: 2px; font: 400 14px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
   .fan-out small { font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }

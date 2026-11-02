@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzildw0";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzildw0";
-import { Calc } from "./calc.js?v=mvzildw0";
-import { Fan } from "./hosts.js?v=mvzildw0";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzji6rz";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvzji6rz";
+import { Calc } from "./calc.js?v=mvzji6rz";
+import { Fan } from "./hosts.js?v=mvzji6rz";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -66,7 +66,7 @@ import { Fan } from "./hosts.js?v=mvzildw0";
     const rows = slate.games.map(g => {
       const tr = el("tr"), started = g.state !== "pre", net = el("td", "cfb-net"), tvBtn = el("button");
       tvBtn.type = "button"; tvBtn.title = "Live telecast"; tvBtn.setAttribute("aria-label", "Live telecast"); tvBtn.innerHTML = CARD_ACTIONS.find(([name]) => name === "Live telecast")[1];
-      tvBtn.addEventListener("click", () => { Fan.openTelecast(telecastLink(g), telecastPref); });   // always on here: a list read once can't say what's live now
+      tvBtn.addEventListener("click", () => { watchGame(g); });   // always on here: a list read once can't say what's live now
       net.append(g.tv, tvBtn);
       tr.append(el("td", null, timeZoned(new Date(g.t))), team(g.away), el("td", "cfb-num", started ? String(g.away.score) : ""), team(g.home), el("td", "cfb-num", started ? String(g.home.score) : ""), el("td", null, started ? g.detail : ""), net);
       return tr;
@@ -101,6 +101,24 @@ import { Fan } from "./hosts.js?v=mvzildw0";
   function setTelecastPref(p) {
     telecastPref = p;
     try { if (p) localStorage.setItem("fan.telecast", JSON.stringify(p)); else localStorage.removeItem("fan.telecast"); } catch (e) {}
+  }
+  // How this browser's user watches (the Application tab's Networks box): YouTube TV, or an HDHomeRun on their network, with the channel each broadcast network is on there. Kept per browser.
+  const BROADCAST = ["CBS", "Fox", "NBC", "ABC", "CW"];   // the networks an antenna gets
+  let watchSetup = "youtubetv", hdhr = { ip: "", channels: {} };
+  try { watchSetup = localStorage.getItem("fan.watchSetup") || "youtubetv"; const v = JSON.parse(localStorage.getItem("fan.hdhomerun")); if (v && typeof v === "object") hdhr = { ip: String(v.ip || ""), channels: v.channels && typeof v.channels === "object" ? v.channels : {} }; } catch (e) {}
+  function setWatchSetup(s) { watchSetup = s; try { localStorage.setItem("fan.watchSetup", s); } catch (e) {} changed("cards"); }
+  function setHdhr(patch) { hdhr = { ...hdhr, ...patch }; try { localStorage.setItem("fan.hdhomerun", JSON.stringify(hdhr)); } catch (e) {} changed("cards"); }
+  // A game's HDHomeRun channel: the first of its networks with a channel set, when that's how the user watches. hdhrPick says which network it is.
+  const hdhrPick = g => (watchSetup === "hdhomerun" && hdhr.ip ? String(g.tv || "").split("/").map(n => n.trim()).find(n => hdhr.channels[n]) : null) || null;
+  const hdhrChannel = g => { const n = hdhrPick(g); return n ? hdhr.channels[n] : null; };
+  // A word at the bottom of the screen for a few seconds, for what a press couldn't do.
+  function toast(text) { let t = document.querySelector(".fan-toast"); if (!t) { t = el("div", "fan-toast"); document.body.append(t); } t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 7000); }
+  // A game's telecast button: its HDHomeRun channel, tuned in VLC when that's installed, or else which channel to pick in the HDHomeRun app (which has no documented way to be opened on a channel). Otherwise its network link.
+  function watchGame(g) {
+    const n = hdhrPick(g), ch = n && hdhr.channels[n], say = `${n} is ${ch} on your HDHomeRun: open it in the HDHomeRun app`;
+    if (ch && !Fan.playHdhr) { toast(say); return; }
+    if (ch) { Fan.playHdhr(hdhr.ip, ch).then(r => { if (!r.ok) toast(/VLC isn't installed/.test(r.error) ? say : "HDHomeRun: " + r.error); }, () => toast(say)); return; }
+    Fan.openTelecast(telecastLink(g), telecastPref);
   }
   // Where a game's Live telecast button goes: the first of its networks with a pasted https link ("ESPN / ABC" is two), or else YouTube TV's site.
   const pastedLink = g => String(g.tv || "").split("/").map(n => networkLinks[n.trim()]).find(u => /^https:\/\//i.test(u || ""));
@@ -168,7 +186,7 @@ import { Fan } from "./hosts.js?v=mvzildw0";
     return tag;
   }
 
-  const APP_VERSION = "0.32.4";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.33.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -326,11 +344,11 @@ import { Fan } from "./hosts.js?v=mvzildw0";
     box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
     const st = status(g)[1];
     CARD_ACTIONS.forEach(([name, icon]) => {
-      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!pastedLink(g) : name === "Tape" ? st === "final" && leagueOf(g).code === "NFL" : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
+      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && (!!pastedLink(g) || !!hdhrChannel(g)) : name === "Tape" ? st === "final" && leagueOf(g).code === "NFL" : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
-      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { Fan.openTelecast(telecastLink(g), telecastPref); } : name === "Tape" ? () => { window.open(tapeLink(g), "_blank", "noopener"); } : name === "Box score" ? () => { window.open(`https://www.espn.com/nfl/boxscore/_/gameId/${g.eid}`, "_blank", "noopener"); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
+      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { watchGame(g); } : name === "Tape" ? () => { window.open(tapeLink(g), "_blank", "noopener"); } : name === "Box score" ? () => { window.open(`https://www.espn.com/nfl/boxscore/_/gameId/${g.eid}`, "_blank", "noopener"); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
       box.append(b);
     });
     return box;
@@ -860,4 +878,4 @@ import { Fan } from "./hosts.js?v=mvzildw0";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ABBR, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, HELM_PAD, LEAGUES_READY, LG, NETWORKS, RULES, TELECAST_LAYOUTS, abbr, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, lumOf, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, telecastLink, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, slateId, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+export { BROADCAST, hdhr, hdhrChannel, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ABBR, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, HELM_PAD, LEAGUES_READY, LG, NETWORKS, RULES, TELECAST_LAYOUTS, abbr, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, lumOf, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, telecastLink, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, slateId, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };

@@ -176,6 +176,10 @@ Fan.connectStore = async () => {
   if (hi && hi.telecast) {
     const send =(path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };
+    if (hi.hdhomerun) {   // an HDHomeRun on the user's network, at the address they gave: its channels, and one played in VLC
+      Fan.hdhrLineup = ip => send("/connector/hdhomerun/lineup", { ip });
+      Fan.playHdhr = (ip, channel) => send("/connector/hdhomerun/play", { ip, channel });
+    }
     Fan.captureTelecast = () => window.fetch("/connector/telecast/capture", { method: "POST" }).then(r => r.json());   // the telecast router's probe: what Fan's TV window shows, saved by the connector
     if (hi.screens) Fan.screens = { list: () => window.fetch("/connector/screens").then(r => r.json()), show: pref => send("/connector/spots", { pref }) };
   }
