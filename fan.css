@@ -127,8 +127,9 @@
   .fan-menu { position: absolute; right: 10px; top: 0; height: 41px; display: flex; align-items: center; z-index: 40; }   /* the top strip's upper right */
   #fanBtn { appearance: none; background: none; border: 0; padding: 0 6px; display: flex; align-items: center; gap: 6px; font: 700 26px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: #12361b; cursor: pointer; }   /* the wager ticket's type */
   .fan-window { position: fixed; inset: 90px auto auto 8px; margin: 0; width: calc(100vw - 16px); max-width: none; height: var(--games-h, 728px); max-height: none; box-sizing: border-box; padding: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--card-rule); border-radius: 3px; }   /* a game preview's size and place */
-  .fan-window[open] { display: flex; flex-direction: column; }
-  #fanList { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .fan-window[open] { display: grid; grid-template: auto minmax(0, 1fr) / max-content minmax(0, 1fr); }   /* the head across the top, the tabs stacked down the left, the open tab beside them */
+  .fan-win-head { grid-column: 1 / -1; }
+  #fanList { min-height: 0; min-width: 0; overflow: auto; }
   .fan-window::backdrop { background: rgb(0 0 0 / .45); }
   .fan-win-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--paper-edge); }
   .fan-win-head h2 { margin: 0; font: 700 20px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
@@ -149,10 +150,16 @@
   @media (max-width: 1180px) { #ncaafb .cfb-list { font-size: 13px; } #ncaafb .cfb-list th, #ncaafb .cfb-list td { padding-inline: 4px; } #ncaafb .cfb-net button { margin-left: 4px; } }
   #fanBtn.due { position: relative; }
   #fanBtn.due::after { content: ""; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-  .fan-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: max-content; justify-content: start; gap: 8px; padding-inline: 8px; border-bottom: 1px solid var(--paper-edge); }
-  .fan-tabs button { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 12px 8px; font: 400 16px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink-dim); cursor: pointer; }
+  .fan-tabs { display: grid; grid-auto-rows: max-content; align-content: start; gap: 2px; padding: 8px 0; border-right: 1px solid var(--paper-edge); }
+  .fan-tabs button { appearance: none; background: none; border: 0; border-left: 3px solid transparent; padding: 9px 20px 9px 14px; text-align: left; font: 400 16px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink-dim); cursor: pointer; }
   .fan-tabs button:hover { color: var(--ink); }
-  .fan-tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .fan-tabs button[aria-selected="true"] { color: var(--accent); border-left-color: var(--accent); background: rgb(95 208 166 / .06); }
+  @media (max-width: 760px) {   /* a phone: the tabs go back across the top */
+    .fan-window[open] { grid-template: auto auto minmax(0, 1fr) / minmax(0, 1fr); }
+    .fan-tabs { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding: 0 8px; border-right: 0; border-bottom: 1px solid var(--paper-edge); }
+    .fan-tabs button { border-left: 0; border-bottom: 2px solid transparent; padding: 10px 12px 8px; background: none; }
+    .fan-tabs button[aria-selected="true"] { border-bottom-color: var(--accent); background: none; }
+  }
   .fan-list { display: grid; align-content: start; box-sizing: border-box; padding: 4px; }
   .fan-list[hidden] { display: none; }
   .fan-telecasts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 460px); gap: 24px; padding: 8px; }
@@ -173,7 +180,7 @@
   .fan-records { display: flex; flex-direction: column; align-items: flex-start; }
   .fan-about { display: grid; grid-template-columns: minmax(0, 1.05fr) 96px minmax(0, 1.25fr) 96px minmax(0, .8fr); gap: 6px 0; padding: 6px 12px; }   /* the page, a wire, the connector, a wire, the outside services */
   .fan-about > * { grid-row: var(--r); grid-column: var(--c); min-width: 0; }
-  .fan-about h3 { margin: 0; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
+  .fan-about h3 { margin: 0; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); text-align: center; }
   /* The connector: a circle with a gear behind it, behind its box and jobs. The gear is dim and still, and turns, faintly green, while everything is healthy. */
   .fan-frame { position: relative; display: grid; place-items: center; pointer-events: none; }
   .fan-gear { height: 100%; aspect-ratio: 1; border: 1px solid var(--accent); border-radius: 50%; background: radial-gradient(circle, rgb(255 255 255 / .03), transparent 70%); display: grid; place-items: center; }
