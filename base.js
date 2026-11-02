@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzsrrlv";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzsrrlv";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzsrrlv";
-import { Calc } from "./calc.js?v=mvzsrrlv";
-import { Fan } from "./hosts.js?v=mvzsrrlv";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvztogen";
+import { BOOK_ICONS } from "./data/assets.js?v=mvztogen";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvztogen";
+import { Calc } from "./calc.js?v=mvztogen";
+import { Fan } from "./hosts.js?v=mvztogen";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -205,11 +205,11 @@ import { Fan } from "./hosts.js?v=mvzsrrlv";
     return tag;
   }
 
-  const APP_VERSION = "0.35.9";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.10";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
-  $("fanVer").textContent = APP_VERSION;   // and on its button
+  $("infoVer").textContent = APP_VERSION;   // and at the info line's far right
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;   // times show in the viewer's own zone
   const dayFmt = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: tz });
   const shortDayFmt = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: tz });
@@ -271,7 +271,7 @@ import { Fan } from "./hosts.js?v=mvzsrrlv";
     if (!(W > 0)) return;
     line.style.width = W + "px";
     line.style.setProperty("--slate-fs", "16px");
-    const need = note.scrollWidth + document.querySelector(".bye-box").scrollWidth + 24;
+    const need = note.scrollWidth + document.querySelector(".bye-box").scrollWidth + $("infoVer").scrollWidth + 38;
     line.style.setProperty("--slate-fs", Math.max(8, Math.min(16, 16 * W / need)) + "px");
   }
   window.addEventListener("resize", () => fitSlateLine());
@@ -496,6 +496,7 @@ import { Fan } from "./hosts.js?v=mvzsrrlv";
     const w = document.querySelector(".tabrows.bottom").clientWidth, r1 = $("sectiontabs1"), cell = w / Math.max(1, Number(r1.style.getPropertyValue("--n")) || 1);
     [r1, $("sectiontabs2")].forEach(r => { r.style.width = "100%"; r.style.marginLeft = "0"; r.style.setProperty("--cell", cell + "px"); });
     document.querySelector(".strip-row2").style.setProperty("--cell", cell + "px");   // Graphs: the same type as the game buttons
+    document.querySelector(".pagetabs").style.setProperty("--cell", (w / 14) + "px");   // Season stats and Playbook: a week's Graphs type on every view, so they never change size
   }
 
   // The bottom strip stays the width of the screen; its two tab rows run from the left edge of the game cards to the left edge of the right-hand stack (the wager ticket column).
@@ -511,10 +512,6 @@ import { Fan } from "./hosts.js?v=mvzsrrlv";
     const base = bottom.getBoundingClientRect().left;
     // the two week rows are as wide as the two section tab rows below (the strips themselves stay the width of the screen)
     document.querySelectorAll(".weektabs.wk2").forEach(r => { r.style.width = g.width + "px"; r.style.setProperty("--cell", (g.width / 9) + "px"); });
-    // the top strip's right-hand region: the wager ticket column's extent, measured from the strip's left edge
-    const top = document.querySelector(".tabrows:not(.bottom)");
-    top.style.setProperty("--rx", (wr.left - top.getBoundingClientRect().left) + "px");
-    top.style.setProperty("--rw", wr.width + "px");
     sizeTabRows();
   }
   // The week view must not scroll vertically: if the page is taller than the window, the games area (and the card height) shrinks by the overflow. It always tries the full size
@@ -557,7 +554,11 @@ import { Fan } from "./hosts.js?v=mvzsrrlv";
     const h = bottom - (r.top + window.scrollY);
     if (h > 0 && h < r.height - 1) { col.style.alignSelf = "start"; col.style.height = Math.max(300, h) + "px"; }
   }
-  window.addEventListener("resize", () => { fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); });
+  // The background image fills the band from the top strip's bottom edge to the bottom strip's top edge, behind the info line too: pinned to the window with the bottom strip, or measured on the page where that strip scrolls with it (a phone).
+  function fitBand() { const t = document.querySelector(".tabrows:not(.bottom)").getBoundingClientRect(), strip = document.querySelector(".tabrows.bottom"), b = strip.getBoundingClientRect(), band = $("bgBand"), pinned = getComputedStyle(strip).position === "fixed"; band.style.position = pinned ? "fixed" : "absolute"; band.style.top = (t.bottom + window.scrollY) + "px"; band.style.bottom = pinned ? b.height + "px" : "auto"; band.style.height = pinned ? "" : Math.max(0, b.top - t.bottom) + "px"; }
+  const bandWatch = new ResizeObserver(fitBand);   // held here, so it keeps watching
+  bandWatch.observe(document.body); bandWatch.observe(document.querySelector(".tabrows:not(.bottom)"));
+  window.addEventListener("resize", () => { fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); fitBand(); });
   window.addEventListener("load", () => fitTicketColumn());
   window.addEventListener("resize", () => fitSectionTabs());
   document.addEventListener("dragstart", e => { if (e.target.closest && e.target.closest(".tabrows")) e.preventDefault(); });   // the bottom strip tabs are fixed in place (no dragging)

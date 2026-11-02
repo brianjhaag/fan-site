@@ -25,7 +25,8 @@
     --font-label: "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif;
   }
   * { box-sizing: border-box; }
-  body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-field) center top / cover no-repeat, color-mix(in srgb, #2c6b3c 40%, var(--bg)); color: var(--ink); font: 400 14px/1.4 var(--font-mono); margin: 0; padding-block: 0; padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+  body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), color-mix(in srgb, #2c6b3c 40%, var(--bg)); color: var(--ink); font: 400 14px/1.4 var(--font-mono); margin: 0; padding-block: 0; padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+  .bg-band { position: fixed; z-index: -1; left: 0; right: 0; top: 0; bottom: 0; background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-field) center top / cover no-repeat; pointer-events: none; }   /* the background image: the window's width, from the top strip to the bottom strip, behind the info line too (base.js fitBand) */
   main { margin: 0 auto; display: grid; gap: 8px; padding-bottom: 122px; }   /* room under the page for the pinned bottom tab strip (82px) */
   label { display: grid; gap: 3px; min-width: 0; }
   .lbl { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
@@ -72,8 +73,10 @@
   /* ===== Tab strips and the slate line ===== */
   .tabrows.bottom { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: 0; z-index: 30; }   /* pinned to the viewport bottom */
   /* The NHL's page (Nov 2 2026, the user's photos): the rink behind everything, and the tab strips as its boards, red line to kick plate, the bottom one flipped (src/data/images.css). */
-  :root[data-league="nhl"] body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-rink) center / cover no-repeat, color-mix(in srgb, #1d3f63 40%, var(--bg)); }
-  :root[data-league="nba"] body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-court) center / cover no-repeat, color-mix(in srgb, #8a5a2b 40%, var(--bg)); }   /* the NBA's page: the user's court photo */
+  :root[data-league="nhl"] body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), color-mix(in srgb, #1d3f63 40%, var(--bg)); }
+  :root[data-league="nhl"] .bg-band { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-rink) center / cover no-repeat; }
+  :root[data-league="nba"] body { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), color-mix(in srgb, #8a5a2b 40%, var(--bg)); }
+  :root[data-league="nba"] .bg-band { background: linear-gradient(color-mix(in srgb, var(--bg) 68%, transparent), color-mix(in srgb, var(--bg) 68%, transparent)), var(--img-court) center / cover no-repeat; }   /* the NBA's page: the user's court photo */
   /* The NBA's tab strips (made up, Nov 2 2026, on the user's word): a courtside LED ad board, lit off-white with its dot grid, a navy band along the top and a red one along the bottom in an aluminum frame, the bottom strip flipped. */
   :root[data-league="nba"] .tabrows { background: linear-gradient(to bottom, #8d939b 0 1px, #1d428a 1px 5px, transparent 5px calc(100% - 5px), #c8102e calc(100% - 5px) calc(100% - 1px), #8d939b calc(100% - 1px)), radial-gradient(circle, rgb(20 30 60 / .09) 0 .7px, transparent 1.1px) 0 0 / 4px 4px, linear-gradient(to bottom, #f8f6f0, #e7e3d9); }
   :root[data-league="nba"] .tabrows.bottom { background: linear-gradient(to bottom, #8d939b 0 1px, #c8102e 1px 5px, transparent 5px calc(100% - 5px), #1d428a calc(100% - 5px) calc(100% - 1px), #8d939b calc(100% - 1px)), radial-gradient(circle, rgb(20 30 60 / .09) 0 .7px, transparent 1.1px) 0 0 / 4px 4px, linear-gradient(to bottom, #f8f6f0, #e7e3d9); }
@@ -95,13 +98,8 @@
   .weektabs.pinned button { grid-column: auto !important; justify-self: stretch; text-align: center; padding-inline: 4px; font-size: min(20px, calc(((100vw - 16px) / 17 - 8px) / 4.9)); letter-spacing: .04em; touch-action: auto; }
   /* Weeks 1-17 in two rows of nine equal cells (the second row holds eight), the same overall width as before */
   .weektabs.pinned.wk2 { grid-template-columns: repeat(9, minmax(0, 1fr)); }
-  /* Graphs, Season stats and Ledger live in the region left over above the tickets (the wager ticket column's width), three equal cells on row 2, Ledger at the far right */
   /* The active top tab: a faint orange between its two bars */
   .tabrows:not(.bottom) .weektabs button[aria-selected="true"] { background: rgb(255 140 26 / .14); }
-  /* Season stats, Playbook and Ledger: Season stats gets the most room so its name clears the selected tab's bars */
-  #tab-season, #tab-playbook { position: absolute !important; grid-column: auto !important; top: 41px; height: 41px; box-sizing: border-box; text-align: center; width: calc((var(--rw, 628px) - var(--pick, 100px)) * .5); }   /* --pick: the league picker under Fan, wider while it shows a long name */
-  #tab-season { left: var(--rx, 1066px); }
-  #tab-playbook { left: calc(var(--rx, 1066px) + (var(--rw, 628px) - var(--pick, 100px)) * .5); }
   .weektabs.pinned.wk2 button { font-size: min(20px, calc((var(--cell, 180px) - 8px) / 4.9)); }
   .weektabs.pinned button:disabled { color: rgb(44 107 60 / .25); cursor: default; }
   .weektabs.pinned button[aria-selected="true"]::before, .weektabs.pinned button[aria-selected="true"]::after { width: 8px; }   /* the dividers (orange bars) are 8px, were 12px */
@@ -129,6 +127,7 @@
   .one-line #slateNote.stale { color: #ffb52e; }   /* lines older than an hour */
   .one-line #slateNote { order: 2; margin-left: auto; text-align: right; align-self: flex-end; padding-bottom: 2px; flex: none; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; }   /* 2x (was 11px): the week update text on its own line, the byes under it */
   .one-line #slateHead { display: none; }
+  .one-line #infoVer { order: 4; margin-left: 14px; align-self: flex-end; padding-bottom: 2px; flex: none; font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; color: var(--ink-dim); }   /* Fan's version, at the far right */
   .bye-box { order: 1; margin-left: 14px; margin-bottom: 5px; align-self: flex-end; flex: none; display: flex; align-items: baseline; gap: .6em; font-size: var(--slate-fs, 16px); line-height: 26px; }   /* up to 2x (was 11px); fitSlateLine shrinks both to fit the width */
   .byes { display: flex; align-items: center; gap: 4px; letter-spacing: .08em; white-space: nowrap; }
   .bye-chip { position: relative; display: inline-flex; align-items: center; height: 25px; padding: 0 10px 0 30px; margin-left: 17px; border-radius: 5px; line-height: 1; letter-spacing: .06em; font-size: calc(var(--slate-fs, 16px) * 1.25); }   /* 25% bigger than v423 */
@@ -142,8 +141,10 @@
   .refresh:disabled { color: var(--ink-dim); cursor: default; }
   .refresh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .tabrows.bottom #tab-xy { position: relative !important; left: auto; top: auto; width: auto; height: 41px; padding-inline: 14px; }
-  /* the strip's second row: Graphs at the far left, Ledger at the far right in the settings window's plain type */
-  .tabrows.bottom .weektabs.ledgertab { flex: none; display: block; width: auto; min-height: 41px; margin: 0 0 0 auto; }
+  /* the strip's second row: Graphs at the far left; Season stats, Playbook and Ledger at the far right, Ledger in the settings window's plain type */
+  .tabrows.bottom .weektabs.pagetabs { flex: none; display: flex; width: auto; min-height: 41px; margin: 0 0 0 auto; }
+  .tabrows.bottom .pagetabs button { position: relative; width: auto; height: 41px; padding-inline: 14px; }
+  .tabrows.bottom .weektabs.ledgertab { flex: none; display: block; width: auto; min-height: 41px; margin: 0; }
   .tabrows.bottom #tab-ledger { position: relative; width: auto; height: 41px; padding-inline: 14px; font: 600 20px/1.1 "Source Sans 3", "Segoe UI", system-ui, sans-serif; letter-spacing: .04em; }
   .tabrows.bottom .strip-row2 { position: absolute; left: 0; right: 0; top: 41px; height: 41px; display: flex; align-items: center; gap: 8px; padding-right: 10px; box-sizing: border-box; z-index: 2; }
   .fan-menu { position: absolute; right: 10px; top: 0; height: 41px; display: flex; align-items: center; z-index: 40; }   /* the top strip's upper right */
@@ -347,7 +348,6 @@
   #tab-season, #tab-playbook, #tab-ledger, .weektabs [data-week].now { color: #12361b; }   /* .now = the calendar's current week */
   :root[data-league="nba"] :is(#tab-season, #tab-playbook, #tab-ledger, .weektabs [data-week].now) { color: rgb(10 16 34); }   /* the NBA's and NHL's strips: their own ink, not the turf's green */
   :root[data-league="nhl"] :is(#tab-season, #tab-playbook, #tab-ledger, .weektabs [data-week].now) { color: rgb(12 20 34); }
-  .weektabs.pinned.wk2 #tab-season, .weektabs.pinned.wk2 #tab-playbook { font-size: min(24px, calc((var(--rw, 628px) - var(--pick, 100px)) / 19)); padding-inline: 0; }
 
   /* ===== Game cards ===== */
   /* hover arrows over the game strip: appear at its left and right edges when the pointer is over the cards and there is more to scroll that way */
@@ -774,8 +774,7 @@
   .rk-hedge .hxres.ok { color: #19e37a; }
   .rk-hedge .hxres.err { color: #ff6b6b; }
   .col.left .riskcard.rk-over.has-arm { height: auto; min-height: var(--tk-h, 411px); }
-  #fanVer { font-weight: 500; font-size: 13px; }
-  :where(.lay-narrow) { #fanVer { display: none; } #fanBtn .demo-badge { position: absolute; top: 100%; right: 6px; } }   /* no room beside the week tabs: the version is still in the settings window, and DEMO hangs below */
+  :where(.lay-narrow) { #fanBtn .demo-badge { position: absolute; top: 100%; right: 6px; } }   /* no room beside the week tabs: DEMO hangs below */
   .demo-badge[hidden] { display: none; }
   .demo-badge { padding: 3px 7px; font: 700 12px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; color: #231400; background: #ffb020; border-radius: 3px; pointer-events: none; }
   .rk-arm { display: grid; gap: 3px; padding: 4px 6px; border: 1px solid var(--card-rule); border-radius: 3px; font-size: 11.5px; line-height: 1.25; color: var(--ink-dim); }
@@ -1037,10 +1036,11 @@
     &, & body { height: auto !important; overflow-x: hidden; }
     .tabrows:not(.bottom) { position: static !important; display: flex; overflow-x: auto; scrollbar-width: none; padding-top: 82px; }   /* Fan and the league picker above one row of tabs */
     .tabrows:not(.bottom) .weektabs.pinned.wk2 { display: contents; }
-    #tab-season { position: relative !important; top: 0; left: auto !important; width: auto !important; flex: none; }
     #fanMenu { right: 16px; }
     .tabrows:not(.bottom) .weektabs.pinned.wk2 button { flex: none; width: auto !important; position: relative !important; top: 0; left: auto !important; height: 41px; font-size: 16px; padding-inline: 10px; }
-    .tabrows.bottom { position: static; margin-top: 8px; }
+    .tabrows.bottom { position: relative; inset: auto; margin-top: 46px; }   /* the info line rides on its top edge here too, in the room above it (static, it sat above the page's top) */
+    .tabrows.bottom .strip-row2 { overflow-x: auto; scrollbar-width: none; }   /* Graphs, Season stats, Playbook and Ledger scroll sideways when they don't fit */
+    .tabrows.bottom :is(#tab-xy, #tab-season, #tab-playbook, #tab-ledger) { font-size: 16px; padding-inline: 10px; }
     .garrow { display: none !important; }
     .fan-about { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 6px; }   /* one column, row by row, with no wires: what the connector and the services do hangs indented under each card */
     .fan-about > * { grid-row: auto; grid-column: 1; }
