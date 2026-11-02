@@ -181,21 +181,22 @@
   .fan-about { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(96px, .45fr) minmax(0, .85fr) minmax(96px, .45fr) minmax(0, .8fr);   /* the connector's column narrower, its links longer, so they stay attached */ gap: 8px 0; padding: 6px 12px; }   /* the page, a wire, the connector, a wire, the outside services */
   .fan-about > * { grid-row: var(--r); grid-column: var(--c); min-width: 0; }
   .fan-about h3 { margin: 0; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); text-align: center; }
-  /* The connector: a circle with a gear behind it, behind its box and jobs. The gear is dim and still, and turns, faintly green, while everything is healthy. */
-  .fan-frame { position: relative; display: grid; place-items: center; pointer-events: none; }
-  .fan-gear { height: 100%; aspect-ratio: 1; border: 1px solid var(--accent); border-radius: 50%; background: radial-gradient(circle, rgb(255 255 255 / .03), transparent 70%); display: grid; place-items: center; }
-  .fan-frame.away .fan-gear { border: 1px dashed var(--card-rule); }
-  .fan-gear svg { width: 86%; height: 86%; fill: var(--ink-dim); opacity: .1; transition: opacity .6s, fill .6s, filter .6s; }
-  .fan-about.healthy .fan-gear svg { fill: var(--accent); opacity: .22; filter: drop-shadow(0 0 10px rgb(95 208 166 / .45)); animation: fan-turn 24s linear infinite; }
+  /* The connector: one box in four sections, its three jobs and its program, dashed when it isn't running. A small gear outside its upper left, half a card high, is dim and still, and turns, green, while everything is healthy. */
+  .fan-frame { position: relative; pointer-events: none; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 6px; }
+  .fan-frame.away { border-style: dashed; }
+  .fan-gear { position: absolute; right: calc(100% + 4px); bottom: calc(100% + 4px); width: 44px; height: 44px; }
+  .fan-gear svg { width: 100%; height: 100%; fill: var(--ink-dim); opacity: .35; transition: opacity .6s, fill .6s, filter .6s; }
+  .fan-about.healthy .fan-gear svg { fill: var(--accent); opacity: .9; filter: drop-shadow(0 0 6px rgb(95 208 166 / .45)); animation: fan-turn 12s linear infinite; }
   @keyframes fan-turn { to { transform: rotate(360deg); } }
-  .fan-con { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; margin-top: 8px; padding: 10px 12px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; }   /* under the gear, a space of its own */
+  .fan-con { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; margin-top: -4px; padding: 10px 12px; border-top: 1px solid var(--card-rule); }   /* the box's bottom section */
   .fan-con > .fan-con-ctl, .fan-con > .fan-con-page { justify-content: center; }
   .fan-con > b { font-size: 18px; color: var(--ink); }
   .fan-free { font-size: 19px; line-height: 1; color: var(--accent); }
   .fan-list:has(.fan-yours) { min-height: 100%; grid-template-rows: auto 1fr; }   /* the statement takes what's left of the window */
   .fan-yours { align-self: end; margin: 0; padding: 4px 12px 10px;   /* at the bottom, leaving the space under the gear for the connector's program details */ font: 700 21px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--accent); text-align: center; text-wrap: balance; }
-  /* The connector's jobs: boxes across its column, centered over the gear, which shows through. Their edges are the column's, where the links end. */
-  .fan-job { position: relative; z-index: 1; align-self: center; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 14px; text-align: center; background: rgb(26 31 38 / .6); border: 1px solid var(--card-rule); border-radius: 6px; backdrop-filter: blur(1px); }
+  /* The connector's jobs: the box's top three sections, each the height of its row, with a rule between. Their edges are the column's, where the links end. */
+  .fan-job { position: relative; z-index: 1; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin-top: -4px; padding: 8px 14px; text-align: center; border-top: 1px solid var(--card-rule); }
+  .fan-job.first { margin-top: 0; border-top: 0; }
   .fan-job .fan-st { justify-content: center; }
   .fan-wire { position: relative; z-index: 1; }
   .fan-con { position: relative; z-index: 1; }
@@ -1011,7 +1012,8 @@
     .fan-about h3, .fan-about > span, .fan-frame, .fan-wire { display: none; }
     .fan-job, .fan-out { margin-left: 16px; }
     .fan-job { padding: 0 0 0 10px; border-left: 1px solid var(--card-rule); }
-    .fan-con { padding: 8px 0 0; }
+    .fan-con { padding: 8px 0 0; margin-top: 0; border-top: 0; }
+    .fan-job { margin-top: 0; }
     .top { display: block; }
     .games, .games.strip { display: block; height: auto; overflow: visible; }
     .games.strip .slot { margin-bottom: 12px; }

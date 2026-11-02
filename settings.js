@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvznp0an";
-import { Fan } from "./hosts.js?v=mvznp0an";
-import { switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvznp0an";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvznp0an";
-import { demoAway, setBet } from "./trade.js?v=mvznp0an";
+import { espnState } from "./espn.js?v=mvznusuq";
+import { Fan } from "./hosts.js?v=mvznusuq";
+import { switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvznusuq";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvznusuq";
+import { demoAway, setBet } from "./trade.js?v=mvznusuq";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -261,9 +261,9 @@ import { demoAway, setBet } from "./trade.js?v=mvznp0an";
     };
     setInterval(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
     new MutationObserver(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }).observe($("feedNote"), { attributes: true, childList: true, characterData: true, subtree: true });   // the fill feed's dot changes when the feed does
-    // The connector, drawn as a circle with a gear behind it, on the user's word (Nov 2 2026). The gear turns, faintly green, while the whole system is healthy (drawStatus): the user knows it's all well if it's turning.
+    // The connector, one box in four sections, its three jobs and its program, with a small gear outside its upper left, on the user's word (Nov 2 2026). The gear turns, green, while the whole system is healthy (drawStatus): the user knows it's all well if it's turning.
     const GEAR = (() => { const teeth = 10, R = 50, r = 41, w = 0.18, corners = []; for (let i = 0; i < teeth; i++) { const a = (i / teeth) * 2 * Math.PI; [[a - w * 1.4, r], [a - w, R], [a + w, R], [a + w * 1.4, r]].forEach(([t, d]) => corners.push(`${(50 + d * Math.cos(t)).toFixed(2)},${(50 + d * Math.sin(t)).toFixed(2)}`)); } return `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill-rule="evenodd" d="M${corners.join("L")}Z M50,34 a16,16 0 1,0 0.01,0 Z"/></svg>`; })();
-    const gearFrame = here => { const f = el("div", "fan-frame" + (here ? "" : " away")), circle = el("div", "fan-gear"); circle.innerHTML = GEAR; f.append(circle); return f; };
+    const conFrame = here => { const f = el("div", "fan-frame" + (here ? "" : " away")), gear = el("div", "fan-gear"); gear.innerHTML = GEAR; f.append(gear); return f; };
     // How this user watches: the watching setup the telecast router will read (PLAN.md E). YouTube TV is the only one so far; more come as manifests.
     const WATCH_SETUPS = [["youtubetv", "YouTube TV"], ["hdhomerun", "HDHomeRun"]];   // HDHomeRun on the user's word (Nov 2 2026): an antenna's channels, played in VLC
     const networkPick = () => {
@@ -325,7 +325,7 @@ import { demoAway, setBet } from "./trade.js?v=mvznp0an";
       const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("span", "fan-cost"), head = el("div", "fan-part-head"); cost.append(el("b", "fan-free", "Free"), needs); head.append(toggle, cost); d.append(head, el("p", null, what)); return at(d, row, 1); };
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
       const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
-      const job = (text, status, row) => { const d = el("div", "fan-job"); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
+      const job = (text, status, row) => { const d = el("div", "fan-job" + (row === 3 ? " first" : "")); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
       const outBox = (name, on, ...rest) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), ...rest); return d; };
       const service = (name, row, on, ...rest) => at(outBox(name, on, ...rest), row, 5);
       const stack = (...boxes) => { const s = el("div", "fan-outs"); s.append(...boxes); return s; };
@@ -335,9 +335,9 @@ import { demoAway, setBet } from "./trade.js?v=mvznp0an";
       con.append(el("div", "fan-con-ctl"), el("div", "fan-con-page"));
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Everywhere else"), 1, 5),
-        at(gearFrame(here), "3 / 6", 3),   // the gear behind the connector's three jobs
+        at(conFrame(here), "3 / 7", 3),   // the box around the connector's three jobs and its program
         card("watch", 2), wire("scores, networks", true, false, 2, "2 / 5"), at(stack(outBox("ESPN", true, slot("ESPN", true)), outBox("Networks", true, ...networkPick(), slot("Networks", true))), 2, 5),
-        at(con, 6, 3),   // under the gear, in a space of its own: its badge, Stop or Update, Start at login, page updates
+        at(con, 6, 3),   // the box's bottom section: its badge, Stop or Update, Start at login, page updates
         card("track", 3), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 3, 2) : at(el("span"), 3, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 3),
         card("price", 4), wire("lines", here && pricesWanted, false, 4, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 4), wire("prices", here && pricesWanted, false, 4, 4), service("Kalshi, Polymarket US", 4, here && pricesWanted, routeBox("prices")),
         card("bet", 5), wire("orders, fills", here && !!Fan.trader, true, 5, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 5), wire("orders, fills", here && !!Fan.keyed, true, 5, 4), service("Kalshi", 5, here && !!Fan.keyed, slot("Kalshi", true), routeBox("orders"), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))
