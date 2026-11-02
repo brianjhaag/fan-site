@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzhol41";
-import { Fan } from "./hosts.js?v=mvzhol41";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzhol41";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzhol41";
-import { demoAway, setBet } from "./trade.js?v=mvzhol41";
+import { espnState } from "./espn.js?v=mvzi2xcg";
+import { Fan } from "./hosts.js?v=mvzi2xcg";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzi2xcg";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzi2xcg";
+import { demoAway, setBet } from "./trade.js?v=mvzi2xcg";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -192,6 +192,7 @@ import { demoAway, setBet } from "./trade.js?v=mvzhol41";
       if (away !== connectorAway) { connectorAway = away; demoAway(away); fill(); return; }   // the diagram above changes too, and this list is drawn again with it
       rows.forEach(([name, [state, text, checked]]) => { const at = box.querySelector(`[data-st="${name}"]`), r = el("div", "fan-st " + state + (checked ? " checked" : "")); r.append(el("i")); if (!at.dataset.plain) r.append(el("b", null, name)); r.append(el("span", null, text)); at.replaceChildren(r); });
       showStates(box, new Map(rows.map(([name, [state, , checked]]) => [name, [state, checked]])));
+      box.classList.toggle("healthy", !!hi && !away && rows.every(([, [state]]) => state === "ok" || state === "live" || state === "off"));   // a part turned off isn't a problem; amber, red or waiting is
       ctl.replaceChildren();
       if (away && Fan.startLink) ctl.append(startItem());
       if (hi && hi.update && programBehind(hi.version)) ctl.append(updateItem(hi.version));   // in Stop's place: there's room on the line for one
@@ -258,6 +259,9 @@ import { demoAway, setBet } from "./trade.js?v=mvzhol41";
     };
     setInterval(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
     new MutationObserver(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }).observe($("feedNote"), { attributes: true, childList: true, characterData: true, subtree: true });   // the fill feed's dot changes when the feed does
+    // The connector, drawn as a circle with a gear behind it, on the user's word (Nov 2 2026). The gear turns, faintly green, while the whole system is healthy (drawStatus): the user knows it's all well if it's turning.
+    const GEAR = (() => { const teeth = 10, R = 50, r = 41, w = 0.18, corners = []; for (let i = 0; i < teeth; i++) { const a = (i / teeth) * 2 * Math.PI; [[a - w * 1.4, r], [a - w, R], [a + w, R], [a + w * 1.4, r]].forEach(([t, d]) => corners.push(`${(50 + d * Math.cos(t)).toFixed(2)},${(50 + d * Math.sin(t)).toFixed(2)}`)); } return `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill-rule="evenodd" d="M${corners.join("L")}Z M50,34 a16,16 0 1,0 0.01,0 Z"/></svg>`; })();
+    const gearFrame = here => { const f = el("div", "fan-frame" + (here ? "" : " away")), circle = el("div", "fan-gear"); circle.innerHTML = GEAR; f.append(circle); return f; };
     const aboutRows = () => {
       const box = el("div", "fan-about"), parts = ABOUT();
       const here = !!Fan.lines && !connectorAway;   // the connector is on this page and answering
@@ -275,7 +279,7 @@ import { demoAway, setBet } from "./trade.js?v=mvzhol41";
       con.append(el("div", "fan-con-ctl"), el("div", "fan-con-page"));
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Outside"), 1, 5),
-        at(el("div", "fan-frame" + (here ? "" : " away")), "3 / 7", 3),
+        at(gearFrame(here), "3 / 7", 3),
         card("watch", "2 / span 2"), wire("scores, telecasts", true, false, 2, "2 / 5"), service("ESPN, YouTube TV", 2, true, slot("ESPN"), slot("Telecasts")),
         at(con, 3, 3),
         card("track", 4), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 4, 2) : at(el("span"), 4, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 4),
