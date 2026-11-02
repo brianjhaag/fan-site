@@ -239,6 +239,31 @@
   .fan-st.wait i { box-sizing: border-box; background: none; border: 1.5px solid var(--accent); }
   .fan-st.warn i, .fan-st.warn span { color: var(--live); }
   .fan-st.bad i, .fan-st.bad span { color: #ff6b5e; }
+  .fan-st.live i { color: var(--accent); box-shadow: 0 0 0 0 rgb(95 208 166 / .6); animation: fan-ping 2s ease-out infinite; }
+  .fan-st i { width: 10px; height: 10px; align-self: center; }
+  .fan-st { font-size: 15px; }
+  /* A part's state as a highlight behind it: a band of its color down the left edge and a wash fading across, so the whole diagram reads at a glance. Live parts breathe. */
+  .fan-about [data-state] { position: relative; border: 1px solid var(--card-rule); border-radius: 3px; transition: background-color .4s, border-color .4s, box-shadow .4s; --st: var(--card-rule); }
+  .fan-about .fan-job[data-state] { padding: 6px 12px; }
+  .fan-about [data-state="ok"], .fan-about [data-state="live"] { --st: 95 208 166; }
+  .fan-about [data-state="wait"] { --st: 95 208 166; }
+  .fan-about [data-state="warn"] { --st: 242 184 75; }
+  .fan-about [data-state="bad"] { --st: 255 107 94; }
+  .fan-about [data-state]:not([data-state="off"]) { border-color: rgb(var(--st) / .9); background: linear-gradient(90deg, rgb(var(--st) / .2), rgb(var(--st) / .05) 70%), var(--paper); box-shadow: inset 5px 0 0 rgb(var(--st)); }
+  .fan-about [data-state="off"] { background: var(--paper); border-style: dashed; }
+  .fan-about [data-state="off"] p, .fan-about [data-state="off"] b { color: var(--ink-dim); }
+  .fan-about [data-state="live"] { animation: fan-breathe 3s ease-in-out infinite; }
+  .fan-about [data-state="wait"] { animation: fan-wait 1.4s ease-in-out infinite; }
+  .fan-about [data-state="bad"] .fan-st span, .fan-about [data-state="warn"] .fan-st span { font-weight: 600; }
+  @keyframes fan-breathe { 0%, 100% { box-shadow: inset 5px 0 0 rgb(var(--st)), 0 0 0 0 rgb(var(--st) / 0); } 50% { box-shadow: inset 5px 0 0 rgb(var(--st)), 0 0 16px 1px rgb(var(--st) / .35); } }
+  @keyframes fan-wait { 0%, 100% { border-color: rgb(var(--st) / .3); } 50% { border-color: rgb(var(--st) / .9); } }
+  @keyframes fan-ping { 0% { box-shadow: 0 0 0 0 rgb(95 208 166 / .6); } 100% { box-shadow: 0 0 0 8px rgb(95 208 166 / 0); } }
+  /* What's flowing moves along its wire, toward the page, or both ways for a two-way wire. */
+  .fan-wire.lit div { border-top: 0; height: 2px; margin-top: 1px; background: repeating-linear-gradient(90deg, var(--accent) 0 8px, rgb(95 208 166 / .25) 8px 14px); background-size: 28px 2px; animation: fan-flow 1.2s linear infinite; }
+  .fan-wire.lit i { top: -4px; }
+  .fan-wire.lit.both div { animation: fan-flow-both 2.4s ease-in-out infinite; }
+  @keyframes fan-flow { to { background-position: -28px 0; } }
+  @keyframes fan-flow-both { 0%, 100% { background-position: 0 0; } 50% { background-position: -28px 0; } }
   .fan-note { margin: 0; padding: 8px 12px; font-size: 14px; line-height: 1.3; color: var(--ink-dim); }
   .fan-net { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: 8px; padding: 4px 12px; font: 400 16px/1.1 "Saira Stencil One", var(--font-display); color: var(--ink); }
   .fan-net input { box-sizing: border-box; width: 100%; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); border-radius: 2px; color: var(--ink); font: 400 13px var(--font-mono); }
@@ -976,7 +1001,7 @@
   }
 
   /* ===== Windows and motion ===== */
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } .fan-about [data-state], .fan-st i, .fan-wire.lit div { animation: none !important; } }
   /* Portrait window: the ticket column gives up width so two full columns of game cards fit (2 x 376 + 12 gap = 764), never under 400px. Landscape windows never see this. */
   @media (orientation: portrait) and (min-width: 921px) { .top { grid-template-columns: minmax(0, 1fr) clamp(352px, calc(100vw - 16px - 20px - 764px), 620px); } }
   @media (orientation: portrait) and (min-width: 921px) and (max-width: 1347px) {   /* the narrowed ticket column: tighter type, and the Straight / Parlay tabs get their own row */

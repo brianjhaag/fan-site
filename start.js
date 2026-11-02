@@ -1,18 +1,18 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mvze1an3";
-import "./risk.js?v=mvze1an3";
-import "./panels.js?v=mvze1an3";
-import "./tracker.js?v=mvze1an3";
-import "./trade.js?v=mvze1an3";
-import "./settings.js?v=mvze1an3";
-import { Fan } from "./hosts.js?v=mvze1an3";
-import { watchAuto } from "./trade.js?v=mvze1an3";
-import { WEEK_GAMES } from "./espn.js?v=mvze1an3";
-import { changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mvze1an3";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mvze1an3";
-import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mvze1an3";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mvze1an3";
-import { fillSettings, findConnector } from "./settings.js?v=mvze1an3";
+import "./base.js?v=mvzelb0i";
+import "./risk.js?v=mvzelb0i";
+import "./panels.js?v=mvzelb0i";
+import "./tracker.js?v=mvzelb0i";
+import "./trade.js?v=mvzelb0i";
+import "./settings.js?v=mvzelb0i";
+import { Fan } from "./hosts.js?v=mvzelb0i";
+import { watchAuto } from "./trade.js?v=mvzelb0i";
+import { WEEK_GAMES } from "./espn.js?v=mvzelb0i";
+import { changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mvzelb0i";
+import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mvzelb0i";
+import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mvzelb0i";
+import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mvzelb0i";
+import { fillSettings, findConnector } from "./settings.js?v=mvzelb0i";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };

@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvze1an3";
-import { Fan } from "./hosts.js?v=mvze1an3";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvze1an3";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvze1an3";
-import { demoAway, setBet } from "./trade.js?v=mvze1an3";
+import { espnState } from "./espn.js?v=mvzelb0i";
+import { Fan } from "./hosts.js?v=mvzelb0i";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzelb0i";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzelb0i";
+import { demoAway, setBet } from "./trade.js?v=mvzelb0i";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -165,9 +165,9 @@ import { demoAway, setBet } from "./trade.js?v=mvze1an3";
         ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? programBehind(hi.version) ? ["warn", hi.update ? hi.version : `${hi.version ? hi.version + ", u" : "U"}pdate to ${newestProgram()}`] : ["ok", "Running " + hi.version] : ["off", "Not on this page"]],
         ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at)] : ["ok", "Using this browser's saved copy"]],
         ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : away && Fan.lines === Fan.store ? ["off", "Kept by the connector, which isn't running"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
-        ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : book && book.note ? ["warn", book.note[0].toUpperCase() + book.note.slice(1)] : ["ok", "Lines from " + time(slateAt) + (book && book.live && book.games ? `, live on ${book.games} game${book.games === 1 ? "" : "s"}` : "")]],
+        ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : book && book.note ? ["warn", book.note[0].toUpperCase() + book.note.slice(1)] : [book && book.live && book.games ? "live" : "ok", "Lines from " + time(slateAt) + (book && book.live && book.games ? `, live on ${book.games} game${book.games === 1 ? "" : "s"}` : "")]],
         ["Kalshi", !hi ? ["off", "Needs the connector"] : hi.keyError ? ["bad", hi.keyError] : !hi.env ? ["off", "No key connected"] : ["ok", `Connected${hi.env === "demo" ? " to demo, fake money" : ""}, orders ${hi.orders ? "on" : "off"}`]],
-        ["Fill feed", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "Waits for a Kalshi key"] : !feed.textContent || feed.classList.contains("wait") ? ["wait", "Starting"] : feed.classList.contains("on") ? ["ok", "Live"] : ["bad", feed.textContent]],
+        ["Fill feed", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "Waits for a Kalshi key"] : !feed.textContent || feed.classList.contains("wait") ? ["wait", "Starting"] : feed.classList.contains("on") ? ["live", "Live"] : ["bad", feed.textContent]],
         ["Telecasts", nets ? ["ok", nets + (nets === 1 ? " network linked" : " networks linked")] : ["off", "No links pasted"]],
         ["Leagues", ["ok", [...leaguesOn].map(k => leagueNames()[k]).join(", ")]]
       ] };
@@ -178,6 +178,7 @@ import { demoAway, setBet } from "./trade.js?v=mvze1an3";
       if (!ctl || ctl.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
       if (away !== connectorAway) { connectorAway = away; demoAway(away); fill(); return; }   // the diagram above changes too, and this list is drawn again with it
       rows.forEach(([name, [state, text]]) => { const at = box.querySelector(`[data-st="${name}"]`), r = el("div", "fan-st " + state); r.append(el("i")); if (!at.dataset.plain) r.append(el("b", null, name)); r.append(el("span", null, text)); at.replaceChildren(r); });
+      showStates(box, new Map(rows.map(([name, [state]]) => [name, state])));
       ctl.replaceChildren();
       if (away && Fan.startLink) ctl.append(startItem());
       if (hi && hi.update && programBehind(hi.version)) ctl.append(updateItem(hi.version));   // in Stop's place: there's room on the line for one
@@ -190,6 +191,16 @@ import { demoAway, setBet } from "./trade.js?v=mvze1an3";
         ctl.append(lab);
       }
       drawPageChoice(hi);
+    };
+    // Each part of the diagram lit by its state, so the state reads at a glance: the box a status sits in, and each part's card by the statuses of its row. The worst wins; "live" is fine and moving. A card that's turned off stays plain.
+    const STATE_RANK = { off: 0, ok: 1, live: 2, wait: 3, warn: 4, bad: 5 };
+    const CARD_STATES = { watch: ["ESPN", "Leagues", "Telecasts"], track: ["Records"], price: ["Prices"], bet: ["Fill feed", "Kalshi"] };
+    const worst = list => list.filter(Boolean).reduce((a, b) => (STATE_RANK[b] > STATE_RANK[a] ? b : a), "off");
+    const showStates = (box, states) => {
+      const hosts = new Map();
+      box.querySelectorAll("[data-st]").forEach(s => { const h = s.closest(".fan-part, .fan-job, .fan-out, .fan-con"); if (h) hosts.set(h, [...(hosts.get(h) || []), states.get(s.dataset.st)]); });
+      hosts.forEach((list, h) => { h.dataset.state = worst(list); });
+      Object.entries(CARD_STATES).forEach(([k, names]) => { const c = box.querySelector(`[data-part=${k}]`); if (!c) return; if (c.classList.contains("off")) delete c.dataset.state; else c.dataset.state = worst(names.map(n => states.get(n))); });
     };
     // The user's say over page updates: hold what this computer has, take the newest when they choose, or go back one. Pressed, it says so until the page reloads with what the connector now serves.
     const drawPageChoice = hi => {
@@ -221,7 +232,7 @@ import { demoAway, setBet } from "./trade.js?v=mvze1an3";
       const slot = (name, plain) => { const s = el("div", "fan-slot"); s.dataset.st = name; if (plain) s.dataset.plain = "1"; return s; };
       const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("p"); cost.append(el("b", "fan-free", "Free"), needs); d.append(toggle, el("p", null, what), cost); return at(d, row, 1); };
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
-      const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
+      const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "") + (both ? " both" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
       const job = (text, status, row) => { const d = el("div", "fan-job"); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
       const service = (name, row, on, ...rest) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), ...rest); return at(d, row, 5); };
       const con = el("div", "fan-con");
