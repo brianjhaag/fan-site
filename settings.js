@@ -1,9 +1,9 @@
-// The settings window: Fan's button, its tabs and the status monitor.
-import { espnState } from "./espn.js?v=mvyl51tk";
-import { Fan } from "./hosts.js?v=mvyl51tk";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyl51tk";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyl51tk";
-import { demoAway, setBet } from "./trade.js?v=mvyl51tk";
+// The settings window: Fan's button, its tabs and the status indicators.
+import { espnState } from "./espn.js?v=mvyl8sf5";
+import { Fan } from "./hosts.js?v=mvyl8sf5";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvyl8sf5";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvyl8sf5";
+import { demoAway, setBet } from "./trade.js?v=mvyl8sf5";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -118,7 +118,7 @@ import { demoAway, setBet } from "./trade.js?v=mvyl51tk";
       price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines && !connectorAway ? on => setPrices(on) : null), "Live lines and risk, plus trends and analytics.", ", requires the Connector."],
       bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed && !connectorAway ? on => setBet(on) : null), "Execute directly on prediction markets.", ", requires the Connector and API keys."]
     });
-    // The status monitor: what the page can see of each part right now, redrawn every 5 seconds while it shows.
+    // The status indicators, each on its part of the diagram: what the page can see right now, redrawn every 5 seconds while it shows.
     let stopPressed = false;   // pressed Stop on this page, so its silence is expected
     let connectorAway = false;   // this page's connector isn't answering: Price and Bet keep their ticks, greyed
     const stopItem = box => {
@@ -138,7 +138,7 @@ import { demoAway, setBet } from "./trade.js?v=mvyl51tk";
       else if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
       const espn = espnState(), feed = $("feedNote"), nets = Object.values(networkLinks).filter(u => /^https:\/\//i.test(u)).length, time = at => timeZoned(new Date(at));
       return { hi, away, rows: [
-        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? ["ok", "Running on this computer" + (hi.version ? ", program " + hi.version : "")] : ["off", "Not on this page"]],
+        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? ["ok", "Running" + (hi.version ? " " + hi.version : "")] : ["off", "Not on this page"]],
         ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at)] : ["ok", "Using this browser's saved copy"]],
         ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : away && Fan.lines === Fan.store ? ["off", "Kept by the connector, which isn't running"] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}`]],
         ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !slateAt ? ["off", "No lines yet"] : Date.now() - slateAt > 3600000 ? ["warn", "Lines from " + time(slateAt) + ", over an hour old"] : ["ok", "Lines from " + time(slateAt)]],
@@ -153,7 +153,7 @@ import { demoAway, setBet } from "./trade.js?v=mvyl51tk";
       const ctl = document.querySelector(".fan-con-ctl");   // the connector's own controls sit on it, in the diagram
       if (!ctl || ctl.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
       if (away !== connectorAway) { connectorAway = away; demoAway(away); fill(); return; }   // the diagram above changes too, and this list is drawn again with it
-      box.replaceChildren(...rows.map(([name, [state, text]]) => { const r = el("div", "fan-st " + state); r.append(el("i"), el("b", null, name), el("span", null, text)); return r; }));
+      rows.forEach(([name, [state, text]]) => { const at = box.querySelector(`[data-st="${name}"]`), r = el("div", "fan-st " + state); r.append(el("i")); if (!at.dataset.plain) r.append(el("b", null, name)); r.append(el("span", null, text)); at.replaceChildren(r); });
       ctl.replaceChildren();
       if (away && Fan.startLink) ctl.append(startItem());
       if (hi && hi.stop) ctl.append(stopItem(box));
@@ -165,33 +165,34 @@ import { demoAway, setBet } from "./trade.js?v=mvyl51tk";
         ctl.append(lab);
       }
     };
-    setInterval(() => { const box = document.querySelector(".fan-status"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
+    setInterval(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
     const aboutRows = () => {
       const box = el("div", "fan-about"), parts = ABOUT();
       const here = !!Fan.lines && !connectorAway;   // the connector is on this page and answering
       const at = (node, row, col) => { node.style.setProperty("--r", row); node.style.setProperty("--c", col); return node; };
+      // Where a status indicator goes. A plain one sits under its own name, so it doesn't repeat it.
+      const slot = (name, plain) => { const s = el("div", "fan-slot"); s.dataset.st = name; if (plain) s.dataset.plain = "1"; return s; };
       const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("p"); cost.append(el("b", "fan-free", "Free"), needs); d.append(toggle, el("p", null, what), cost); return at(d, row, 1); };
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
       const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
-      const job = (text, row) => at(el("p", "fan-job", text), row, 3);
-      const service = (name, what, row, on) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), typeof what === "string" ? el("small", null, what) : what); return at(d, row, 5); };
-      const con = el("div", "fan-con"), state = el("div", "fan-st " + (here ? "ok" : connectorAway && !stopPressed ? "bad" : "off"));
-      state.append(el("i"), el("span", null, here ? "Running" : connectorAway ? (stopPressed ? "Stopped" : "Not answering") : "Not on this page"));
-      con.append(el("b", null, "Fan connector"), state);
+      const job = (text, status, row) => { const d = el("div", "fan-job"); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
+      const service = (name, row, on, ...rest) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), ...rest); return at(d, row, 5); };
+      const con = el("div", "fan-con");
+      con.append(el("b", null, "Fan connector"), slot("Connector", true));
       if (!Fan.lines && Fan.startLink) con.append(getOrStart());   // on the name's line where it fits, like the controls below
       con.append(el("div", "fan-con-ctl"));
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Outside"), 1, 5),
         at(el("div", "fan-frame" + (here ? "" : " away")), "3 / 7", 3),
-        card("watch", "2 / span 2"), wire("scores, telecasts", true, false, 2, "2 / 5"), service("ESPN, YouTube TV", "Your own pull, and your own links.", 2, true),
+        card("watch", "2 / span 2"), wire("scores, telecasts", true, false, 2, "2 / 5"), service("ESPN, YouTube TV", 2, true, slot("ESPN"), slot("Telecasts")),
         at(con, 3, 3),
-        card("track", 4), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 4, 2) : at(el("span"), 4, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", 4),
-        card("price", 5), wire("lines", here && pricesWanted, false, 5, 2), job("Pulls lines on a timer, over your own connection.", 5), wire("prices", here && pricesWanted, false, 5, 4), service("Kalshi, Polymarket", "Public prices.", 5, here && pricesWanted),
-        card("bet", 6), wire("orders, fills", here && !!Fan.trader, true, 6, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", 6), wire("orders, fills", here && !!Fan.keyed, true, 6, 4), service("Kalshi", Fan.account && !Fan.keyed ? keysItem() : el("small", null, "Your account, your money."), 6, here && !!Fan.keyed)
+        card("track", 4), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 4, 2) : at(el("span"), 4, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 4),
+        card("price", 5), wire("lines", here && pricesWanted, false, 5, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 5), wire("prices", here && pricesWanted, false, 5, 4), service("Kalshi, Polymarket", 5, here && pricesWanted, el("small", null, "Public prices.")),
+        card("bet", 6), wire("orders, fills", here && !!Fan.trader, true, 6, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 6), wire("orders, fills", here && !!Fan.keyed, true, 6, 4), service("Kalshi", 6, here && !!Fan.keyed, slot("Kalshi", true), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))
       );
-      const status = el("div", "fan-status");
-      drawStatus(status);
-      return [box, status, el("p", "fan-yours", "Fan does not track, keep, or use your data in any way, other than local storage of the things you want, which is only used internally. There is nothing to sign or agree on: your data is yours.")];
+      box.querySelector("[data-part=watch]").append(slot("Leagues"));
+      drawStatus(box);
+      return [box, el("p", "fan-yours", "Fan does not track, keep, or use your data in any way, other than local storage of the things you want, which is only used internally. There is nothing to sign or agree on: your data is yours.")];
     };
     const SETTINGS_TABS = [
       ["about", "Fan", aboutRows],

@@ -178,11 +178,11 @@
   .fan-frame.away { border: 1px dashed var(--card-rule); background: none; }
   .fan-con { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 12px 0; }
   .fan-con > b { font-size: 18px; color: var(--ink); }
-  .fan-con .fan-st { display: flex; }
   .fan-free { font-size: 19px; line-height: 1; color: var(--accent); }
-  .fan-list:has(.fan-yours) { min-height: 100%; grid-template-rows: auto auto 1fr; }   /* the statement takes what's left of the window */
+  .fan-list:has(.fan-yours) { min-height: 100%; grid-template-rows: auto 1fr; }   /* the statement takes what's left of the window */
   .fan-yours { align-self: center; margin: 0; padding: 4px 12px; font: 700 21px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--accent); text-align: center; text-wrap: balance; }
-  .fan-job { align-self: center; margin: 0; padding: 0 12px; font: 400 15px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .fan-job { align-self: center; padding: 0 12px; }
+  .fan-job p { margin: 0; font: 400 15px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
   .fan-wire { align-self: center; padding: 0 1px; font: 400 13px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; text-align: center; color: var(--ink-dim); }
   .fan-wire span { display: block; margin-bottom: 3px; }
   .fan-wire div { position: relative; border-top: 1px dashed var(--card-rule); }
@@ -225,14 +225,10 @@
   .fan-connector ol { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
   .fan-connector li b { font-weight: 600; }
   .fan-connector small { display: block; margin-top: 4px; color: var(--ink-dim); }
-  .fan-status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px 16px; padding: 4px 12px; }
-  .fan-status .fan-st { grid-template-columns: 8px auto minmax(0, 1fr); }   /* name and state on one line */
-  .fan-status .fan-st span { grid-column: 3; }
-  .fan-status h3 { grid-column: 1 / -1; margin: 0 0 2px; font: 400 16px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
-  .fan-st { display: grid; grid-template-columns: 8px minmax(0, 1fr); column-gap: 6px; align-items: center; font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
-  .fan-st i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-  .fan-st b { color: var(--ink); font-weight: 600; }
-  .fan-st span { grid-column: 2; }
+  .fan-slot { min-height: 18px; }
+  .fan-st { display: flex; column-gap: 6px; align-items: baseline; font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }   /* name and state on one line */
+  .fan-st i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  #fanWindow .fan-st b { flex: none; color: var(--ink); font-size: 14px; font-weight: 600 !important; }
   .fan-st.ok i { color: var(--accent); }
   .fan-st.wait i { box-sizing: border-box; background: none; border: 1.5px solid var(--accent); }
   .fan-st.warn i, .fan-st.warn span { color: var(--live); }
@@ -955,7 +951,6 @@
     .fan-job, .fan-out { margin-left: 16px; }
     .fan-job { padding: 0 0 0 10px; border-left: 1px solid var(--card-rule); }
     .fan-con { padding: 8px 0 0; }
-    .fan-status { grid-template-columns: minmax(0, 1fr); }
     .top { display: block; }
     .games, .games.strip { display: block; height: auto; overflow: visible; }
     .games.strip .slot { margin-bottom: 12px; }

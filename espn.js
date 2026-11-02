@@ -51,7 +51,7 @@ const WEEK_GAMES = {}, GAME_ENV = {}, TEAM_INFO = {}, NBA_INFO = {}, nflRows = {
 let pullProblem = "", onRefresh = () => {};
 const setRefresh = fn => { onRefresh = fn; };
 const pullStatus = () => pullProblem;
-const espnState = () => ({ at: pullAt, problem: pullFailed || pullProblem });   // for the status monitor
+const espnState = () => ({ at: pullAt, problem: pullFailed || pullProblem });   // for the status indicators
 
 // Blocks the page only for a week this browser has never seen.
 for (let w = 1; w <= NFL_WEEKS; w++) {
