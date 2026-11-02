@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzurx0y";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzurx0y";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzurx0y";
-import { Calc } from "./calc.js?v=mvzurx0y";
-import { Fan } from "./hosts.js?v=mvzurx0y";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzuvc2w";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzuvc2w";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzuvc2w";
+import { Calc } from "./calc.js?v=mvzuvc2w";
+import { Fan } from "./hosts.js?v=mvzuvc2w";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -205,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvzurx0y";
     return tag;
   }
 
-  const APP_VERSION = "0.35.15";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.16";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -271,7 +271,7 @@ import { Fan } from "./hosts.js?v=mvzurx0y";
     if (!(W > 0)) return;
     line.style.width = W + "px";
     line.style.setProperty("--slate-fs", "16px");
-    const need = note.scrollWidth + document.querySelector(".bye-box").scrollWidth + $("infoVer").scrollWidth + 38;
+    const need = note.scrollWidth + document.querySelector(".bye-box").scrollWidth + $("infoVer").scrollWidth + 38 + ($("demoBadge") ? $("demoBadge").offsetWidth + 14 : 0);
     line.style.setProperty("--slate-fs", Math.max(8, Math.min(16, 16 * W / need)) + "px");
   }
   window.addEventListener("resize", () => fitSlateLine());

@@ -122,16 +122,16 @@
   /* the bottom text uses the same type as the game cards column headers (.slot-h): label font, 700, spaced caps, 16px */
   .one-line #slateNote, .bye-box, .byeLabel { font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   .tabrows.bottom .sec-title.one-line { position: absolute; left: 0; right: auto; bottom: calc(100% + 2px); top: auto; margin: 0; height: 36px; overflow: visible; }   /* the byes / update row belongs to the bottom strip: it rides on its top edge, never behind it */ /* the slate line (Refresh, note, byes) sits under the game cards */
-  .sec-title.one-line { flex-wrap: nowrap; align-items: center; gap: 0 24px; height: 28px; overflow: hidden; position: relative; top: 8px; }   /* byes at the left, the update text at the right: the row hugs the top edge of the bottom tab strip, the text above Refresh */
+  .sec-title.one-line { justify-content: flex-end; flex-wrap: nowrap; align-items: center; gap: 0 24px; height: 28px; overflow: hidden; position: relative; top: 8px; }   /* byes at the left, the update text at the right: the row hugs the top edge of the bottom tab strip, the text above Refresh */
   .one-line #slateHead { flex: none; display: flex; align-items: baseline; gap: .6em; }
   .one-line #feedNote { order: 3; margin-left: 14px; align-self: flex-end; padding-bottom: 2px; flex: none; font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; color: var(--ink-dim); }
   .one-line #feedNote.on { color: #19e37a; }
   .one-line #feedNote.off { color: #ffb52e; }
   .one-line #slateNote.stale { color: #ffb52e; }   /* lines older than an hour */
-  .one-line #slateNote { order: 2; margin-left: auto; text-align: right; align-self: flex-end; padding-bottom: 2px; flex: none; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; }   /* 2x (was 11px): the week update text on its own line, the byes under it */
+  .one-line #slateNote { order: 2; text-align: right; align-self: flex-end; padding-bottom: 2px; flex: none; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; }   /* 2x (was 11px): the week update text on its own line, the byes under it */
   .one-line #slateHead { display: none; }
   .one-line #infoVer { order: 4; margin-left: 14px; align-self: flex-end; padding-bottom: 2px; flex: none; font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; color: var(--ink-dim); }   /* Fan's version, at the far right */
-  .bye-box { order: 1; margin-left: 14px; margin-bottom: 5px; align-self: flex-end; flex: none; display: flex; align-items: baseline; gap: .6em; font-size: var(--slate-fs, 16px); line-height: 26px; }   /* up to 2x (was 11px); fitSlateLine shrinks both to fit the width */
+  .bye-box { order: 1; margin: 0 auto 5px 14px; align-self: flex-end; flex: none; display: flex; align-items: baseline; gap: .6em; font-size: var(--slate-fs, 16px); line-height: 26px; }   /* up to 2x (was 11px); fitSlateLine shrinks both to fit the width */
   .byes { display: flex; align-items: center; gap: 4px; letter-spacing: .08em; white-space: nowrap; }
   .bye-chip { position: relative; display: inline-flex; align-items: center; height: 25px; padding: 0 10px 0 30px; margin-left: 17px; border-radius: 5px; line-height: 1; letter-spacing: .06em; font-size: calc(var(--slate-fs, 16px) * 1.25); }   /* 25% bigger than v423 */
   .bye-helm { position: absolute; left: -15px; top: 50%; height: 35px; width: auto; transform: translateY(-50%); }
@@ -155,7 +155,8 @@
   .tabrows.bottom .strip-row2 button { padding-inline: 14px; font: 600 20px/1.1 "Source Sans 3", "Segoe UI", system-ui, sans-serif; letter-spacing: .04em; }   /* every bottom strip button in Ledger's plain type, the settings window's (the user's, Nov 2 2026) */
   .tabrows.bottom .strip-row2 { position: absolute; left: 0; right: 0; top: 41px; height: 41px; display: flex; align-items: center; gap: 8px; padding-right: 10px; box-sizing: border-box; z-index: 2; }
   .fan-menu { position: absolute; right: 10px; top: 0; height: 41px; display: flex; align-items: center; z-index: 40; }   /* the top strip's upper right */
-  #fanBtn { appearance: none; background: none; border: 0; padding: 0 6px; display: flex; align-items: center; gap: 6px; font: italic 900 26px/1 "Saira", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-stretch: 125%; text-transform: uppercase; color: #12361b; cursor: pointer; }   /* ESPN-like, on the user's word: Saira's black italic at its widest, in capitals (FAN) */
+  #fanBtn { appearance: none; background: none; border: 0; padding: 0 6px; display: flex; align-items: center; gap: 8px; font: 400 26px/1 "Plaster", "Montserrat", "Helvetica Neue", Arial, sans-serif; text-transform: uppercase; color: #d50a0a; cursor: pointer; }   /* the user's (Nov 2 2026): Plaster, in capitals, in red */
+  #fanBtn svg { color: #12361b; }   /* the gear keeps the strip's ink */
   .fan-window { position: fixed; inset: 90px auto auto 8px; margin: 0; width: calc(100vw - 16px); max-width: none; height: var(--games-h, 728px); max-height: none; box-sizing: border-box; padding: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--card-rule); border-radius: 3px; }   /* a game preview's size and place */
   .fan-window[open] { display: grid; grid-template: auto minmax(0, 1fr) / max-content minmax(0, 1fr); }   /* the head across the top, the tabs stacked down the left, the open tab beside them */
   .fan-win-head { grid-column: 1 / -1; }
@@ -790,8 +791,8 @@
   .rk-hedge .hxres.ok { color: #19e37a; }
   .rk-hedge .hxres.err { color: #ff6b6b; }
   .col.left .riskcard.rk-over.has-arm { height: auto; min-height: var(--tk-h, 411px); }
-  :where(.lay-narrow) { #fanBtn .demo-badge { position: absolute; top: 100%; right: 6px; } }   /* no room beside the week tabs: DEMO hangs below */
   .demo-badge[hidden] { display: none; }
+  .one-line .demo-badge { order: 5; flex: none; align-self: flex-end; margin: 0 0 5px 14px; }   /* at the info line's far right, after the version */
   .demo-badge { padding: 3px 7px; font: 700 12px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; color: #231400; background: #ffb020; border-radius: 3px; pointer-events: none; }
   .rk-arm { display: grid; gap: 3px; padding: 4px 6px; border: 1px solid var(--card-rule); border-radius: 3px; font-size: 11.5px; line-height: 1.25; color: var(--ink-dim); }
   .rk-arm.on { border-color: #ff6b6b; }
