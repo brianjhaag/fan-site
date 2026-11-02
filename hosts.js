@@ -163,6 +163,11 @@ Fan.connectStore = async () => {
     const r = await (await window.fetch("/connector/stop", { method: "POST" })).json();
     if (!r.ok) throw new Error(r.error);
   };
+  if (hi && hi.page) Fan.pageChoice = async action => {   // hold page updates, take the newest, or go back one: "hold", "release", "take", "back"
+    const r = await (await window.fetch("/connector/page", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    return r.page;
+  };
   if (hi && hi.update) Fan.updateConnector = async () => {   // the Update button. The connector fetches the new program and replaces itself
     const r = await (await window.fetch("/connector/update", { method: "POST" })).json();
     if (!r.ok) throw new Error(r.error);
