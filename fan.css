@@ -46,6 +46,8 @@
   /* the slate header is one line: title, refresh and the note together at the left, the byes pinned to the right */
   /* Every week: the cards sit in one column per kickoff window, side by side, each card 376 x 165, a scrollbar along the bottom */
   html, body { overscroll-behavior: none; }   /* no rubber-band bounce at the ends of a scroll */
+  body { caret-color: transparent; }   /* no text caret left at a dropdown or button when Chrome's caret browsing (F7) is on [U, Nov 2 2026]; places you type keep theirs */
+  input, textarea, [contenteditable] { caret-color: auto; }
   .tchip { display: inline-block; border: 2px solid transparent; border-radius: 4px; padding: 1px 8px 2px; font: 700 20px/1.1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
   html.nohover body * { pointer-events: none !important; }   /* until the first real mouse move, nothing reacts to the pointer */
   main:has(#xy:not([hidden])) { padding-bottom: 82px; }   /* the graphs end at the bottom strip: no vertical scroll */
