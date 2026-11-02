@@ -1,8 +1,8 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvyn6i6d";
-import { Fan } from "./hosts.js?v=mvyn6i6d";
-import { Calc } from "./calc.js?v=mvyn6i6d";
-import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvyn6i6d";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mvz7dwsz";
+import { Fan } from "./hosts.js?v=mvz7dwsz";
+import { Calc } from "./calc.js?v=mvz7dwsz";
+import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, slateId, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mvz7dwsz";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -230,7 +230,7 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
   async function autoSet(g, on) {
     autoCfg = (await Fan.auto.get()) || autoCfg || { set: {} };
     const key = gameKey(g), s = armSet;
-    autoCfg = { ...autoCfg, "abbr": ABBR, games: autoGames(), set: { ...autoCfg.set, [key]: { stamp: Date.now(), on, trigger: s.trigger === "fill" ? { kind: "fill" } : { kind: "every", seconds: s.every }, response: { kind: "hedge", up: s.up, size: s.size, max: s.max, send: s.kind, lift: s.lift, capital: s.capital } } } };
+    autoCfg = { ...autoCfg, "abbr": ABBR, games: autoGames(), set: { ...autoCfg.set, [key]: { stamp: Date.now(), on, trigger: s.trigger === "fill" || (s.trigger === "price" && Fan.auto.price) ? { kind: s.trigger } : { kind: "every", seconds: s.every }, response: { kind: "hedge", up: s.up, size: s.size, max: s.max, send: s.kind, lift: s.lift, capital: s.capital } } } };
     await Fan.auto.set(autoCfg);
   }
   const armLog = (a, text, cls) => { a.log.unshift({ at: Date.now(), text, cls: cls || "" }); a.log.length = Math.min(a.log.length, 20); changed("exec"); };
@@ -301,8 +301,8 @@ import { changed, $, ABBR, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, 
     kind.value = armSet.kind; kind.disabled = a.on; kind.addEventListener("change", () => { armSet.kind = kind.value; save(); });
     kindLab.append(kind);
     const when = el("select"), whenLab = el("label", null, "When");
-    [["every", "Every few seconds"], ["fill", "On a fill"]].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; when.append(o); });
-    when.value = armSet.trigger; when.disabled = a.on; when.addEventListener("change", () => { armSet.trigger = when.value; save(); });
+    [["every", "Every few seconds"], ["fill", "On a fill"], ...(Fan.auto && Fan.auto.price ? [["price", "On a price"]] : [])].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; when.append(o); });
+    when.value = when.querySelector(`option[value="${armSet.trigger}"]`) ? armSet.trigger : "every"; when.disabled = a.on; when.addEventListener("change", () => { armSet.trigger = when.value; save(); });
     whenLab.append(when);
     if (Fan.auto) row.append(whenLab);
     row.append(kindLab, field("Max", "max", "Contracts per order at most. 0 sends the whole suggestion"), field("Size %", "size", "Share of the suggestion to send"), field("Up ¢", "up", "Cents above the ask the order may pay"), field("Every s", "every", "Seconds between checks"), field("Lift $", "lift", "How much a hedge has to raise the worst case", "0.5"), field("Capital ¢", "capital", "Charge per dollar put down, for hedges", "0.5"));

@@ -156,7 +156,8 @@ Fan.connectStore = async () => {
   };
   if (hi && hi.auto) Fan.auto = {   // triggers and responses: a config the connector runs by itself
     get: async () => (await (await window.fetch("/connector/config?name=auto")).json()).result,
-    set: async data => { const r = await (await window.fetch("/connector/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "auto", data }) })).json(); if (!r.ok) throw new Error(r.error); }
+    set: async data => { const r = await (await window.fetch("/connector/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "auto", data }) })).json(); if (!r.ok) throw new Error(r.error); },
+    price: !!hi.book   // a connector with the live book can trigger on a price
   };
   if (hi && hi.stop) Fan.stopConnector = async () => {   // the Stop button. It finishes what's under way, saves and ends
     const r = await (await window.fetch("/connector/stop", { method: "POST" })).json();

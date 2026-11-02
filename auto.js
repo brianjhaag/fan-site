@@ -1,5 +1,6 @@
 // Triggers and responses: what the connector does by itself, with or without a page open. It runs in the connector's engine beside calc.js and reaches the world only through `fan` (the connector's README). The page sets them in the local config `auto`, and reads what happened from the records' `auto` collection.
-// config auto = { abbr, games: [{ t, away, home, week, league, id, when }], set: { <game key>: { stamp, on, trigger: { kind: "every", seconds } or { kind: "fill" }, response: { kind: "hedge", up, size, max, send, lift, capital } } } }
+// config auto = { abbr, games: [{ t, away, home, week, league, id, when }], set: { <game key>: { stamp, on, trigger: { kind: "every", seconds } or { kind: "fill" } or { kind: "price" }, response: { kind: "hedge", up, size, max, send, lift, capital } } } }
+// It also keeps the saved lines on the live book: each second the book moved, the games it moved get their fresh prices, as a fill's read gives the page.
 const Auto = (() => {
   const ownOrders = new Set(), timers = new Map();   // the orders this sent, and when each game's timer is next due
   let orderNo = 0;
@@ -68,8 +69,8 @@ const Auto = (() => {
     save(key, doc);
   }
 
-  // One pass. `heard`: the fill that set this off, or nothing for the clock.
-  function pass(heard) {
+  // One pass. `heard`: the fill that set this off; `priced`: the slate ids the book just moved; neither for the clock.
+  function pass(heard, priced) {
     if (heard && heard.catchup) return;   // a fill from before this started says nothing about now
     const cfg = fan.config("auto");
     if (!cfg || !cfg.set) return;
@@ -94,9 +95,11 @@ const Auto = (() => {
       if (!doc.on) continue;
       const trig = set.trigger || {};
       if (heard) { if (trig.kind !== "fill" || ownOrders.has(heard.client_order_id)) continue; }
-      else if (trig.kind === "fill" ? timers.has(key) : fan.now() < (timers.get(key) || 0)) continue;
+      else if (priced) { if (trig.kind !== "price") continue; }
+      else if (trig.kind === "fill" || trig.kind === "price" ? timers.has(key) : fan.now() < (timers.get(key) || 0)) continue;   // a fill or price trigger runs once on arming, then waits for its event
       const { games, tickets, calc } = load(), g = games.find(x => calc.gameKey(x) === key);
       if (!g) { stop(key, doc, "this game isn't in the config"); continue; }
+      if (priced && !priced.has(g.id)) continue;
       if (heard && eventOf(heard.ticker) !== eventOf(firstTicker(g))) continue;
       if (g.final) { stop(key, doc, "the game is final"); continue; }
       if (!RESPONSES[set.response && set.response.kind]) { stop(key, doc, "no response called " + (set.response && set.response.kind)); continue; }
@@ -105,7 +108,20 @@ const Auto = (() => {
       world = null;   // a response may have changed the tickets
     }
   }
+  // The games the live book moved: their saved lines first, so the page and the response read the same prices, then any game armed on a price.
+  function priced(ev) {
+    const moved = new Set();
+    ((ev && ev.games) || []).forEach(({ id, q }) => {
+      if (!q || q.skip || q.start == null) return;
+      let doc;
+      try { doc = fan.records.get("slate", id); } catch (e) { return; }
+      if (!doc || Array.isArray(doc.final)) return;   // not in the slate yet, or over
+      try { fan.records.update("slate", id, Calc.freshPrices({ t: new Date(q.start).toISOString(), lad: doc.lad }, q, fan.now())); moved.add(id); } catch (e) {}
+    });
+    if (moved.size) pass(null, moved);
+  }
   fan.on("tick", () => pass(null));
   fan.on("fill", f => pass(f));
-  return { pass };
+  fan.on("prices", priced);
+  return { pass, priced };
 })();
