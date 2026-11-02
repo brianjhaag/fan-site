@@ -18,7 +18,8 @@ const Fan = {
   startLink: "fan-connector://start",   // starts an installed connector. Windows runs what the install registered
   localFan: "http://localhost:5180/",   // where it answers. A page on another site can't read it, but can tell a refusal from no answer, which is all it needs
   connectorUp: () => (Fan.hostHello ? Fan.hostHello() : window.fetch(Fan.localFan + "connector/hello", { mode: "no-cors" })),
-  setLeagues: list => { tellConnector({ leagues: list }); }   // tells the connector which leagues to refresh
+  setLeagues: list => { tellConnector({ leagues: list }); },   // tells the connector which leagues to refresh
+  setRoutes: r => { tellConnector(r); }   // { prices: [...] } or { orders: [...] }: the venues switched on for each
 };
 
 // A person's records in this browser's IndexedDB, for a page with no connector. The store contract, plus dump and restore for backups, and kept and keep for this browser's own settings about them.

@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzf1bgh";
-import { Fan } from "./hosts.js?v=mvzf1bgh";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzf1bgh";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzf1bgh";
-import { demoAway, setBet } from "./trade.js?v=mvzf1bgh";
+import { espnState } from "./espn.js?v=mvzfwuag";
+import { Fan } from "./hosts.js?v=mvzfwuag";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzfwuag";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzfwuag";
+import { demoAway, setBet } from "./trade.js?v=mvzfwuag";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -191,6 +191,31 @@ import { demoAway, setBet } from "./trade.js?v=mvzf1bgh";
         ctl.append(lab);
       }
       drawPageChoice(hi);
+      drawRoutes(hi);
+    };
+    // Each venue's switches, on the user's word (Nov 2 2026): prices from Kalshi and Polymarket US, and where orders may go. A venue the connector can't send orders to yet says why. They're the connector's to keep, so they show only with one that knows them.
+    const VENUES = [["kalshi", "Kalshi"], ["polymarket", "Polymarket US"]];
+    const routeBox = kind => { const d = el("div", "fan-routes"); d.dataset.kind = kind; return d; };
+    const drawRoutes = hi => {
+      const r = hi && hi.routes;
+      document.querySelectorAll(".fan-routes").forEach(box => {
+        if (box.dataset.busy) return;
+        box.replaceChildren();
+        if (!r || !Fan.setRoutes) return;
+        const kind = box.dataset.kind, on = new Set(r[kind] || []);
+        box.append(el("small", null, kind === "prices" ? "Prices from" : "Orders to"));
+        VENUES.forEach(([v, name]) => {
+          const cannot = kind === "orders" && !(r.canOrder || []).includes(v), lab = el("label", "fan-check"), c = el("input");
+          c.type = "checkbox"; c.checked = on.has(v) && !cannot; c.disabled = cannot || connectorAway;
+          c.addEventListener("change", () => {
+            if (c.checked) on.add(v); else on.delete(v);
+            Fan.setRoutes({ [kind]: VENUES.map(x => x[0]).filter(x => on.has(x)) });
+            box.dataset.busy = "1"; setTimeout(() => { delete box.dataset.busy; }, 2000);   // until the connector has it, so a redraw doesn't flip it back
+          });
+          lab.append(c, name + (cannot ? ": needs a key" : ""));
+          box.append(lab);
+        });
+      });
     };
     // A status shown under its own title, the connector's and Kalshi's, puts its state on that title, which then wears it as the other names do (fan.css).
     // A check means something was verified, not just that nothing's wrong: the connector on the newest program, ESPN's last read, the records' integrity check and today's backup, fresh lines, Kalshi signed in. Telecasts and Leagues have nothing to verify.
@@ -241,8 +266,8 @@ import { demoAway, setBet } from "./trade.js?v=mvzf1bgh";
         card("watch", "2 / span 2"), wire("scores, telecasts", true, false, 2, "2 / 5"), service("ESPN, YouTube TV", 2, true, slot("ESPN"), slot("Telecasts")),
         at(con, 3, 3),
         card("track", 4), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 4, 2) : at(el("span"), 4, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 4),
-        card("price", 5), wire("lines", here && pricesWanted, false, 5, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 5), wire("prices", here && pricesWanted, false, 5, 4), service("Kalshi, Polymarket", 5, here && pricesWanted, el("small", null, "Public prices.")),
-        card("bet", 6), wire("orders, fills", here && !!Fan.trader, true, 6, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 6), wire("orders, fills", here && !!Fan.keyed, true, 6, 4), service("Kalshi", 6, here && !!Fan.keyed, slot("Kalshi", true), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))
+        card("price", 5), wire("lines", here && pricesWanted, false, 5, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 5), wire("prices", here && pricesWanted, false, 5, 4), service("Kalshi, Polymarket US", 5, here && pricesWanted, routeBox("prices")),
+        card("bet", 6), wire("orders, fills", here && !!Fan.trader, true, 6, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 6), wire("orders, fills", here && !!Fan.keyed, true, 6, 4), service("Kalshi", 6, here && !!Fan.keyed, slot("Kalshi", true), routeBox("orders"), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))
       );
       box.querySelector("[data-part=watch]").append(slot("Leagues"));
       drawStatus(box);
