@@ -1014,7 +1014,6 @@
   .tracking-off .top.bd-open .games.bd { width: 100%; }
   .tracking-off .g-bot { visibility: hidden; }   /* a fully enabled card is the layout in every mode: what's off leaves its space blank */
 
-  .prices-off.tracking-off .strip-row2, .prices-off.tracking-off .sectiontabs { display: none; }   /* Track still needs the strip, for Ledger */
   /* No prices: the moneyline, spread and total columns would stand empty, so the badge takes the card, centered in the room left of the icons. */
 
   /* One plain font across the settings window: the stencil belongs to football. */
