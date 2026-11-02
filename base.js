@@ -1,8 +1,8 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvyl8sf5";
-import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvyl8sf5";
-import { Calc } from "./calc.js?v=mvyl8sf5";
-import { Fan } from "./hosts.js?v=mvyl8sf5";
+import { NBA_INFO, NBA_SCHEDULE, WEEK_GAMES, pullNba, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvylhds1";
+import { BOOK_ICONS, HELMETS, PLATE_STATES, TEAM_STATE } from "./data/assets.js?v=mvylhds1";
+import { Calc } from "./calc.js?v=mvylhds1";
+import { Fan } from "./hosts.js?v=mvylhds1";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -168,7 +168,7 @@ import { Fan } from "./hosts.js?v=mvyl8sf5";
     return tag;
   }
 
-  const APP_VERSION = "0.21.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.21.4";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -319,16 +319,18 @@ import { Fan } from "./hosts.js?v=mvyl8sf5";
     ["Tape", '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.500"/><circle cx="12" cy="6.500" r="1.500"/><circle cx="12" cy="17.500" r="1.500"/><circle cx="6.500" cy="12" r="1.500"/><circle cx="17.500" cy="12" r="1.500"/></svg>'],
     ["Risk detail", '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 13.5c3 0 3.8-1.6 4.8-4.8C6.6 6 7 3 8 3s1.400 3 2.200 5.700c1 3.200 1.800 4.800 4.800 4.800"/></svg>']
   ];
+  // A final NFL game's replays on nfl.com, in the user's own browser, where their sign-in is. Condensed Replay is a button on that tab. Every 2026 game to Week 8 answered at this address, Nov 1 2026.
+  const tapeLink = g => `https://www.nfl.com/games/${last(g.away).toLowerCase()}-at-${last(g.home).toLowerCase()}-2026-reg-${g.week}?tab=highlights-replays`;
   function cardGutter(g) {
     const box = el("div", "g-gut");
     box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
-    const st = status(g)[1];   // Box score has nothing to open yet, and Tape stays dim until there are nfl.com sign-ins to use
+    const st = status(g)[1];   // Box score has nothing to open yet
     CARD_ACTIONS.forEach(([name, icon]) => {
-      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!pastedLink(g) : name === "Risk detail" && trackingOn;
+      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!pastedLink(g) : name === "Tape" ? st === "final" && leagueOf(g).code === "NFL" : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
-      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { Fan.openTelecast(telecastLink(g), telecastPref); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
+      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { Fan.openTelecast(telecastLink(g), telecastPref); } : name === "Tape" ? () => { window.open(tapeLink(g), "_blank", "noopener"); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
       box.append(b);
     });
     return box;
