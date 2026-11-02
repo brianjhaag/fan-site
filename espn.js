@@ -1,7 +1,7 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { LEAGUE_DEFS, leagueCodes } from "./leagues.js?v=mvzrvsqh";
+import { LEAGUE_DEFS, leagueCodes } from "./leagues.js?v=mvzs2gck";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = Date.UTC(2026, 9, 28, 6), NFL_WEEKS = 18;
@@ -145,13 +145,13 @@ async function pullTeams() {
   keepPull("teams", out);
 }
 
-// A daily league's games (the NBA, the NHL), only once it's on: one Eastern day a slate, from its season's start to 16 days ahead, each day kept so a finished one is asked for once.
+// A daily league's games (the NBA, the NHL), only once it's on: one Eastern day a slate, from its season's start through its last day tab, each day kept so a finished one is asked for once.
 // Codes are Kalshi's, because its tickers end in them (leagues.js's espnCodes); a game with a team not in the league's table, an exhibition or an All-Star game, is left out. Every network ESPN names, as for the NFL.
 const ymd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
 async function pullDaily(l) {
   const def = LEAGUE_DEFS[l], codes = leagueCodes(l), code = x => def.espnCodes[x.abbreviation] || x.abbreviation;
   const rows = [], today = Math.floor(Date.now() / 864e5) * 864e5;
-  for (let d = def.start; d <= today + 16 * 864e5; d += 864e5) {
+  for (let d = def.start; d <= today + def.days * 864e5; d += 864e5) {
     const key = l + ymd(d), had = keptPull(key);
     let day = had && (d < today - 864e5 && had.at > d + 2 * 864e5 || Date.now() - had.at < TEAMS_MS) ? had.data : null;
     if (!day) {

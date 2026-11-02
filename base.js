@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzrvsqh";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzrvsqh";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzrvsqh";
-import { Calc } from "./calc.js?v=mvzrvsqh";
-import { Fan } from "./hosts.js?v=mvzrvsqh";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzs2gck";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzs2gck";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzs2gck";
+import { Calc } from "./calc.js?v=mvzs2gck";
+import { Fan } from "./hosts.js?v=mvzs2gck";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -203,7 +203,7 @@ import { Fan } from "./hosts.js?v=mvzrvsqh";
     return tag;
   }
 
-  const APP_VERSION = "0.35.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.35.4";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -808,15 +808,16 @@ import { Fan } from "./hosts.js?v=mvzrvsqh";
   $("tab-xy").addEventListener("click", () => { detailGame = null; if (view === "xy") { showView("week"); } else showView("xy"); });   // clicking Graphs again goes back to the cards
   // Season stats, Playbook and Ledger: clicking the active one closes it, onto the current week's cards.
   ["season", "playbook", "ledger"].forEach(k => $("tab-" + k).addEventListener("click", () => { if (view === k) { detailGame = null; switchWeek(weekNow()); } else showView(k); }));
-  // The week tabs follow the league: Weeks 1-17, or for a daily league (the NBA, the NHL) 17 days from yesterday.
+  // The week tabs follow the league: Weeks 1-17, or for a daily league (the NBA, the NHL) its days from today (leagues.js), the spare tabs hidden.
   function setLeague(l) {
     league = l;
     document.documentElement.dataset.league = l;
     const tabs = [...document.querySelectorAll(".weektabs [data-week]")];
     tabs.forEach((b, i) => {
+      b.style.display = Calc.RULES.leagues[l].daily && i >= LEAGUE_DEFS[l].days ? "none" : "";
       if (!Calc.RULES.leagues[l].daily) { b.dataset.week = String(i + 1); b.textContent = "Week " + (i + 1); return; }
-      const d = new Date(Date.now() + (i - 1) * 864e5);
-      b.dataset.week = String(slateOfDay(l, nbaDay(i - 1)));
+      const d = new Date(Date.now() + i * 864e5);
+      b.dataset.week = String(slateOfDay(l, nbaDay(i)));
       b.textContent = d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
     });
     detailGame = null;
