@@ -1,9 +1,9 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzelb0i";
-import { Fan } from "./hosts.js?v=mvzelb0i";
-import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzelb0i";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzelb0i";
-import { demoAway, setBet } from "./trade.js?v=mvzelb0i";
+import { espnState } from "./espn.js?v=mvzeo2o9";
+import { Fan } from "./hosts.js?v=mvzeo2o9";
+import { APP_VERSION, $, BADGE_STYLES, LEAGUES_READY, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzeo2o9";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzeo2o9";
+import { demoAway, setBet } from "./trade.js?v=mvzeo2o9";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -208,6 +208,7 @@ import { demoAway, setBet } from "./trade.js?v=mvzelb0i";
       if (!line || line.querySelector("small")) return;
       line.replaceChildren();
       if (!p || !Fan.pageChoice) return;
+      const num = v => { const n = String(v || "").split(" ")[0]; return /^d+.d+.d+$/.test(n) ? n : ""; };   // the site's version.txt is "0.28.2 <hash>"; one from before 0.28.2 is a bare hash
       const act = (action, saying) => {
         line.querySelectorAll("button, input").forEach(x => { x.disabled = true; });
         line.append(el("small", null, saying));
@@ -216,11 +217,11 @@ import { demoAway, setBet } from "./trade.js?v=mvzelb0i";
       const lab = el("label", "fan-check"), c = el("input");
       c.type = "checkbox"; c.checked = !!p.held;
       c.addEventListener("change", () => act(c.checked ? "hold" : "release", c.checked ? "Holding…" : "Following the site…"));
-      lab.append(c, p.held ? `Hold at ${p.version || APP_VERSION}` : "Hold page updates");
+      lab.append(c, p.held ? `Hold at ${APP_VERSION}` : "Hold page updates");   // the page knows its own number
       line.append(lab);
       const button = (text, action, saying) => { const b = el("button", "fan-start", text); b.type = "button"; b.addEventListener("click", () => act(action, saying)); line.append(b); };
-      if (p.held && p.available && p.available !== p.version) button("Take " + p.available, "take", "Taking " + p.available + "…");
-      if (p.previous) button("Back to " + p.previous, "back", "Going back to " + p.previous + "…");
+      if (p.held && p.available && p.available !== p.version) { const n = num(p.available); button(n ? "Take " + n : "Take the newest", "take", "Taking " + (n || "the newest") + "…"); }
+      if (p.previous) { const n = num(p.previous); button(n ? "Back to " + n : "Go back one", "back", "Going back to " + (n || "the page before") + "…"); }
     };
     setInterval(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
     new MutationObserver(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }).observe($("feedNote"), { attributes: true, childList: true, characterData: true, subtree: true });   // the fill feed's dot changes when the feed does
