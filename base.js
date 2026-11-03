@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0r0udi";
-import { BOOK_ICONS } from "./data/assets.js?v=mw0r0udi";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0r0udi";
-import { Calc } from "./calc.js?v=mw0r0udi";
-import { Fan } from "./hosts.js?v=mw0r0udi";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0relni";
+import { BOOK_ICONS } from "./data/assets.js?v=mw0relni";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0relni";
+import { Calc } from "./calc.js?v=mw0relni";
+import { Fan } from "./hosts.js?v=mw0relni";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -66,6 +66,7 @@ import { Fan } from "./hosts.js?v=mw0r0udi";
   // The top strip's tabs other than the weeks, and the bottom strip's buttons for each; an entry with `stub` is a placeholder saying what it will show. A section with one view has no bottom buttons. A new section or view is one entry here.
   const SECTIONS = {
     playbook: [{ k: "main", h: "Trends" }],
+    code: [],   // the Code section (code.js): one page, no views
     ncaafb: [{ k: "main", h: "NCAA FB", stub: "Not built yet." }],
     season: [{ k: "margins", h: "Margins" },
       { k: "keys", h: "Key numbers", stub: "How often games land on 3, 7, 10 and the other key numbers this season, against the long-run shares." },
@@ -205,7 +206,7 @@ import { Fan } from "./hosts.js?v=mw0r0udi";
     return tag;
   }
 
-  const APP_VERSION = "0.37.5";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.37.6";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -582,7 +583,7 @@ import { Fan } from "./hosts.js?v=mw0r0udi";
     if (h > 0 && h < r.height - 1) { col.style.alignSelf = "start"; col.style.height = Math.max(300, h) + "px"; }
   }
   // The background image fills the band from the top strip's bottom edge to the bottom strip's top edge, behind the info line too: pinned to the window with the bottom strip, or measured on the page where that strip scrolls with it (a phone).
-  function fitBand() { const t = document.querySelector(".tabrows:not(.bottom)").getBoundingClientRect(), strip = document.querySelector(".tabrows.bottom"), b = strip.getBoundingClientRect(), band = $("bgBand"), pinned = getComputedStyle(strip).position === "fixed"; band.style.position = pinned ? "fixed" : "absolute"; band.style.top = (t.bottom + window.scrollY) + "px"; band.style.bottom = pinned ? b.height + "px" : "auto"; band.style.height = pinned ? "" : Math.max(0, b.top - t.bottom) + "px"; const win = $("fanWindow"), info = document.querySelector(".sec-title.one-line").offsetHeight; win.style.top = pinned ? (t.bottom + 8) + "px" : ""; win.style.bottom = pinned ? (b.height + 2 + info + 2) + "px" : ""; win.style.height = pinned ? "auto" : ""; }   // the settings window too: the usable space, from the top strip down to the info line, its bottom held to the strip so it follows the window's height
+  function fitBand() { const t = document.querySelector(".tabrows:not(.bottom)").getBoundingClientRect(), strip = document.querySelector(".tabrows.bottom"), b = strip.getBoundingClientRect(), band = $("bgBand"), pinned = getComputedStyle(strip).position === "fixed"; band.style.position = pinned ? "fixed" : "absolute"; band.style.top = (t.bottom + window.scrollY) + "px"; band.style.bottom = pinned ? b.height + "px" : "auto"; band.style.height = pinned ? "" : Math.max(0, b.top - t.bottom) + "px"; const win = $("fanWindow"), info = document.querySelector(".sec-title.one-line").offsetHeight; win.style.top = pinned ? (t.bottom + 8) + "px" : ""; win.style.bottom = pinned ? (b.height + 2 + info + 2) + "px" : ""; const code = $("code"); code.style.top = win.style.top; code.style.bottom = win.style.bottom; win.style.height = pinned ? "auto" : ""; }   // the settings window too: the usable space, from the top strip down to the info line, its bottom held to the strip so it follows the window's height
   const bandWatch = new ResizeObserver(fitBand);   // held here, so it keeps watching
   bandWatch.observe(document.body); bandWatch.observe(document.querySelector(".tabrows:not(.bottom)"));
   window.addEventListener("resize", () => { fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); fitBand(); });
@@ -838,16 +839,16 @@ import { Fan } from "./hosts.js?v=mw0r0udi";
   const drawLeagueStub = () => { if (LEAGUES.includes(view)) drawStub(view); };
   function showView(v) {
     view = v;
-    $("ledger").hidden = v !== "ledger"; $("xy").hidden = v !== "xy"; $("season").hidden = v !== "season"; $("playbook").hidden = v !== "playbook"; $("panel").hidden = v !== "week";
+    $("ledger").hidden = v !== "ledger"; $("xy").hidden = v !== "xy"; $("season").hidden = v !== "season"; $("playbook").hidden = v !== "playbook"; $("code").hidden = v !== "code"; $("panel").hidden = v !== "week";
     LEAGUES.forEach(k => { $(k).hidden = v !== k; });
-    ["ledger", "xy", "season", "playbook"].forEach(k => $("tab-" + k).setAttribute("aria-selected", String(v === k)));
+    ["ledger", "xy", "season", "playbook", "code"].forEach(k => $("tab-" + k).setAttribute("aria-selected", String(v === k)));
     document.querySelectorAll(".weektabs [data-week]").forEach(b => { const w = Number(b.dataset.week); b.classList.toggle("now", w === weekNow()); b.setAttribute("aria-selected", String(!SECTIONS[v] && w === curWeek)); });   // Graphs belongs to the selected week; one top tab is active at a time
     changed("view", "view:" + v);
     syncLeaguePick();
   }
   $("tab-xy").addEventListener("click", () => { detailGame = null; if (view === "xy") { showView("week"); } else showView("xy"); });   // clicking Graphs again goes back to the cards
   // Season stats, Playbook and Ledger: clicking the active one closes it, onto the current week's cards.
-  ["season", "playbook", "ledger"].forEach(k => $("tab-" + k).addEventListener("click", () => { if (view === k) { detailGame = null; switchWeek(weekNow()); } else showView(k); }));
+  ["season", "playbook", "ledger", "code"].forEach(k => $("tab-" + k).addEventListener("click", () => { if (view === k) { detailGame = null; switchWeek(weekNow()); } else showView(k); }));
   // The week tabs follow the league: Weeks 1-17, or for a daily league (the NBA, the NHL) its days from today (leagues.js), the spare tabs hidden.
   function setLeague(l) {
     league = l;
