@@ -1,7 +1,7 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mvzy3a8k";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mvzyf90p";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = Date.UTC(2026, 9, 28, 6), NFL_WEEKS = 18;
@@ -51,6 +51,9 @@ const pullWeek = async w => {
 const WEEK_GAMES = {}, GAME_ENV = {}, TEAM_INFO = {}, nflRows = {};
 let pullProblem = "", onRefresh = () => {};
 const setRefresh = fn => { onRefresh = fn; };
+// The leagues that are on (base.js setLeagueOn): the minute's scores are read for theirs alone, so a league turned off stops being asked for at once, not at the next load.
+let scoresFor = new Set(["nfl"]);
+const wantScores = list => { scoresFor = new Set(list); };
 const pullStatus = () => pullProblem;
 const espnState = () => ({ at: pullAt, problem: pullFailed || pullProblem });   // for the status indicators
 
@@ -92,7 +95,7 @@ let lastWeekPull = 0;
 const gameOn = w => (nflRows[w] || []).some(r => r.now || (!r.final && Date.now() >= r.ms && Date.now() - r.ms < 5 * 3600e3));
 setInterval(() => {
   const w = espnWeek();
-  if (w < 1 || w > NFL_WEEKS || document.hidden) return;
+  if (w < 1 || w > NFL_WEEKS || document.hidden || !scoresFor.has("nfl")) return;
   if (!gameOn(w) && Date.now() - lastWeekPull < 10 * 60e3) return;
   lastWeekPull = Date.now();
   refreshWeek(w).then(() => onRefresh(), () => {});
@@ -187,7 +190,7 @@ async function refreshDaily(l) {
 }
 setInterval(() => {
   if (document.hidden) return;
-  for (const l of new Set(Object.values(WEEK_GAMES).flat().map(g => g.league).filter(Boolean))) if (dailyGames(l).some(dailyOn)) refreshDaily(l).then(() => onRefresh(), () => {});
+  for (const l of scoresFor) if (l !== "nfl" && dailyGames(l).some(dailyOn)) refreshDaily(l).then(() => onRefresh(), () => {});
 }, 60e3);
 
 // NCAA FB's list: today's games involving a top 25 team, asked for when its page opens.
@@ -200,4 +203,4 @@ async function pullNcaafb() {
   }).filter(g => g.away.rank || g.home.rank).sort((a, b) => a.t.localeCompare(b.t));
   return { asOf: Date.now(), games };
 }
-export { espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule };
+export { espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };
