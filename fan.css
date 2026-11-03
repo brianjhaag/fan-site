@@ -271,6 +271,12 @@
   .fan-remote-url { margin: 6px 0; font: 600 26px/1.2 var(--font-mono); color: var(--accent); user-select: all; }   /* typed into the iPad, so large */
   .fan-remote-here { margin: 0; font-size: 18px; color: var(--accent); }
   :root.remote #tab-code { display: none; }   /* a remote is Watch and the wall only */
+  .fan-setup { margin: 0 0 4px; border: 1px solid var(--paper-edge); border-radius: 4px; }   /* Wall setup: folds away once set */
+  .fan-setup > summary { display: flex; align-items: baseline; gap: 14px; padding: 10px 12px; cursor: pointer; font: 700 18px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+  .fan-setup-how { font: 400 15px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink-dim); }
+  .fan-setup[open] > summary { border-bottom: 1px solid var(--paper-edge); }
+  .fan-setup > .fan-remote { padding: 8px 12px; }
+  .fan-setup > .fan-remote:empty { display: none; }
   .fan-joinrow { display: flex; gap: 8px; align-items: center; }
   .fan-joinrow input { flex: 1; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); color: var(--ink); font: 400 15px var(--font-mono); }
   .fan-joinrow input + input { flex: 0 0 160px; }

@@ -1,11 +1,11 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw15yroz";
-import { Fan } from "./hosts.js?v=mw15yroz";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw15yroz";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw15yroz";
-import { wallPanel } from "./wall.js?v=mw15yroz";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw15yroz";
-import { demoAway, setBet } from "./trade.js?v=mw15yroz";
+import { espnState } from "./espn.js?v=mw16a8le";
+import { Fan } from "./hosts.js?v=mw16a8le";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw16a8le";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw16a8le";
+import { wallPanel } from "./wall.js?v=mw16a8le";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw16a8le";
+import { demoAway, setBet } from "./trade.js?v=mw16a8le";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -80,7 +80,7 @@ import { demoAway, setBet } from "./trade.js?v=mw15yroz";
     const telecastRows = () => {
       const grid = el("div", "fan-telecasts"), links = el("div");
       links.append(...hdhrRows(), ...networkRows(), ...captureRows());
-      if (Fan.wall) { if (Fan.screen && Fan.screen.of) grid.append(screenRows(), links); else grid.append(wallPanel(), doorRows(), screenRows(), links); return [grid]; }
+      if (Fan.wall) { const joined = !!(Fan.screen && Fan.screen.of); grid.append(wallSetup([doorRows(), screenRows()]), ...(joined ? [] : [wallPanel()]), links); return [grid]; }
       const mon = el("button", "fan-start fan-monbtn"), picker = el("div");
       const set = () => { mon.textContent = monitorsOpen ? "Close monitors" : "Configure monitors"; mon.setAttribute("aria-expanded", String(monitorsOpen)); picker.hidden = !monitorsOpen; if (monitorsOpen && !picker.childNodes.length) picker.append(screenPicker()); };
       mon.type = "button"; mon.addEventListener("click", () => { monitorsOpen = !monitorsOpen; set(); });
@@ -90,6 +90,20 @@ import { demoAway, setBet } from "./trade.js?v=mw15yroz";
       if (!Fan.screens) row.append(el("span", "fan-note", Fan.hostHello ? "The connector can't place telecast windows on this computer, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it reads your monitors and places each telecast's window. Without it, a telecast opens as a plain link."));
       grid.append(row, picker, links);
       return [grid];
+    };
+    // Wall setup (the user's, Nov 3 2026: "the first choice to make"), at the top of the tab and folding away once set: the two switches, or joining another wall. Open until something
+    // is set, then as the user last left it, kept per browser. Folded, its title says how it's set.
+    let setupOpen = null;   // this session's: the tab redraws as a switch changes, and the section stays as it was
+    const wallSetup = parts => {
+      const d = el("details", "fan-setup"), s = el("summary"), door = Fan.door && Fan.door.info, of = Fan.screen && Fan.screen.of;
+      const set = !!(of || (door && (door.screens.on || door.remote.on)));
+      const how = Fan.door && Fan.door.here ? "This is a remote" : of ? `A screen on the wall at ${of.wall}` : door ? `Screens ${door.screens.on ? "on" : "off"} · Remote control ${door.remote.on ? "on" : "off"}` : "";
+      s.append(el("b", null, "Wall setup"), el("span", "fan-setup-how", how));
+      if (setupOpen === null) { let kept = null; try { kept = localStorage.getItem("fan.wallSetup"); } catch (e) {} setupOpen = kept ? kept === "open" : !set; }
+      d.open = setupOpen;
+      d.addEventListener("toggle", () => { setupOpen = d.open; try { localStorage.setItem("fan.wallSetup", d.open ? "open" : "closed"); } catch (e) {} });
+      d.append(s, ...parts);
+      return d;
     };
     // The wall's two switches, on the computer that runs it: other computers may join as screens, and tablets or phones may control it. Each has its own code and address.
     const doorRows = () => {
@@ -107,7 +121,7 @@ import { demoAway, setBet } from "./trade.js?v=mw15yroz";
           else if (on) out.push(el("p", "fan-note", "On, but this computer's address on the network couldn't be found."));
           return out;
         };
-        box.replaceChildren(el("h3", null, "This computer's wall"),
+        box.replaceChildren(
           ...row("screens", "Let other computers join this wall as screens", d.screens.on, d.screens.url, "On each of the other computers: Settings, Telecasts, Join a wall, and paste this."),
           ...row("remote", "Let a tablet or phone control this wall", d.remote.on, d.remote.url, "On the tablet or phone, open this in Chrome, then Add to Home Screen. It pairs that device, once."));
         if (d.open) box.append(el("p", "fan-note", "If Windows asks whether Fan's connector may use the network, choose Private networks."));
