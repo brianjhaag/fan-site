@@ -1,8 +1,8 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { SHARED } from "./shared.js?v=mw0xlgwo";
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw0xlgwo";
+import { SHARED } from "./shared.js?v=mw0xza50";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw0xza50";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;
@@ -165,11 +165,13 @@ async function pullDailyTeams(l) {
   const def = LEAGUE_DEFS[l], code = a => def.espnCodes[a] || a, codes = leagueCodes(l), out = {};
   const standings = await getJson(`https://site.api.espn.com/apis/v2/sports/${def.espn}/standings`), report = await getJson(`${SITE}/${def.espn}/injuries`), inj = {};
   report.injuries.forEach(t => { inj[t.id] = t.injuries.filter(i => i.status in SEVERITY).sort((p, q) => SEVERITY[p.status] - SEVERITY[q.status]).slice(0, 30).map(i => { const pos = (i.athlete.position && i.athlete.position.abbreviation) || ""; return [i.athlete.displayName, pos, i.status, (i.details && i.details.type) || "", l === "nhl" && pos === "G" ? 1 : 0]; }); });
-  for (const conf of standings.children) for (const [i, row] of conf.standings.entries.entries()) {
+  // the teams' statistics four at a time, so the first preview doesn't wait on 32 requests in a row
+  const rows = standings.children.flatMap(conf => conf.standings.entries.map((row, i) => [conf, row, i])).filter(([, row]) => codes.has(code(row.team.abbreviation))), stats = {};
+  for (let k = 0; k < rows.length; k += 4) await Promise.all(rows.slice(k, k + 4).map(([, row]) => { const c = code(row.team.abbreviation); return (stats[c] = getJson(`${SITE}/${def.espn}/teams/${row.team.id}/statistics`)); }));
+  for (const [conf, row, i] of rows) {
     const t = row.team, c = code(t.abbreviation);
-    if (!codes.has(c)) continue;
     const stat = n => row.stats.find(x => x.name === n) || {}, streak = String(stat("streak").displayValue || "");
-    const cats = (await getJson(`${SITE}/${def.espn}/teams/${t.id}/statistics`)).results.stats.categories, st = {};
+    const cats = (await stats[c]).results.stats.categories, st = {};
     Object.entries(DAILY_STATS[l]).forEach(([k, [cat, name]]) => { st[k] = statOf(cats, cat, name); });
     out[c] = {
       called: t.name, r: stat("overall").summary, h: stat("Home").summary, a: stat("Road").summary, l10: stat("Last Ten Games").summary || "", stand: `${ordinal(stat("playoffSeed").value || i + 1)} in the ${conf.abbreviation || conf.name}`, streak: (streak[0] === "L" ? -1 : 1) * (Number(streak.slice(1)) || 0),

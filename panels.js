@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw0xlgwo";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams } from "./espn.js?v=mw0xlgwo";
-import { Fan } from "./hosts.js?v=mw0xlgwo";
-import { ALL_GAMES, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw0xlgwo";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw0xlgwo";
+import { riskGrid } from "./risk.js?v=mw0xza50";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams } from "./espn.js?v=mw0xza50";
+import { Fan } from "./hosts.js?v=mw0xza50";
+import { ALL_GAMES, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw0xza50";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw0xza50";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -539,7 +539,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw0xlgwo";
     if (g.final) part(el("b", null, "FINAL " + g.final[0] + " – " + g.final[1]));
     part(el("span", null, `${shortDayFmt.format(new Date(g.t))} · ${timeZoned(new Date(g.t))}`));
     if (g.tv) part(el("span", null, g.tv));
-    if (g.venue) g.venue.filter(Boolean).forEach(x => part(el("span", null, x)));
+    if (Array.isArray(g.arena)) g.arena.filter(Boolean).forEach(x => part(el("span", null, x)));   // arena, not venue: a game's venue is the slate's cheapest place for each leg
     head.dataset.scene = "dome";
     const team = (side, t) => { const d = el("div", "bd-team " + side); d.append(bdBadge(g, side, t.called.toUpperCase())); return d; };
     head.append(info, team("away", A), team("home", H));
@@ -599,18 +599,27 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw0xlgwo";
       d.append(c2, c4, c3);
       return d;
     };
-    const nInj = Math.max(A.inj.length, H.inj.length, 1), lh = Math.max(13, Math.min(22, Math.floor(250 / nInj))), lfs = Math.max(10, Math.min(14, Math.round(lh * 0.56)));
-    low.style.setProperty("--lh", lh + "px"); low.style.setProperty("--lfs", lfs + "px");
+    const nInj = Math.max(A.inj.length, H.inj.length, 1), lh = Math.max(13, Math.min(22, Math.floor(250 / nInj)));
+    const setRows = (h, sfs) => { low.style.setProperty("--lh", h + "px"); low.style.setProperty("--lfs", Math.max(10, Math.min(14, Math.round(h * 0.56))) + "px"); if (sfs) low.style.setProperty("--sfs", sfs + "px"); [...low.children].forEach(d => { d.style.gridTemplateRows = Math.max(nInj * h + 2, 70) + "px auto minmax(0, 1fr)"; }); };
     low.append(half(A, "away"), half(H, "home"));
-    [...low.children].forEach(d => { d.style.gridTemplateRows = Math.max(nInj * lh + 2, 70) + "px auto minmax(0, 1fr)"; });
+    setRows(lh);
     const wrap = el("div", "bd-wrap");
     wrap.append(head, low);
     box.replaceChildren(wrap);
+    // a short window: tighten the injury rows, then the script's type, until the script clears the season panel and nothing is cut off, as the NFL's board does
+    for (let i = 0, h = lh, sfs = 14.5; i < 24; i++) {
+      const scs = [...box.querySelectorAll(".bd-script")], sch = [...box.querySelectorAll(".bd-half > .bd-sched:not(.bd-script)")];
+      const deficit = Math.max(low.scrollHeight - low.clientHeight - 1, ...scs.map((e, k) => e.getBoundingClientRect().bottom - sch[k].getBoundingClientRect().top + 4));
+      if (deficit <= 0.5) break;
+      if (h > 13) { h = Math.max(13, h - Math.max(1, Math.ceil(deficit / nInj))); setRows(h); }
+      else if (sfs > 10.5) { sfs -= 0.5; setRows(h, sfs); }
+      else break;
+    }
     const sp = [...box.querySelectorAll(".bd-script")], sh = Math.max(0, ...sp.map(e => e.offsetHeight));
     sp.forEach(e => { e.style.minHeight = sh + "px"; });
   }
   function renderGameDetail(box, g) {
-    if (leagueOf(g).daily && leagueOf(g).gameDetails) { renderDailyDetail(box, g); return; }
+    if (leagueOf(g).daily && leagueOf(g).gameDetails) { try { renderDailyDetail(box, g); } catch (e) { box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", "This preview couldn't be drawn: " + e.message)); } return; }
     if (!leagueOf(g).gameDetails) { box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", `${leagueOf(g).code} game details are not built yet.`)); return; }
     if (!TEAM_INFO[nick(g, "away")] || !TEAM_INFO[nick(g, "home")]) {   // this browser's own pull, the first time a game detail opens
       box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", "Asking ESPN for team stats and injuries…"));
