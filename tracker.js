@@ -1,8 +1,8 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { Fan } from "./hosts.js?v=mw0q2jcy";
-import { nick, $, setAcc, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw0q2jcy";
-import { TEAM, abbr } from "./leagues.js?v=mw0q2jcy";
-import { setPlaybook } from "./panels.js?v=mw0q2jcy";
+import { Fan } from "./hosts.js?v=mw0r0udi";
+import { calc, setWeirdFills, nick, $, setAcc, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw0r0udi";
+import { TEAM, abbr } from "./leagues.js?v=mw0r0udi";
+import { setPlaybook } from "./panels.js?v=mw0r0udi";
   Object.assign(later, { syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))} ${pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };
@@ -22,8 +22,13 @@ import { setPlaybook } from "./panels.js?v=mw0q2jcy";
       }
       inStore = true;
       try { store.watchDoc("meta", "balances", v => { if (v && v.books) { setBalances(v); changed("balances"); } }); } catch (e) {}
+      // Fills are the record (the user, Nov 3 2026): each Kalshi order's ticket takes its money from its fills, worked out here on every change of either.
+      let savedRows = [], fillRows = [];
+      const show = () => { const v = calc.withFills(savedRows, fillRows, k => dayFmt.format(new Date(k)) + ", " + timeZoned(new Date(k))); setWeirdFills(v.weird); setTickets(v.tickets); };
+      store.watch("fills", rows => { fillRows = rows; show(); }, () => {});
       store.watch("wagers", rows => {
-        setTickets(rows.map(r => ({ id: r.id, ...r.data })).sort((p, q) => (p.createdAt > q.createdAt ? 1 : p.createdAt < q.createdAt ? -1 : 0)));
+        savedRows = rows.map(r => ({ id: r.id, ...r.data })).sort((p, q) => (p.createdAt > q.createdAt ? 1 : p.createdAt < q.createdAt ? -1 : 0));
+        show();
         ticketsLoaded();
       }, () => { inStore = false; });
       await startBackups();
@@ -275,7 +280,7 @@ import { setPlaybook } from "./panels.js?v=mw0q2jcy";
       const li = el("li", r.t.fillId ? "row from-fill" : "row");   // from-fill: the ticket came from a Kalshi fill, not typed in by hand
       if (r.t.parlay) li.title = r.t.legs.map(legText).join("\n");
       r.cells.forEach((v, i) => {
-        const c = COLS[i], editable = c.edit && c.edit(r.t);
+        const c = COLS[i], editable = !r.t.fromFills && c.edit && c.edit(r.t);   // a real fill's ticket can't be edited (the user, Nov 3 2026)
         const cell = el("span", [c.ctr ? "ctr" : c.num ? "num" : "", editable ? "ed" : "", c.at[0] === 2 ? "r2" : ""].filter(Boolean).join(" ") || null, v);
         cell.style.gridArea = `${c.at[0]} / ${c.at[1]}`;
         if (editable) { cell.title = "Click to edit"; cell.addEventListener("click", e => { e.stopPropagation(); startEdit(r.t, c, cell); }); }
@@ -292,7 +297,7 @@ import { setPlaybook } from "./panels.js?v=mw0q2jcy";
           armTimer = setTimeout(() => { del.classList.remove("arm"); del.title = "Delete ticket"; }, 3000);
         } else { clearTimeout(armTimer); deleteTicket(r.t); }
       });
-      li.append(del);
+      if (!r.t.fromFills) li.append(del);   // nor deleted
       // A parlay's legs are listed under its row, one per line, so the figures stay on a single line.
       if (r.t.parlay) { const legs = el("div", "legs"); r.t.legs.forEach(l => legs.append(el("div", null, legText(l)))); li.append(legs); }
       ul.append(li);

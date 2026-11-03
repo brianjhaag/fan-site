@@ -1,9 +1,9 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw0q2jcy";
-import { Fan } from "./hosts.js?v=mw0q2jcy";
-import { Calc } from "./calc.js?v=mw0q2jcy";
-import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw0q2jcy";
-import { ABBR, slateDocId } from "./leagues.js?v=mw0q2jcy";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw0r0udi";
+import { Fan } from "./hosts.js?v=mw0r0udi";
+import { Calc } from "./calc.js?v=mw0r0udi";
+import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw0r0udi";
+import { ABBR, slateDocId } from "./leagues.js?v=mw0r0udi";
   Object.assign(later, { hedgeControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -81,18 +81,6 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw0q2jcy";
     fillTix.set(id, out.ticket);
     return inStore ? Fan.store.set("wagers", id, out.ticket) : undefined;
   }
-  // A ticket saved from an order's reply carries Kalshi's rounded average fee. Once every fill of the order has arrived, the fills' exact figures replace it.
-  function trueUpOrder(cid, tries = 0) {
-    const held = ownOrders.get(cid), t = allTickets.find(x => x.fillId === cid);
-    if (!held || !held.length) return;
-    if (!t) { if (tries < 20) setTimeout(() => trueUpOrder(cid, tries + 1), 500); return; }
-    if (!t.kalshi) return;
-    const a = fillAmounts(Object.fromEntries(held.map(x => [x.trade_id, { n: x.count, p: fillSide(x).price, fee: x.fee }])));
-    if (Math.abs(a.contracts - t.kalshi.contracts) > 1e-9) return;   // more fills to come
-    const amount = Math.round(a.total * 100) / 100;
-    if (Math.abs(amount - t.amount) < 0.005) return;
-    updateTicket(t, { amount, kalshi: { ...t.kalshi, fee: Math.round(a.fee * 100) / 100 }, ...(t.type === "Moneyline" ? { line: a.american } : { odds: a.american }) });
-  }
   async function handleFill(x, delayMs) {
     await ticketsReady;
     const id = x.venue === "kalshi" ? x.trade_id : x.venue + "-" + x.trade_id;
@@ -107,7 +95,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw0q2jcy";
     } catch (e) {}
     const done = () => { if (waiting) Fan.store.update("fills", "feed-" + id, { handled: true, ...(x.catchup ? {} : { delayMs }) }).catch(() => {}); };
     const cid = x.client_order_id || savedClient;
-    if (cid && ownOrders.has(cid)) { ownOrders.get(cid).push(x); trueUpOrder(cid); return; }
+    if (cid && ownOrders.has(cid)) { ownOrders.get(cid).push(x); return; }   // its ticket comes from the order's reply; its money, from the fills (calc.js's withFills)
     if (known) return;
     // Another Fan window may have sent this order, and its ticket comes with the order's reply, after the fill. Give it time to arrive before saving one from the fill.
     if (cid && Date.now() - x.ts_ms < 60000) await new Promise(r => setTimeout(r, OTHER_WINDOW_MS));

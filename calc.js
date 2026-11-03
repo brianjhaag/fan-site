@@ -546,6 +546,37 @@ const Calc = (() => {
         when: when(kickoff)
       } };
     }
+    // The tickets to show, with fills as the record (the user, Nov 3 2026): one per Kalshi order that has fills, its money worked out from them, what it is from the order's saved ticket, or
+    // from its market when there's none, and a real fill's ticket can't be edited or deleted (fromFills). saved: the records' tickets; fills: the records' fills collection, as { id, data }.
+    // An order's saved ticket is found by its id (fill-…), its client id (Place's and Execute's), or for one saved before either, by its contracts and dollars. Saved tickets with no fills
+    // (hand-booked, or from before fills were kept) are shown as saved. weird: markets of fills Fan can't place in any game and no saved ticket names, for the Application tab.
+    function withFills(saved, fills, when) {
+      const live = fills.filter(r => r.id.startsWith("feed-") && r.data.env !== "demo" && r.data.order), clientOf = new Map(), orders = new Map();
+      fills.forEach(r => { const rp = r.data.reply; if (!r.id.startsWith("feed-") && rp && rp.order_id) clientOf.set(rp.order_id, r.id); });
+      live.forEach(r => { if (r.data.client) clientOf.set(r.data.order, r.data.client); });
+      [...live].sort((a, b) => (a.data.tradeMs || 0) - (b.data.tradeMs || 0)).forEach(r => { if (!orders.has(r.data.order)) orders.set(r.data.order, []); orders.get(r.data.order).push(r); });
+      const kalshi = saved.filter(t => t.book === "Kalshi" && !t.parlay), used = new Set(), made = [], weird = [];
+      for (const [order, list] of orders) {
+        const client = clientOf.get(order) || null, venue = list[0].data.venue || "kalshi";
+        let t = null, known = false;
+        list.forEach(r => { const d = r.data, next = ticketFromFill({ venue, order_id: order, trade_id: r.id.slice(5), client_order_id: client, ticker: d.ticker, side: d.side, action: d.action, price: d.price, count: d.filled, fee: d.fee, ts_ms: d.tradeMs }, t, when); if (next) { t = next.ticket; known = next.known; } });
+        if (!t) continue;
+        const free = s => !used.has(s.id);
+        const linked = kalshi.find(s => free(s) && (s.id === `fill-${venue}-${order}` || (client && s.fillId === client)))
+          || kalshi.find(s => free(s) && !s.fillId && s.kalshi && Math.abs(s.kalshi.contracts - t.kalshi.contracts) < 1e-9 && Math.abs(s.amount - t.amount) < 0.05);   // the records check's tolerance for a ticket typed in by hand
+        if (linked) {
+          used.add(linked.id);
+          const ml = linked.type === "Moneyline", cents = t.kalshi.cents, american = t.type === "Moneyline" ? t.line : t.odds;
+          made.push({ ...linked, amount: t.amount, kalshi: { ...linked.kalshi, ...t.kalshi }, trades: t.trades, ...(ml ? { line: american } : { odds: american }), fromFills: true,
+            pick: `${linked.side}${ml ? "" : " " + (linked.type === "Spread" ? pts(linked.line) : String(linked.line))} ${cents}¢` });
+        } else {
+          if (!known) weird.push(t.ticker);
+          made.push({ id: `fill-${venue}-${order}`, ...t, fromFills: true });
+        }
+      }
+      const tickets = [...saved.filter(s => !used.has(s.id)), ...made].sort((p, q) => (p.createdAt > q.createdAt ? 1 : p.createdAt < q.createdAt ? -1 : 0));
+      return { tickets, weird };
+    }
     // The Ledger's sums, one row per value of keyOf(ticket). Net cash counts settled wagers only (a lost bonus wager costs nothing).
     function ledgerRows(tickets, keyOf) {
       const rows = new Map();
@@ -577,7 +608,7 @@ const Calc = (() => {
       const all = [...rows.values()], off = all.filter(r => Math.abs(r.fillN - r.ticketN) > 0.5 || Math.abs(r.fillPaid - r.ticketPaid) >= 0.05);
       return { rows: all, off, matched: all.length - off.length, fillPaid: all.reduce((s, r) => s + r.fillPaid, 0), ticketPaid: all.reduce((s, r) => s + r.ticketPaid, 0) };
     }
-    return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, kalshiCheck, ledgerRows };
+    return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
   return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
 })();
