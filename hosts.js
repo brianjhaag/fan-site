@@ -176,6 +176,10 @@ Fan.connectStore = async () => {
     info: hi.remote, here: !!hi.fromRemote,
     set: on => window.fetch("/connector/remote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) }).then(r => r.json()).then(r => { if (!r.ok) throw new Error(r.error); Fan.remote.info = r.remote; return r.remote; })
   };
+  if (hi && hi.wall) {   // the house's wall (wall.js): this connector as the hub of the user's computers, and this computer as a screen of another's
+    Fan.wall = { get: () => window.fetch("/connector/wall").then(r => r.json()), act: body => window.fetch("/connector/wall", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()) };
+    if (!hi.fromRemote) Fan.house = { joined: hi.house || null, name: hi.machineName || "", set: body => window.fetch("/connector/house", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).then(r => { if (!r.ok) throw new Error(r.error); Fan.house.joined = r.house || null; return r.house; }) };
+  }
   if (hi && hi.telecast) {
     const send =(path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };

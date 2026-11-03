@@ -270,6 +270,38 @@
   .fan-remote .fan-check { font-size: 18px; }
   .fan-remote-url { margin: 6px 0; font: 600 26px/1.2 var(--font-mono); color: var(--accent); user-select: all; }   /* typed into the iPad, so large */
   .fan-remote-here { margin: 0; font-size: 18px; color: var(--accent); }
+  .fan-houserow { display: flex; gap: 8px; align-items: center; }
+  .fan-houserow input { flex: 1; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); color: var(--ink); font: 400 15px var(--font-mono); }
+  .fan-houserow input + input { flex: 0 0 160px; }
+
+  /* The Screens view (wall.js): the house's computers, their monitors and telecast windows, and the day's games */
+  .screens { overflow: auto; }
+  .wl-top { display: flex; align-items: baseline; gap: 16px; }
+  .wl-top h2 { margin: 0; }
+  .wl-note { margin: 0 !important; color: var(--accent) !important; font-size: 14px !important; }
+  .wl-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 24px; margin-top: 10px; }
+  .wl-wall { display: flex; flex-wrap: wrap; gap: 20px; align-content: start; }
+  .wl-machine { border: 1px solid var(--paper-edge); border-radius: 4px; padding: 10px; }
+  .wl-machine.off { opacity: .55; }
+  .wl-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 18px; }
+  .wl-state { font-size: 12px; padding: 2px 8px; border-radius: 9px; border: 1px solid currentColor; }
+  .wl-state.on { color: var(--accent); }
+  .wl-state.off { color: var(--ink-dim); }
+  .wl-map { position: relative; margin: 4px 0 10px; }
+  .wl-display { position: absolute; box-sizing: border-box; border: 2px solid var(--card-rule); border-radius: 3px; background: rgb(0 0 0 / .25); }
+  .wl-display small { position: absolute; left: 4px; bottom: 2px; font-size: 10px; color: var(--ink-dim); margin: 0; }
+  .wl-win { position: absolute; box-sizing: border-box; border: 1px solid var(--accent); background: rgb(95 208 166 / .18); border-radius: 2px; overflow: hidden; cursor: pointer; font-size: 11px; color: var(--ink); }
+  .wl-win.loud { background: rgb(255 140 26 / .35); border-color: #ff8c1a; }
+  .wl-title { display: block; padding: 2px 18px 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wl-x { position: absolute; top: 0; right: 0; width: 18px; height: 18px; padding: 0; border: 0; background: rgb(0 0 0 / .45); color: var(--ink); cursor: pointer; font-size: 14px; line-height: 18px; }
+  .wl-pick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .wl-lay { padding: 4px 8px; background: none; border: 1px solid var(--card-rule); color: var(--ink); cursor: pointer; font-size: 13px; }
+  .wl-lay[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .wl-games h3 { margin: 0 0 6px; }
+  .wl-game { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid var(--paper-edge); }
+  .wl-gname { font-size: 16px; }
+  .wl-game > small { grid-column: 1; margin: 0 !important; }
+  .wl-go { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   .fan-monrow .fan-note { margin: 0; }
   .fan-telecasts .fan-monbtn { justify-self: start; margin: 4px 12px; padding: 12px 28px; font-size: 20px; font-weight: 600; }   /* the monitor map is behind it */
   .fan-netcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; row-gap: 4px; }   /* the networks in two columns, with room */
