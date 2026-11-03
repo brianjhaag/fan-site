@@ -1,8 +1,8 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { SHARED } from "./shared.js?v=mw0sz174";
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw0sz174";
+import { SHARED } from "./shared.js?v=mw0x8ad1";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw0x8ad1";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;
@@ -27,7 +27,7 @@ function etIso(utc) {
   const off = p.timeZoneName.replace("GMT", ""), sign = off[0], h = off.slice(1).padStart(2, "0");
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}${sign}${h}:00`;
 }
-const tvName = n => ({ "NFL Net": "NFL Network" }[n] || n);
+const tvName = n => ({ "NFL Net": "NFL Network", "NHL Net": "NHL Network" }[n] || n);
 const sides = c => [c.competitors.find(x => x.homeAway === "away"), c.competitors.find(x => x.homeAway === "home")];
 
 // One NFL scoreboard event as a row: what the cards, game details and team schedules need.
@@ -112,7 +112,7 @@ function ensureTeams() {
 }
 const round1 = x => (x === null ? null : Math.round(x * 10) / 10);
 const statOf = (cats, cat, name) => { const c = cats.find(x => x.name === cat), s = c && c.stats.find(x => x.name === name); return s && typeof s.value === "number" ? s.value : null; };
-const SEVERITY = { Out: 0, Doubtful: 1, Questionable: 2, "Injured Reserve": 3 };
+const SEVERITY = { Out: 0, Doubtful: 1, Questionable: 2, "Day-To-Day": 2, "Injured Reserve": 3 };   // Day-To-Day is the NBA's and the NHL's
 function injuryList(report) {
   const by = {};
   report.injuries.forEach(t => {
@@ -149,6 +149,37 @@ async function pullTeams() {
   keepPull("teams", out);
 }
 
+// A daily league's team stats and injuries, for its game preview, by Kalshi's code: standings, one injury report and one request a team, asked for only when one opens, at most once a day.
+const DAILY_TEAMS = { nba: {}, nhl: {} }, dailyTeamsPull = {};
+const DAILY_STATS = {
+  nba: { ppg: ["offensive", "avgPoints"], fg: ["offensive", "fieldGoalPct"], tp: ["offensive", "threePointPct"], tpm: ["offensive", "avgThreePointFieldGoalsMade"], ft: ["offensive", "freeThrowPct"], reb: ["general", "avgRebounds"], ast: ["offensive", "avgAssists"], tov: ["offensive", "avgTurnovers"], stl: ["defensive", "avgSteals"], blk: ["defensive", "avgBlocks"] },
+  nhl: { sgp: ["general", "games"], shots: ["offensive", "shotsTotal"], sa: ["defensive", "shotsAgainst"], shp: ["offensive", "shootingPct"], svp: ["defensive", "savePct"], ppg: ["offensive", "powerPlayGoals"], fo: ["offensive", "faceoffPercent"], pim: ["penalties", "penaltyMinutes"] }
+};
+function ensureDailyTeams(l) {
+  const had = keptPull("teams-" + l), have = DAILY_TEAMS[l] || (DAILY_TEAMS[l] = {});
+  if (had && !Object.keys(have).length) Object.assign(have, had.data);
+  if (Object.keys(have).length && Date.now() - (had ? had.at : 0) < TEAMS_MS) return Promise.resolve(true);
+  return dailyTeamsPull[l] = dailyTeamsPull[l] || pullDailyTeams(l).then(() => true, () => Object.keys(have).length > 0).finally(() => { dailyTeamsPull[l] = null; });
+}
+async function pullDailyTeams(l) {
+  const def = LEAGUE_DEFS[l], code = a => def.espnCodes[a] || a, codes = leagueCodes(l), out = {};
+  const standings = await getJson(`https://site.api.espn.com/apis/v2/sports/${def.espn}/standings`), report = await getJson(`${SITE}/${def.espn}/injuries`), inj = {};
+  report.injuries.forEach(t => { inj[t.id] = t.injuries.filter(i => i.status in SEVERITY).sort((p, q) => SEVERITY[p.status] - SEVERITY[q.status]).slice(0, 30).map(i => { const pos = (i.athlete.position && i.athlete.position.abbreviation) || ""; return [i.athlete.displayName, pos, i.status, (i.details && i.details.type) || "", l === "nhl" && pos === "G" ? 1 : 0]; }); });
+  for (const conf of standings.children) for (const [i, row] of conf.standings.entries.entries()) {
+    const t = row.team, c = code(t.abbreviation);
+    if (!codes.has(c)) continue;
+    const stat = n => row.stats.find(x => x.name === n) || {}, streak = String(stat("streak").displayValue || "");
+    const cats = (await getJson(`${SITE}/${def.espn}/teams/${t.id}/statistics`)).results.stats.categories, st = {};
+    Object.entries(DAILY_STATS[l]).forEach(([k, [cat, name]]) => { st[k] = statOf(cats, cat, name); });
+    out[c] = {
+      called: t.name, r: stat("overall").summary, h: stat("Home").summary, a: stat("Road").summary, l10: stat("Last Ten Games").summary || "", stand: `${ordinal(stat("playoffSeed").value || i + 1)} in the ${conf.abbreviation || conf.name}`, streak: (streak[0] === "L" ? -1 : 1) * (Number(streak.slice(1)) || 0),
+      gp: (stat("wins").value || 0) + (stat("losses").value || 0) + (stat("otLosses").value || 0), pf: stat("pointsFor").value ?? null, pa: stat("pointsAgainst").value ?? null, standPts: l === "nhl" ? stat("points").value ?? null : null, ...st, inj: inj[t.id] || []
+    };
+  }
+  Object.assign(DAILY_TEAMS[l], out);
+  keepPull("teams-" + l, out);
+}
+
 // A daily league's games (the NBA, the NHL), only once it's on: one Eastern day a slate, from its season's start through its last day tab, each day kept so a finished one is asked for once.
 // Codes are Kalshi's, because its tickers end in them (leagues.js's espnCodes); a game with a team not in the league's table, an exhibition or an All-Star game, is left out. Every network ESPN names, as for the NFL.
 const ymd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
@@ -156,8 +187,8 @@ const ymd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
 async function dayGames(l, date) {
   const def = LEAGUE_DEFS[l], codes = leagueCodes(l), code = x => def.espnCodes[x.abbreviation] || x.abbreviation;
   return ((await getJson(`${SITE}/${def.espn}/scoreboard?dates=${date}&limit=40`)).events || []).map(e => ({ e, c: e.competitions && e.competitions[0] })).filter(({ c }) => c && c.competitors.every(x => codes.has(code(x.team)))).map(({ e, c }) => {
-    const [A, H] = sides(c), score = [Number(A.score), Number(H.score)];
-    return { eid: e.id, t: etIso(e.date), a: code(A.team), h: code(H.team), tv: (c.broadcasts || []).flatMap(b => b.names || []).join(" / "), final: e.status.type.completed ? score : null, now: e.status.type.state === "in" ? { score, clock: e.status.type.shortDetail || "" } : null };
+    const [A, H] = sides(c), score = [Number(A.score), Number(H.score)], v = c.venue || {}, at = v.address || {};
+    return { eid: e.id, t: etIso(e.date), a: code(A.team), h: code(H.team), tv: [...new Set((c.broadcasts || []).flatMap(b => b.names || []))].map(tvName).join(" / "), venue: [v.fullName || "", [at.city, at.state || at.country].filter(Boolean).join(", ")], final: e.status.type.completed ? score : null, now: e.status.type.state === "in" ? { score, clock: e.status.type.shortDetail || "" } : null };
   });
 }
 async function pullDaily(l) {
@@ -165,7 +196,7 @@ async function pullDaily(l) {
   const rows = [], today = Math.floor(Date.now() / 864e5) * 864e5;
   for (let d = def.start; d <= today + def.days * 864e5; d += 864e5) {
     const key = l + ymd(d), had = keptPull(key);
-    let day = had && (d < today - 864e5 && had.at > d + 2 * 864e5 || Date.now() - had.at < TEAMS_MS) ? had.data : null;
+    let day = had && had.data.every(r => r.eid) && (d < today - 864e5 && had.at > d + 2 * 864e5 || Date.now() - had.at < TEAMS_MS) ? had.data : null;   // a day kept before rows had ESPN's id, and so their scores, is asked for once more
     if (!day) {
       try { day = await dayGames(l, ymd(d)); keepPull(key, day); } catch (e) { day = had ? had.data : []; }
     }
@@ -204,4 +235,4 @@ async function pullNcaafb() {
   }).filter(g => g.away.rank || g.home.rank).sort((a, b) => a.t.localeCompare(b.t));
   return { asOf: Date.now(), games };
 }
-export { espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };
+export { DAILY_TEAMS, ensureDailyTeams, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };

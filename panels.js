@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw0sz174";
-import { GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams } from "./espn.js?v=mw0sz174";
-import { Fan } from "./hosts.js?v=mw0sz174";
-import { isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw0sz174";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw0sz174";
+import { riskGrid } from "./risk.js?v=mw0x8ad1";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams } from "./espn.js?v=mw0x8ad1";
+import { Fan } from "./hosts.js?v=mw0x8ad1";
+import { ALL_GAMES, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw0x8ad1";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw0x8ad1";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -513,7 +513,104 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw0sz174";
     add("mot", "Motivation", (rec >= 0.65 ? "contending: " : rec <= 0.3 ? "losing season: " : "in the mix: ") + stand);
     return out;
   }
+  // A daily league's game preview (the NBA, the NHL; Nov 3 2026): the NFL's whiteboard with the league's own numbers. The head-to-head table, then under each team its injuries,
+  // its spot (rest, the last game, the run of home or road games, its standing) and its season so far: the last results and the next games, from the league's own days on the page.
+  function renderDailyDetail(box, g) {
+    const l = g.league, T = DAILY_TEAMS[l] || {}, code = side => abbr(nick(g, side)), vs = `${code("away")} @ ${code("home")}`;
+    if (!T[code("away")] || !T[code("home")]) {   // this browser's own pull, the first time a game preview opens
+      box.replaceChildren(el("div", "pg-stub", vs), el("p", "pg-stub-t", "Asking ESPN for team stats and injuries…"));
+      ensureDailyTeams(l).then(ok => { if (detailGame !== g) return; if (ok && T[code("away")] && T[code("home")]) changed("cards"); else box.replaceChildren(el("div", "pg-stub", vs), el("p", "pg-stub-t", "Couldn't reach ESPN for team stats.")); });
+      return;
+    }
+    ensureDailyTeams(l);
+    const A = T[code("away")], H = T[code("home")], all = Object.values(T), nhl = l === "nhl";
+    const per = (n, gp) => (gp && n !== null ? n / gp : null), f1 = v => v.toFixed(1), f2 = v => v.toFixed(2), sg = d => v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d), pct = v => v.toFixed(1) + "%";
+    // the Edges line: each number with its rank in the league
+    const metrics = nhl ? [
+      ["goals", t => per(t.pf, t.gp), true, f2], ["against", t => per(t.pa, t.gp), false, f2], ["shots", t => per(t.shots, t.sgp), true, f1], ["against", t => per(t.sa, t.sgp), false, f1],
+      ["shooting", t => t.shp, true, pct], ["save", t => t.svp, true, v => v.toFixed(3).replace(/^0/, "")], ["power-play goals", t => t.ppg, true, v => String(v)], ["faceoffs", t => t.fo, true, pct]
+    ] : [
+      ["points", t => per(t.pf, t.gp), true, f1], ["against", t => per(t.pa, t.gp), false, f1], ["net", t => per(t.pf - t.pa, t.gp), true, sg(1)], ["FG", t => t.fg, true, pct], ["3P", t => t.tp, true, pct],
+      ["threes", t => t.tpm, true, f1], ["rebounds", t => t.reb, true, f1], ["assists", t => t.ast, true, f1], ["turnovers", t => t.tov, false, f1]
+    ];
+    const rank = (fn, high, v) => 1 + all.filter(t => { const x = fn(t); return x !== null && (high ? x > v : x < v); }).length;
+    const edges = t => metrics.map(([label, fn, high, fmt]) => { const v = fn(t); return v === null ? null : label + " " + fmt(v) + " (#" + rank(fn, high, v) + ")"; }).filter(Boolean).join(", ");
+    const head = el("div", "bd-head"), info = el("div", "bd-info"), part = (...n) => { if (info.childNodes.length) info.append(el("i", null, " · ")); info.append(...n); };
+    if (g.final) part(el("b", null, "FINAL " + g.final[0] + " – " + g.final[1]));
+    part(el("span", null, `${shortDayFmt.format(new Date(g.t))} · ${timeZoned(new Date(g.t))}`));
+    if (g.tv) part(el("span", null, g.tv));
+    if (g.venue) g.venue.filter(Boolean).forEach(x => part(el("span", null, x)));
+    head.dataset.scene = "dome";
+    const team = (side, t) => { const d = el("div", "bd-team " + side); d.append(bdBadge(g, side, t.called.toUpperCase())); return d; };
+    head.append(info, team("away", A), team("home", H));
+    // each team's season from the league's games on the page: [ms, opponent's code, home?, its score, theirs], scores null until played
+    const seasonOf = c => ALL_GAMES.filter(x => x.league === l && (abbr(nick(x, "away")) === c || abbr(nick(x, "home")) === c)).map(x => { const home = abbr(nick(x, "home")) === c, s = x.final; return [Date.parse(x.t), abbr(nick(x, home ? "away" : "home")), home ? 1 : 0, s ? s[home ? 1 : 0] : null, s ? s[home ? 0 : 1] : null, x]; }).sort((p, q) => p[0] - q[0]);
+    const etDay = ms => Math.floor(Date.parse(new Date(ms).toLocaleDateString("en-CA", { timeZone: "America/New_York" })) / 864e5);
+    const spotLines = (side, t) => {
+      const out = [], add = (cls, label, text) => out.push({ cls, label, text }), sch = seasonOf(code(side)), at = Date.parse(g.t), before = sch.filter(x => x[0] < at && x[3] !== null), prev = sch.filter(x => x[0] < at).pop();
+      if (g.final) add("role", "", ((g.final[0] > g.final[1]) === (side === "away") ? "WON " : "LOST ") + g.final[0] + "–" + g.final[1]);
+      else if (pricesOn() && g.noLine) add("role", "", "NO LINE YET");
+      add("sx", "Edges", edges(t));
+      const spot = [];
+      if (prev) { const rest = etDay(at) - etDay(prev[0]) - 1; spot.push(rest === 0 ? "second night of a back-to-back" : rest + (rest === 1 ? " day" : " days") + " of rest"); }
+      const last = before[before.length - 1];
+      if (last) spot.push("off a " + (last[3] > last[4] ? "W " : "L ") + last[3] + "–" + last[4] + (last[2] ? " v " : " @ ") + last[1]);
+      const home = side === "home";
+      let run = 1; for (let k = sch.findIndex(x => x[5] === g) - 1; k >= 0 && !!sch[k][2] === home; k--) run++;
+      if (run >= 3) spot.push((home ? "home game " : "road game ") + run + " in a row");
+      const met = before.filter(x => x[1] === code(home ? "away" : "home"));
+      if (met.length) spot.push("met " + met.length + "x: " + met.map(x => (x[3] > x[4] ? "W " : "L ") + x[3] + "–" + x[4]).join(", "));
+      if (spot.length) add("spot", "Spot", spot.join(", "));
+      const out1 = t.inj.filter(p => p[2] === "Out").length, key = t.inj.find(p => p[4] && p[2] !== "Injured Reserve");
+      if (key) add("inj", "Injuries", "G " + key[0].split(" ").slice(-1)[0] + " " + (key[2] === "Out" ? "OUT" : key[2].toLowerCase()));
+      else if (out1 >= 3) add("inj", "Injuries", out1 + " out");
+      add("mot", "Standing", t.r + " (" + t.stand + ")" + (nhl && t.standPts !== null ? ", " + t.standPts + " points" : "") + ", " + (home ? "home " + t.h : "road " + t.a) + ", last ten " + t.l10 + (t.streak >= 3 ? ", W" + t.streak : t.streak <= -3 ? ", L" + Math.abs(t.streak) : ""));
+      return out;
+    };
+    const low = el("div", "bd-low"), half = (t, side) => {
+      const d = el("div", "bd-half"), c2 = el("div", "bd-col"), look = darkLook(g, side), label = (cls, text) => { const x = el("div", cls, text); x.style.background = look.bg; x.style.color = look.fg; return x; };
+      const list = el("div", "bd-ilist");
+      c2.append(label("bd-vlabel", "Injuries"), list);
+      [...t.inj].sort((p, q) => (q[2] === "Injured Reserve") - (p[2] === "Injured Reserve")).forEach(([name, pos, status, type, key]) => {
+        const ln = el("div", "bd-line" + (key ? " key" : "")), nm = name.split(" "), short = nm.length > 1 ? nm[0][0] + ". " + nm.slice(1).join(" ") : name, k = status === "Out" ? "out" : status === "Injured Reserve" ? "ir" : "q";
+        const nmEl = el("span", "nm", short + " "); nmEl.append(el("span", "pos", pos));
+        ln.append(nmEl, el("span", "st " + k, status === "Out" ? "OUT" : status === "Injured Reserve" ? "IR" : "DTD"), el("span", "dim", type));
+        list.append(ln);
+      });
+      if (!t.inj.length) list.append(el("div", "bd-line dim", "none listed"));
+      // the season: the last results and the next games, sixteen cells, the game being viewed highlighted
+      const c3 = el("div", "bd-col bd-sched"), grid = el("div", "bd-sgrid bd-days"), sch = seasonOf(code(side)), i = Math.max(0, sch.findIndex(x => x[5] === g)), from = Math.max(0, Math.min(i - 12, sch.length - 16));
+      c3.style.setProperty("--tc", look.bg);
+      c3.append(label("bd-vlabel sched", "Season"));
+      sch.slice(from, from + 16).forEach(e => {
+        const cell = el("div", "bd-sc" + (e[5] === g ? " cur" : ""));
+        cell.title = shortDayFmt.format(new Date(e[0]));
+        cell.append(el("span", "nm", (e[2] ? "v " : "@ ") + e[1]));
+        if (e[3] === null) cell.append(el("span", "dim", e[5] === g ? "" : new Date(e[0]).toLocaleDateString("en-US", { month: "numeric", day: "numeric", timeZone: "America/New_York" })));
+        else cell.append(el("span", e[3] > e[4] ? "w" : "x", (e[3] > e[4] ? "W " : "L ") + e[3] + "–" + e[4]));
+        grid.append(cell);
+      });
+      grid.style.flex = "1"; grid.style.minWidth = "0";
+      c3.append(grid);
+      const c4 = el("div", "bd-col bd-sched bd-script"), sbody = el("div", "bd-sbody");
+      c4.style.setProperty("--tc", look.bg);
+      spotLines(side, t).forEach(x => { const r = el("div", "bd-sl " + x.cls); if (x.label) r.append(el("b", null, x.label + " ")); r.append(document.createTextNode(x.text)); sbody.append(r); });
+      c4.append(sbody);
+      d.append(c2, c4, c3);
+      return d;
+    };
+    const nInj = Math.max(A.inj.length, H.inj.length, 1), lh = Math.max(13, Math.min(22, Math.floor(250 / nInj))), lfs = Math.max(10, Math.min(14, Math.round(lh * 0.56)));
+    low.style.setProperty("--lh", lh + "px"); low.style.setProperty("--lfs", lfs + "px");
+    low.append(half(A, "away"), half(H, "home"));
+    [...low.children].forEach(d => { d.style.gridTemplateRows = Math.max(nInj * lh + 2, 70) + "px auto minmax(0, 1fr)"; });
+    const wrap = el("div", "bd-wrap");
+    wrap.append(head, low);
+    box.replaceChildren(wrap);
+    const sp = [...box.querySelectorAll(".bd-script")], sh = Math.max(0, ...sp.map(e => e.offsetHeight));
+    sp.forEach(e => { e.style.minHeight = sh + "px"; });
+  }
   function renderGameDetail(box, g) {
+    if (leagueOf(g).daily && leagueOf(g).gameDetails) { renderDailyDetail(box, g); return; }
     if (!leagueOf(g).gameDetails) { box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", `${leagueOf(g).code} game details are not built yet.`)); return; }
     if (!TEAM_INFO[nick(g, "away")] || !TEAM_INFO[nick(g, "home")]) {   // this browser's own pull, the first time a game detail opens
       box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", "Asking ESPN for team stats and injuries…"));

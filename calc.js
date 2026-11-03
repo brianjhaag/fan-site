@@ -16,9 +16,9 @@ const Calc = (() => {
   // fullNames: its teams are keyed by full name, not nickname, because its nicknames meet another league's (the NHL's Panthers, Jets and Kings).
   RULES.leagues = {
     nfl: { code: "NFL", sigma: 12.25, totalSd: 9, keyNumbers: true, maxMargin: 60, ties: true, liveHours: 3.5, daily: false, codeChips: false, graphMinMargin: 0, byes: true, graphs: true, stats: true, gameDetails: true, fullNames: false },
-    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: false, fullNames: false },
+    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: false },
     // The NHL's sigma and totalSd are Claude's estimates (goal margins and totals both run about 2.4 goals each way), not fitted; overtime decides every game, so no ties.
-    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: false, fullNames: true }
+    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: true }
   };
   RULES.hedge = { LIFT: RULES.defaults.lift, CAPITAL: RULES.userSet.capital };
   const D = RULES.defaults;

@@ -934,6 +934,7 @@
   .bd-ilist { flex: 1; min-width: 0; }
   .bd-vlabel { flex: none; width: 22px; display: grid; place-items: center; writing-mode: vertical-rl; transform: rotate(180deg); font: 700 15px var(--font-label); letter-spacing: .24em; text-transform: uppercase; border-radius: 4px; }   /* vertical, reads bottom to top, team colors */ /* the injury table is narrower than its column (name, status and injury sit closer together); the columns themselves are unchanged */
   .bd-sgrid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 18px); grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 4px; }
+  .bd-sgrid.bd-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }   /* a daily league's season: sixteen games in four columns */
   .bd-sc { display: flex; gap: 2px; align-items: center; height: 18px; padding: 0 1px; font: 500 10px var(--font-mono); color: var(--ink); white-space: nowrap; overflow: hidden; }
   .bd-sc .wk { width: 12px; text-align: right; }   /* (the team text has no ellipsis: it cut CAR to C… by a pixel in the first column) */
   .bd-sc .nm { flex: 1; min-width: 0; white-space: nowrap; }
