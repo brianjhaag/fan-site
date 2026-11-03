@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0z4abq";
-import { BOOK_ICONS } from "./data/assets.js?v=mw0z4abq";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0z4abq";
-import { Calc } from "./calc.js?v=mw0z4abq";
-import { Fan } from "./hosts.js?v=mw0z4abq";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0zcjhc";
+import { BOOK_ICONS } from "./data/assets.js?v=mw0zcjhc";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0zcjhc";
+import { Calc } from "./calc.js?v=mw0zcjhc";
+import { Fan } from "./hosts.js?v=mw0zcjhc";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -211,7 +211,7 @@ import { Fan } from "./hosts.js?v=mw0z4abq";
     return tag;
   }
 
-  const APP_VERSION = "0.38.9";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.38.10";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -834,7 +834,11 @@ import { Fan } from "./hosts.js?v=mw0z4abq";
   const riskByWeek = Object.fromEntries(Object.keys(WEEK_GAMES).map(w => [w, ""]));
   riskByWeek[7] = riskKey;
   // Graphs is for the current week and the next, while every game still to kick off has a line and at least one is left.
-  const nflWeek = () => Math.max(1, Math.min(17, 8 + Math.floor((Date.now() - new Date(2026, 9, 28).getTime()) / 604800000)));
+  // The current NFL week is the week of the next game, or of one under way (the user's, Nov 3 2026): Tuesday, after Monday night's game, is already the next week. By the calendar, Wednesday to Tuesday, only with no games known.
+  const nflWeek = () => {
+    const now = Date.now(), next = Object.keys(WEEK_GAMES).map(Number).filter(w => w >= 1 && w <= 17).sort((p, q) => p - q).find(w => WEEK_GAMES[w].some(g => !g.final && Date.parse(g.t) + Calc.RULES.leagues.nfl.liveHours * 3600e3 > now));
+    return next || Math.max(1, Math.min(17, 8 + Math.floor((now - new Date(2026, 9, 28).getTime()) / 604800000)));
+  };
   const weekNow = () => (LG().daily ? slateOfDay(league, nbaDay()) : nflWeek());   // the current slate of the league on screen
   function graphsOK() {
     if (!LG().graphs || (curWeek !== weekNow() && curWeek !== weekNow() + 1)) return false;   // the graphs are built on the NFL's margins
