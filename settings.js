@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw0zcjhc";
-import { Fan } from "./hosts.js?v=mw0zcjhc";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0zcjhc";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0zcjhc";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0zcjhc";
-import { demoAway, setBet } from "./trade.js?v=mw0zcjhc";
+import { espnState } from "./espn.js?v=mw0zmvej";
+import { Fan } from "./hosts.js?v=mw0zmvej";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0zmvej";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0zmvej";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0zmvej";
+import { demoAway, setBet } from "./trade.js?v=mw0zmvej";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -22,6 +22,7 @@ import { demoAway, setBet } from "./trade.js?v=mw0zcjhc";
       const p = list.querySelector(".fan-list:not([hidden])");
       if (!p || !win.open) return;
       p.style.zoom = "";
+      if (p.querySelector(".fan-telecasts")) return;   // the Telecasts tab keeps its large type and scrolls (the user's, Nov 3 2026)
       for (let z = 1; z > .6 && overflows(); ) { z = Math.round((z - .05) * 100) / 100; p.style.zoom = String(z); }
     };
     // Fitted again when the window changes size (it follows the strips, base.js fitBand), when its text changes (the statuses update in place) and when fonts arrive. Its own zoom is a style change, which neither watcher hears.
@@ -71,7 +72,17 @@ import { demoAway, setBet } from "./trade.js?v=mw0zcjhc";
       Fan.screens.list().then(draw, () => box.replaceChildren(el("p", "fan-note", "Couldn't read the monitors.")));
       return box;
     };
-    const telecastRows = () => { const grid = el("div", "fan-telecasts"), links = el("div"); links.append(...hdhrRows(), ...networkRows(), ...captureRows()); grid.append(screenPicker(), links); return [grid]; };
+    // The monitor map waits behind a big button, so the networks get the tab (the user's, Nov 3 2026); it stays open or closed for the session.
+    let monitorsOpen = false;
+    const telecastRows = () => {
+      const grid = el("div", "fan-telecasts"), links = el("div"), mon = el("button", "fan-start fan-monbtn"), picker = el("div");
+      const set = () => { mon.textContent = monitorsOpen ? "Close monitors" : "Configure monitors"; mon.setAttribute("aria-expanded", String(monitorsOpen)); picker.hidden = !monitorsOpen; if (monitorsOpen && !picker.childNodes.length) picker.append(screenPicker()); };
+      mon.type = "button"; mon.addEventListener("click", () => { monitorsOpen = !monitorsOpen; set(); });
+      set();
+      links.append(...hdhrRows(), ...networkRows(), ...captureRows());
+      grid.append(mon, picker, links);
+      return [grid];
+    };
     // The telecast router's probe (PLAN.md E): one press on a Sunday morning saves what Sunday Ticket's page shows in Fan's TV window, so Claude can build the link finder from it.
     const captureRows = () => {
       if (!Fan.captureTelecast) return [];
@@ -83,13 +94,14 @@ import { demoAway, setBet } from "./trade.js?v=mw0zcjhc";
       });
       return [el("h3", null, "Sunday Ticket"), note, b];
     };
-    const networkRows = () => [el("h3", null, "Network links"), el("p", "fan-note", "YouTube TV links. Open a channel in your browser, copy its address and paste it here."), ...allNetworks().map(n => {
+    const networkRows = () => [el("h3", null, "Network links"), el("p", "fan-note", "YouTube TV links. Open a channel in your browser, copy its address and paste it here."), netCols(allNetworks().map(n => {
       const row = el("label", "fan-net"), c = el("input");
       c.type = "url"; c.value = networkLinks[n] || ""; c.placeholder = n === "ESPN+" ? "https://www.espn.com/watch/ (each game opens its own page)" : "https://tv.youtube.com/watch/..."; c.spellcheck = false;
       c.addEventListener("input", () => setNetworkLink(n, c.value));
       row.append(n, c);
       return row;
-    })];
+    }))];
+    const netCols = rows => { const d = el("div", "fan-netcols"); d.append(...rows); return d; };   // the networks in two columns
     const trackItem = () => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = trackingOn; c.addEventListener("change", () => { setTracking(c.checked); fill(); }); lab.append(c, "Track"); return lab; };
     const pricesItem = () => {
       if (!Fan.lines) return [el("p", "fan-note", (trackingOn ? "Your bets stay in this browser. " : "") + "Prices need the Fan connector on this computer.")];
@@ -308,12 +320,13 @@ import { demoAway, setBet } from "./trade.js?v=mw0zcjhc";
         box.replaceChildren(el("h3", null, "HDHomeRun channels"), rescan);
         if (!hdhr.ip) { box.append(el("p", "fan-note", "Set its address in the Provider box on the Application tab.")); return; }
         if (!hdhrList) { box.append(el("p", "fan-note", "Reading its channels…")); if (Fan.hdhrLineup) hdhrRead().then(draw, e => { box.lastChild.textContent = "Couldn't read its channels: " + e.message; }); return; }
+        const cols = el("div", "fan-netcols"); box.append(cols);
         allNetworks().forEach(n => {
           const row = el("label", "fan-net"), s = el("select", "fan-pick");
           [["", "None"], ...hdhrList.map(c => [String(c.number), `${c.number} ${c.name || ""}`])].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; s.append(o); });
           s.value = hdhr.channels[n] || "";
           s.addEventListener("change", () => { const ch = { ...hdhr.channels }; if (s.value) ch[n] = s.value; else delete ch[n]; setHdhr({ channels: ch }); });
-          row.append(n, s); box.append(row);
+          row.append(n, s); cols.append(row);
         });
       };
       draw();
