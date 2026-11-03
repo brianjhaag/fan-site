@@ -205,6 +205,12 @@
   .tabrows.bottom #tab-ledger { position: relative; width: auto; height: 41px; }
   .tabrows.bottom .strip-row2 button { padding-inline: 14px; font: 600 20px/1.1 "Source Sans 3", "Segoe UI", system-ui, sans-serif; letter-spacing: .04em; }   /* every bottom strip button in Ledger's plain type, the settings window's (the user's, Nov 2 2026) */
   .tabrows.bottom .strip-row2 { position: absolute; left: 0; right: 0; top: 41px; height: 41px; display: flex; align-items: center; gap: 8px; padding-right: 10px; box-sizing: border-box; z-index: 2; }
+  /* The bottom strip's buttons (the user, Nov 3 2026): black lines between them, a faint dark shade in each, the right-hand ones side by side */
+  .tabrows.bottom .strip-row2 > :not(.strip-left) { margin-left: -8px; }
+  .tabrows.bottom .strip-row2 > .pagetabs { margin-left: auto; }
+  .tabrows.bottom .strip-row2 button:not([style*="display: none"]) { background-color: rgb(0 0 0 / .16); border-left: 2px solid #000; border-radius: 0; }
+  .tabrows.bottom .strip-row2 .ledgertab button:last-child { border-right: 2px solid #000; }
+  .tabrows.bottom .strip-row2 .weektabs.ledgertab { display: flex; }
   .fan-menu { position: absolute; right: 10px; top: 0; height: 41px; display: flex; align-items: center; z-index: 40; }   /* the top strip's upper right */
   #fanBtn { appearance: none; background: none; border: 0; padding: 0 6px; display: flex; align-items: center; gap: 8px; font: 400 26px/1 "Plaster", "Montserrat", "Helvetica Neue", Arial, sans-serif; text-transform: uppercase; color: #d50a0a; cursor: pointer; }   /* the user's (Nov 2 2026): Plaster, in capitals, in red */
   #fanBtn svg { color: #12361b; }   /* the gear keeps the strip's ink */
