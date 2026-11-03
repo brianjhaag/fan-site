@@ -34,6 +34,7 @@ const Calc = (() => {
   // A market at 100¢ has no American odds: its price is infinite, and it reaches here as that or, after being saved, as nothing.
   const atFull = od => !od || !Number.isFinite(od);
   const odds = n => (atFull(n) ? "−∞" : (n > 0 ? "+" : "−") + Math.abs(n));
+  const pts = n => (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n);   // a spread as the page writes it: +3.5, −3.5
   const profitOf = (amt, od) => atFull(od) ? 0 : od > 0 ? amt * od / 100 : amt * 100 / -od;
   const decimalOf = od => atFull(od) ? 1 : od > 0 ? 1 + od / 100 : 1 + 100 / -od;
   const ticketPrice = t => t.parlay ? t.odds : t.type === "Moneyline" ? t.line : (t.odds ?? D.spreadPrice);
@@ -333,7 +334,7 @@ const Calc = (() => {
     return t.line < 0 ? "Favorite" : "Underdog";
   }
 
-  const shared = { leagueId, leagueOf, outcomes, last, nick, gameLabel, gameKey, profitOf, bonusFactor, riskOf, decimalOf, ticketPrice, winChance, legResult, ticketPL, marginModel, liveModel, totalSd, normCdf, fairLeg, lineOk, FAN_CLASSES, betClass };
+  const shared = { leagueId, leagueOf, outcomes, last, nick, gameLabel, gameKey, pts, profitOf, bonusFactor, riskOf, decimalOf, ticketPrice, winChance, legResult, ticketPL, marginModel, liveModel, totalSd, normCdf, fairLeg, lineOk, FAN_CLASSES, betClass };
 
   /* ==== What depends on the schedule and the clock ==== */
   function make(deps) {
@@ -536,6 +537,22 @@ const Calc = (() => {
       if (kind === "GAME") return { g, type: "Moneyline", side: yes ? named : other };
       return num ? { g, type: "Spread", side: yes ? named : other, line: yes ? -K : K } : null;
     }
+    // A fill's ticket: one per order, with its trades by id. For a fill placed anywhere but Place, Execute or Arm, made by whichever of the page and the connector sees it first, so both make the
+    // same record (Nov 3 2026). had: the order's ticket so far. when: a kickoff as the user reads it. Null when this trade is on it already. known: the fill is on one of `games`.
+    function ticketFromFill(x, had, when) {
+      const { side, price } = fillSide(x), id = `fill-${x.venue}-${x.order_id}`;
+      if (had && had.trades && had.trades[x.trade_id]) return null;
+      const trades = { ...(had && had.trades), [x.trade_id]: { n: x.count, p: price, fee: x.fee } };
+      const { contracts: C, fee, total, american, cents } = fillAmounts(trades), b = readTicker(x.ticker, side), ml = b && b.type === "Moneyline";
+      const week = b ? b.g.week : 0, kickoff = b ? b.g.t : new Date(x.ts_ms).toISOString();   // week 0 = a market in no league the page has: it shows in the Ledger only, never on a league's pages
+      return { id, known: !!b, ticket: {
+        book: "Kalshi", amount: Math.round(total * 100) / 100, bonus: false, createdAt: had ? had.createdAt : x.ts_ms, fillId: x.client_order_id || id, ticker: x.ticker, trades, week,
+        key: b ? gameKey(b.g) : "kalshi|" + x.ticker, game: b ? gameLabel(b.g) : x.ticker, kickoff, type: b ? b.type : "Other", side: b ? b.side : side.toUpperCase(),
+        ...(ml ? { line: american } : { ...(b ? { line: b.line } : {}), odds: american }), kalshi: { cents, contracts: C, fee: Math.round(fee * 100) / 100 },
+        pick: b ? `${b.side}${ml ? "" : " " + (b.type === "Spread" ? pts(b.line) : String(b.line))} ${cents}¢` : `${x.ticker} ${side.toUpperCase()} ${cents}¢`,
+        when: when(kickoff)
+      } };
+    }
     // The Ledger's sums, one row per value of keyOf(ticket). Net cash counts settled wagers only (a lost bonus wager costs nothing).
     function ledgerRows(tickets, keyOf) {
       const rows = new Map();
@@ -567,7 +584,7 @@ const Calc = (() => {
       const all = [...rows.values()], off = all.filter(r => Math.abs(r.fillN - r.ticketN) > 0.5 || Math.abs(r.fillPaid - r.ticketPaid) >= 0.05);
       return { rows: all, off, matched: all.length - off.length, fillPaid: all.reduce((s, r) => s + r.fillPaid, 0), ticketPaid: all.reduce((s, r) => s + r.ticketPaid, 0) };
     }
-    return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, kalshiCheck, ledgerRows };
+    return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, kalshiCheck, ledgerRows };
   }
   return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, kalshiFee, contractsFor, placeLimit, armDecision, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
 })();

@@ -1,9 +1,9 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw0lx0pw";
-import { Fan } from "./hosts.js?v=mw0lx0pw";
-import { Calc } from "./calc.js?v=mw0lx0pw";
-import { nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw0lx0pw";
-import { ABBR, slateDocId } from "./leagues.js?v=mw0lx0pw";
+import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw0m4ahq";
+import { Fan } from "./hosts.js?v=mw0m4ahq";
+import { Calc } from "./calc.js?v=mw0m4ahq";
+import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw0m4ahq";
+import { ABBR, slateDocId } from "./leagues.js?v=mw0m4ahq";
   Object.assign(later, { armControls, execControls, renderKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
@@ -68,27 +68,18 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw0lx0pw";
     priceBusy.delete(key);
     if (again) refreshPrices(again, venue);
   }
-  // The connector saves each fill the moment it hears it, marked handled: false. The page makes the ticket and marks it handled, so a fill heard with no page open waits in the records. A record without the mark was handled long ago.
+  // The connector saves each fill the moment it hears it, marked handled: false. The page makes the ticket and marks it handled, so a fill heard with no page open waits in the records, unless the
+  // connector's Arm makes it first, with the same calc.js function, 10 seconds on. A record without the mark was handled long ago.
   // Every fill becomes one ticket per order: Place and Execute save theirs from the order's reply, so only a fill from anywhere else is saved here.
   // A fill the fills collection already holds was handled before (the feed repeats fills on reload), so a ticket you deleted stays deleted.
   const OTHER_WINDOW_MS = 5000;   // Claude's default
   const ownOrders = new Map(), fillTix = new Map();   // ownOrders: client id of an order this page sent -> its fills so far; fillTix: order id -> its ticket, ahead of the snapshot
   function saveFillTicket(x) {
     if (x.env === "demo") return;
-    const { side, price } = fillSide(x);
-    const id =`fill-${x.venue}-${x.order_id}`, had = fillTix.get(id) || allTickets.find(t => t.id === id), trades = { ...(had && had.trades), [x.trade_id]: { n: x.count, p: price, fee: x.fee } };
-    if (had && had.trades && had.trades[x.trade_id]) return;
-    const { contracts: C, fee, total, american, cents } = fillAmounts(trades), b = readTicker(x.ticker, side), ml = b && b.type === "Moneyline";
-    const week = b ? b.g.week : 0, kickoff = b ? b.g.t : new Date(x.ts_ms).toISOString();   // week 0 = a market in no league the page has: it shows in the Ledger only, never on a league's pages
-    const t = {
-      book: "Kalshi", amount: Math.round(total * 100) / 100, bonus: false, createdAt: had ? had.createdAt : x.ts_ms, fillId: x.client_order_id || id, ticker: x.ticker, trades, week,
-      key: b ? gameKey(b.g) : "kalshi|" + x.ticker, game: b ? gameLabel(b.g) : x.ticker, kickoff, type: b ? b.type : "Other", side: b ? b.side : side.toUpperCase(),
-      ...(ml ? { line: american } : { ...(b ? { line: b.line } : {}), odds: american }), kalshi: { cents, contracts: C, fee: Math.round(fee * 100) / 100 },
-      pick: b ? `${b.side}${ml ? "" : " " + lineShown(b.type, b.line)} ${cents}¢` : `${x.ticker} ${side.toUpperCase()} ${cents}¢`,
-      when: dayFmt.format(new Date(kickoff)) + ", " + timeZoned(new Date(kickoff))
-    };
-    fillTix.set(id, t);
-    return inStore ? Fan.store.set("wagers", id, t) : undefined;
+    const id = `fill-${x.venue}-${x.order_id}`, out = ticketFromFill(x, fillTix.get(id) || allTickets.find(t => t.id === id), k => dayFmt.format(new Date(k)) + ", " + timeZoned(new Date(k)));
+    if (!out) return;
+    fillTix.set(id, out.ticket);
+    return inStore ? Fan.store.set("wagers", id, out.ticket) : undefined;
   }
   // A ticket saved from an order's reply carries Kalshi's rounded average fee. Once every fill of the order has arrived, the fills' exact figures replace it.
   function trueUpOrder(cid, tries = 0) {

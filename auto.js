@@ -14,7 +14,7 @@ const Auto = (() => {
     const all = held.seq == null || !!c.all, cols = new Set(all ? ["wagers", "fills", "auto", "slate"] : c.cols || []);
     held.seq = c.seq;
     if (cols.has("wagers")) held.tickets = fan.records.list("wagers").map(r => ({ id: r.id, ...r.data }));
-    if (cols.has("fills")) held.fills = fan.records.list("fills").map(r => r.data).filter(d => d.handled === false);
+    if (cols.has("fills")) held.fills = fan.records.list("fills").map(r => ({ id: r.id, ...r.data })).filter(d => d.handled === false);
     if (all) held.docs = new Map(fan.records.list("auto").map(r => [r.id, r.data]));   // only this writes them, and keeps its copy as it does
     if (cols.has("slate")) held.slate = null;   // read again when a decision needs it
   }
@@ -35,10 +35,32 @@ const Auto = (() => {
   const firstTicker = g => (g.lad && g.lad.ml && ((g.lad.ml.away && g.lad.ml.away.tk) || (g.lad.ml.home && g.lad.ml.home.tk))) || "";
   const eventOf = ticker => String(ticker || "").split("-")[1] || "";
 
-  // A fill the page hasn't made a ticket for, on this game, means the position isn't known: the next order would be sized on the wrong one.
-  function unknownFill(g, tickets, fills) {
-    const event = eventOf(firstTicker(g)), have = new Set(tickets.map(t => t.fillId));
-    return !!event && fills.some(d => eventOf(d.ticker) === event && !(d.client && have.has(d.client)));
+  // A fill with no ticket yet, on this game, means the position isn't known: the next order would be sized on the wrong one. "young" when every such fill is newer than HAND_MS, so its ticket is coming.
+  function unknownFill(g, tickets, fills, now) {
+    const event = eventOf(firstTicker(g)), have = new Set(tickets.map(t => t.fillId)), list = event ? fills.filter(d => eventOf(d.ticker) === event && !(d.client && have.has(d.client))) : [];
+    return !list.length ? false : now != null && list.every(d => d.at && now - d.at < HAND_MS) ? "young" : true;
+  }
+
+  // ---- Hand fills: a fill placed anywhere else, with no page open to make its ticket. The connector makes the same ticket the page would (Calc's ticketFromFill) and marks the fill handled, as the
+  // page does, so Arm knows the position (Nov 3 2026). Only on a game the page gave, and only once a fill has waited HAND_MS, so an open page, or the reply of an order a page sent, gets there first.
+  const HAND_MS = 10000;   // Claude's default
+  function handFills(cfg) {
+    const now = fan.now(), due = held.fills.filter(d => d.env !== "demo" && d.at && now - d.at >= HAND_MS && !ownOrders.has(d.client) && String(d.id).startsWith("feed-"));
+    if (!due.length) return;
+    const games = gamesOf(cfg), calc = Calc.make({ games, now: () => now, abbr: n => (cfg.abbr || {})[n] || n }), whenOf = k => (games.find(g => g.t === k) || {}).when || "";
+    let made = false;
+    for (const d of due) {
+      const x = { venue: d.venue, env: d.env, trade_id: d.id.slice(5), order_id: d.order, client_order_id: d.client, ticker: d.ticker, side: d.side, action: d.action, price: d.price, count: d.filled, fee: d.fee, ts_ms: d.tradeMs };
+      const own = d.client && held.tickets.some(t => t.fillId === d.client && t.id !== `fill-${d.venue}-${d.order}`);   // a ticket from the order's reply: nothing to make
+      const out = own ? null : calc.ticketFromFill(x, held.tickets.find(t => t.id === `fill-${d.venue}-${d.order}`), whenOf);
+      if (out && !out.known) continue;   // a market the page didn't give: its ticket waits for the page
+      try {
+        if (out) { fan.records.set("wagers", out.id, out.ticket); held.tickets = [...held.tickets.filter(t => t.id !== out.id), { id: out.id, ...out.ticket }]; }
+        fan.records.update("fills", d.id, { handled: true });
+        made = true;
+      } catch (e) {}
+    }
+    if (made) { follow(); held.games = null; }
   }
 
   // ---- The decision: one armed game, from what's held and the prices just read. It reads and writes nothing, so it can be tested, replayed, or one day run as compiled code.
@@ -47,7 +69,9 @@ const Auto = (() => {
     hedge(g, read, set, held, cfg, now) {
       const p = set.response;
       Calc.RULES.hedge.LIFT = p.lift; Calc.RULES.hedge.CAPITAL = p.capital / 100;
-      if (unknownFill(g, held.tickets, held.fills)) return { stop: "a fill hasn't reached the tickets, so the position isn't known" };
+      const unknown = unknownFill(g, held.tickets, held.fills, now);
+      if (unknown === "young") return { wait: "a fill is on its way to the tickets", waitKey: "fill" };
+      if (unknown) return { stop: "a fill hasn't reached the tickets, so the position isn't known" };
       if (read.error) return { stop: "couldn't read the market: " + read.error };   // a rate limit included: never retried in a loop
       const q = read.q;
       if (!q || q.skip) return { wait: "Kalshi has no prices for this game to read", waitKey: "read" };
@@ -112,6 +136,7 @@ const Auto = (() => {
     const keys = Object.keys(cfg.set);
     if (!keys.length) return;
     follow();
+    handFills(cfg);
     let games = null;
     for (const key of keys) {
       const set = cfg.set[key];
