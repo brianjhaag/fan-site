@@ -277,6 +277,13 @@
   .fan-setup[open] > summary { border-bottom: 1px solid var(--paper-edge); }
   .fan-setup > .fan-remote { padding: 8px 12px; }
   .fan-setup > .fan-remote:empty { display: none; }
+  .fan-qr { margin: 6px 0; line-height: 0; }   /* the remote's address as a QR code, for a tablet's camera */
+  .fan-qr svg { border-radius: 4px; }
+  .fan-found { margin: 6px 0; }
+  .fan-foundrow { display: flex; align-items: center; gap: 12px; padding: 4px 0; font-size: 17px; }
+  .fan-foundrow small { color: var(--ink-dim); font: 400 13px var(--font-mono); }
+  .wl-asking { margin: 8px 0; padding: 8px 10px; border: 1px solid #ff8c1a; border-radius: 4px; background: rgb(255 140 26 / .1); }
+  .wl-askrow { display: flex; align-items: center; gap: 10px; font-size: 16px; padding: 2px 0; }
   .fan-joinrow { display: flex; gap: 8px; align-items: center; }
   .fan-joinrow input { flex: 1; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); color: var(--ink); font: 400 15px var(--font-mono); }
   .fan-joinrow input + input { flex: 0 0 160px; }

@@ -1,11 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw16a8le";
-import { Fan } from "./hosts.js?v=mw16a8le";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw16a8le";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw16a8le";
-import { wallPanel } from "./wall.js?v=mw16a8le";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw16a8le";
-import { demoAway, setBet } from "./trade.js?v=mw16a8le";
+import { espnState } from "./espn.js?v=mw16woq7";
+import { Fan } from "./hosts.js?v=mw16woq7";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw16woq7";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw16woq7";
+import { wallPanel } from "./wall.js?v=mw16woq7";
+import { qrSvg } from "./qr.js?v=mw16woq7";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw16woq7";
+import { demoAway, setBet } from "./trade.js?v=mw16woq7";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -80,7 +81,7 @@ import { demoAway, setBet } from "./trade.js?v=mw16a8le";
     const telecastRows = () => {
       const grid = el("div", "fan-telecasts"), links = el("div");
       links.append(...hdhrRows(), ...networkRows(), ...captureRows());
-      if (Fan.wall) { const joined = !!(Fan.screen && Fan.screen.of); grid.append(wallSetup([doorRows(), screenRows()]), ...(joined ? [] : [wallPanel()]), links); return [grid]; }
+      if (Fan.wall) { const joined = !!(Fan.screen && Fan.screen.of); grid.append(wallSetup(joined ? [screenRows()] : [doorRows(), screenRows()]), ...(joined ? [] : [wallPanel()]), links); return [grid]; }
       const mon = el("button", "fan-start fan-monbtn"), picker = el("div");
       const set = () => { mon.textContent = monitorsOpen ? "Close monitors" : "Configure monitors"; mon.setAttribute("aria-expanded", String(monitorsOpen)); picker.hidden = !monitorsOpen; if (monitorsOpen && !picker.childNodes.length) picker.append(screenPicker()); };
       mon.type = "button"; mon.addEventListener("click", () => { monitorsOpen = !monitorsOpen; set(); });
@@ -97,7 +98,7 @@ import { demoAway, setBet } from "./trade.js?v=mw16a8le";
     const wallSetup = parts => {
       const d = el("details", "fan-setup"), s = el("summary"), door = Fan.door && Fan.door.info, of = Fan.screen && Fan.screen.of;
       const set = !!(of || (door && (door.screens.on || door.remote.on)));
-      const how = Fan.door && Fan.door.here ? "This is a remote" : of ? `A screen on the wall at ${of.wall}` : door ? `Screens ${door.screens.on ? "on" : "off"} · Remote control ${door.remote.on ? "on" : "off"}` : "";
+      const how = Fan.door && Fan.door.here ? "This is a remote" : of ? `A screen on the wall at ${of.wall}${of.state === "waiting" ? ", waiting to be allowed" : ""}` : door ? `Screens ${door.screens.on ? "on" : "off"} · Remote control ${door.remote.on ? "on" : "off"}` : "";
       s.append(el("b", null, "Wall setup"), el("span", "fan-setup-how", how));
       if (setupOpen === null) { let kept = null; try { kept = localStorage.getItem("fan.wallSetup"); } catch (e) {} setupOpen = kept ? kept === "open" : !set; }
       d.open = setupOpen;
@@ -111,19 +112,24 @@ import { demoAway, setBet } from "./trade.js?v=mw16a8le";
       if (!Fan.door) return box;
       if (Fan.door.here) { box.append(el("p", "fan-remote-here", "This is a remote for the wall: telecasts you start here open on its computers.")); return box; }
       const draw = (note = "") => {
-        const d = Fan.door.info, row = (kind, label, on, url, how) => {
+        const d = Fan.door.info, row = (kind, label, on, url, ipUrl, how, qr) => {
           const lab = el("label", "fan-check"), c = el("input");
           c.type = "checkbox"; c.checked = !!on;
           c.addEventListener("change", () => { c.disabled = true; Fan.door.set(kind, c.checked).then(() => fill(), e => draw("Couldn't: " + e.message)); });
           lab.append(c, label);
           const out = [lab];
-          if (on && url) out.push(el("p", "fan-note", how), el("div", "fan-remote-url", url));
+          if (on && url) {
+            out.push(el("p", "fan-note", how));
+            if (qr) { const q = el("div", "fan-qr"); q.innerHTML = qrSvg(url) || ""; q.title = "Point the tablet or phone's camera here"; out.push(q); }
+            out.push(el("div", "fan-remote-url", url));
+            if (ipUrl) out.push(el("p", "fan-note", "By its number, if that name doesn't work on your network: " + ipUrl));
+          }
           else if (on) out.push(el("p", "fan-note", "On, but this computer's address on the network couldn't be found."));
           return out;
         };
         box.replaceChildren(
-          ...row("screens", "Let other computers join this wall as screens", d.screens.on, d.screens.url, "On each of the other computers: Settings, Telecasts, Join a wall, and paste this."),
-          ...row("remote", "Let a tablet or phone control this wall", d.remote.on, d.remote.url, "On the tablet or phone, open this in Chrome, then Add to Home Screen. It pairs that device, once."));
+          ...row("screens", "Let other computers join this wall as screens", d.screens.on, d.screens.url, d.screens.ipUrl, "On each of the other computers: Settings, Telecasts, Wall setup, Find walls, and Join this one; you'll allow it on this wall. Or paste this there:", false),
+          ...row("remote", "Let a tablet or phone control this wall", d.remote.on, d.remote.url, d.remote.ipUrl, "On the tablet or phone, point its camera at this code, or open the address in Chrome, then Add to Home Screen. It pairs that device, once.", true));
         if (d.open) box.append(el("p", "fan-note", "If Windows asks whether Fan's connector may use the network, choose Private networks."));
         if (note) box.append(el("p", "fan-note", note));
       };
@@ -139,7 +145,9 @@ import { demoAway, setBet } from "./trade.js?v=mw16a8le";
         if (j) {
           const leave = el("button", "fan-start", "Leave"); leave.type = "button";
           leave.addEventListener("click", () => { leave.disabled = true; Fan.screen.set({ op: "leave" }).then(() => fill(), e => { box.append(el("p", "fan-note", "Couldn't: " + e.message)); leave.disabled = false; }); });
-          box.replaceChildren(el("p", "fan-remote-here", `This computer is a screen on the wall at ${j.wall}, as ${j.name}. That wall puts telecasts here.`), leave);
+          const SAY = { waiting: `Waiting to be allowed: on that computer, Settings, Telecasts, Wall setup, Allow ${j.name}.`, refused: "That wall refused or removed this computer. Leave, then join again.", unreachable: "That wall isn't answering: its computer may be asleep or off." };
+          box.replaceChildren(el("p", "fan-remote-here", `This computer is a screen on the wall at ${j.wall}, as ${j.name}.${j.state === "on" ? " That wall puts telecasts here." : ""}`), ...(SAY[j.state] ? [el("p", "fan-note", SAY[j.state])] : []), leave);
+          if (j.state !== "on") setTimeout(() => { if (!box.isConnected || !Fan.hostHello) return; Fan.hostHello().then(h => { const was = JSON.stringify(Fan.screen.of); Fan.screen.of = h.screenOf || null; if (JSON.stringify(Fan.screen.of) !== was) fill(); else draw(); }, () => {}); }, 3000);   // waiting: watch for the wall's answer
           return;
         }
         const ip = el("input"), name = el("input"), go = el("button", "fan-start", "Join"), say = el("p", "fan-note", "");
@@ -147,8 +155,19 @@ import { demoAway, setBet } from "./trade.js?v=mw16a8le";
         name.type = "text"; name.value = Fan.screen.name; name.setAttribute("aria-label", "This computer's name on the wall");
         go.type = "button";
         go.addEventListener("click", () => { go.disabled = true; say.textContent = "Joining…"; Fan.screen.set({ op: "join", address: ip.value, name: name.value }).then(() => fill(), e => { say.textContent = "Couldn't: " + e.message; go.disabled = false; }); });
-        const row = el("div", "fan-joinrow"); row.append(ip, name, go);
-        box.replaceChildren(el("h3", null, "Join a wall"), el("p", "fan-note", "To make this computer a screen on another computer's wall: paste the screens address that computer's Telecasts tab shows, and name this one."), row, say);
+        const row = el("div", "fan-joinrow"); row.append(ip, go);
+        // Find walls: one ask on the home network; each wall that answers can be joined, and its computer allows it
+        const find = el("button", "fan-start fan-monbtn", "Find walls"), found = el("div", "fan-found");
+        find.type = "button";
+        find.addEventListener("click", () => {
+          find.disabled = true; found.replaceChildren(el("p", "fan-note", "Looking on your network…"));
+          Fan.screen.find().then(walls => {
+            find.disabled = false;
+            if (!walls.length) { found.replaceChildren(el("p", "fan-note", "No wall answered. On the computer that runs it, turn on \"Let other computers join this wall as screens\", or paste its address below.")); return; }
+            found.replaceChildren(...walls.map(w => { const r = el("div", "fan-foundrow"), b = el("button", "fan-start", "Join"); b.type = "button"; r.append(el("b", null, `${w.name}'s wall`), el("small", null, w.wall || w.ip || ""), b); b.addEventListener("click", () => { b.disabled = true; const ask = wall => Fan.screen.set({ op: "ask", wall, name: name.value }); (w.wall ? ask(w.wall).catch(() => ask(w.ip)) : ask(w.ip)).then(() => fill(), e => { r.append(el("small", "fan-note", "Couldn't: " + e.message)); b.disabled = false; }); }); return r; }));
+          }, e => { find.disabled = false; found.replaceChildren(el("p", "fan-note", "Couldn't: " + e.message)); });
+        });
+        box.replaceChildren(el("h3", null, "Join a wall"), el("p", "fan-note", "To make this computer a screen on another computer's wall: name it, then find that wall on your network, or paste the screens address its Telecasts tab shows."), name, find, found, row, say);
       };
       draw();
       return box;

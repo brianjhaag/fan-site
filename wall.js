@@ -2,9 +2,9 @@
 // screen that joined its wall, with their monitors and the telecast windows on them, where they really sit, and the day's games to put on any of them. This page's connector keeps it;
 // the other computers are its screens (wall.rs in the connector). Tap a window for its sound, which mutes every other telecast on the wall; x closes it; Snap back puts a computer's
 // windows back in their spots; each computer's monitor and layout pick its spots.
-import { Fan } from "./hosts.js?v=mw16a8le";
-import { el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw16a8le";
-import { abbr } from "./leagues.js?v=mw16a8le";
+import { Fan } from "./hosts.js?v=mw16woq7";
+import { el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw16woq7";
+import { abbr } from "./leagues.js?v=mw16woq7";
 
 const WALL_MS = 3000;   // how often the open Telecasts tab reads the wall
 let wallTimer = null, wallData = null, wallNote = "", wallBox = null, wallShown = "";
@@ -19,6 +19,7 @@ function machineBox(m, sound) {
   const snap = el("button", "fan-start", "Snap back"); snap.type = "button"; snap.disabled = !m.online;
   snap.addEventListener("click", () => wallAct({ op: "snap", machine: m.id }, `${m.name}: snapped back`));
   head.append(snap);
+  if (m.id !== "self" && !m.online) { const rm = el("button", "fan-start", "Remove"); rm.type = "button"; rm.title = "Take this computer off the wall; it can join again"; rm.addEventListener("click", () => wallAct({ op: "remove", machine: m.id }, `${m.name} removed`)); head.append(rm); }   // an asleep screen, which may be gone for good
   box.append(head);
   const ds = Array.isArray(m.displays) ? m.displays : [], ws = Array.isArray(m.windows) ? m.windows : [];
   if (!ds.length) { box.append(el("p", "fan-note", m.online ? "No monitors reported." : "Asleep or off: its screens come back when it does.")); return box; }
@@ -89,12 +90,23 @@ function drawWall() {
   const off = el("button", "fan-start", "Sound off"); off.type = "button"; off.disabled = !wallData.sound;
   off.addEventListener("click", () => wallAct({ op: "sound", machine: "self", target: null }, "Sound off"));
   head.append(off);
+  // computers that found this wall and asked to join, waiting for the user
+  const asking = ms.filter(m => m.approved === false), shown = ms.filter(m => m.approved !== false), ask = el("div", "wl-asking");
+  if (asking.length) {
+    asking.forEach(m => {
+      const r = el("div", "wl-askrow"), yes = el("button", "fan-start", "Allow"), no = el("button", "fan-start", "Refuse"); yes.type = no.type = "button";
+      yes.addEventListener("click", () => wallAct({ op: "allow", machine: m.id }, `${m.name} joined`));
+      no.addEventListener("click", () => wallAct({ op: "remove", machine: m.id }, `${m.name} refused`));
+      r.append(el("b", null, m.name || "A computer"), el("span", null, " asks to join this wall as a screen"), yes, no);
+      ask.append(r);
+    });
+  }
   const wall = el("div", "wl-wall");
-  if (!ms.length) wall.append(el("p", "fan-note", "No screens yet. This computer shows here once it can open telecasts; other computers join below, with this computer's screens switch on."));
-  ms.forEach(m => wall.append(machineBox(m, wallData.sound)));
+  if (!shown.length) wall.append(el("p", "fan-note", "No screens yet. This computer shows here once it can open telecasts; other computers join below, with this computer's screens switch on."));
+  shown.forEach(m => wall.append(machineBox(m, wallData.sound)));
   const body = el("div", "wl-body");
-  body.append(wall, gameRows(ms));
-  box.replaceChildren(head, body);
+  body.append(wall, gameRows(shown));
+  box.replaceChildren(head, ...(asking.length ? [ask] : []), body);
 }
 
 // The panel for the Telecasts tab, read every few seconds while it's on screen.

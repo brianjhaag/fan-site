@@ -176,7 +176,7 @@ Fan.connectStore = async () => {
     const post = (path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.wall = { get: () => window.fetch("/connector/wall").then(r => r.json()), act: body => post("/connector/wall", body) };
     Fan.door = { info: hi.door, here: !!hi.fromRemote, set: (kind, on) => post("/connector/door", { kind, on }).then(r => { if (r.door) Fan.door.info = r.door; if (!r.ok) throw new Error(r.error); return r.door; }) };
-    if (!hi.fromRemote) Fan.screen = { of: hi.screenOf || null, name: hi.machineName || "", set: body => post("/connector/screen", body).then(r => { if (!r.ok) throw new Error(r.error); Fan.screen.of = r.screenOf || null; return r.screenOf; }) };
+    if (!hi.fromRemote) Fan.screen = { of: hi.screenOf || null, name: hi.machineName || "", set: body => post("/connector/screen", body).then(r => { if (!r.ok) throw new Error(r.error); Fan.screen.of = r.screenOf || null; return r.screenOf; }), find: () => post("/connector/screen", { op: "find" }).then(r => { if (!r.ok) throw new Error(r.error); return r.walls || []; }) };
   }
   if (hi && hi.telecast) {
     const send =(path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
