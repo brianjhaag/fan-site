@@ -869,10 +869,10 @@
   /* ===== Game detail ===== */
   /* the game detail: the card's Game preview icon replaces the cards with a head-to-head of the two teams (data: TEAM_INFO, from ESPN) */
   .games.bd { display: block; overflow: hidden; padding: 0; }
-  .top.bd-open .col.left { visibility: hidden; }
+  .top.bd-open .col.left, .top.bd-open .col.left .riskcard.rk-over { visibility: hidden; }   /* the risk detail too, which sets itself visible: its close button showed through the game preview (Nov 2 2026) */
   .top.bd-open .games.bd { width: calc(100% + var(--bdx, 0px)); position: relative; z-index: 3; }
-  .bd-close { position: absolute; top: 8px; right: 8px; z-index: 5; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / .55); border: 1px solid rgb(255 255 255 / .35); border-radius: 50%; color: #fff; font: 400 22px/1 var(--font-display); cursor: pointer; }
-  .bd-close:hover { background: rgb(0 0 0 / .85); border-color: #fff; }
+  .bd-close { position: absolute; top: 8px; right: 8px; z-index: 5; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / .85); border: 1px solid #fff; border-radius: 50%; color: #fff; font: 400 22px/1 var(--font-display); cursor: pointer; }   /* solid, so it reads as live on the game preview's light header */
+  .bd-close:hover { border-color: var(--accent); color: var(--accent); }
   .bd-wrap { height: 100%; box-sizing: border-box; display: grid; grid-template-rows: 112px minmax(0, 1fr); gap: 8px; background: var(--paper); border: 1px solid var(--card-rule); border-radius: 3px; padding: 10px 14px 6px; }
   .bd-head { position: relative; display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; align-items: center; }   /* the same two columns as the injury / schedule tables below; each team group is centered over its column */
   .bd-team { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; }
