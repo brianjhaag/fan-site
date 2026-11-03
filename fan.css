@@ -156,6 +156,10 @@
   :root[data-league="nba"] .tabrows:not(.bottom) .weektabs button[aria-selected="true"] { background: rgb(29 66 138 / .1); }
   /* on the bottom strip the bars are upside down: flat at the bottom, pointing up */
   .tabrows.bottom .weektabs button[aria-selected="true"]::before, .tabrows.bottom .weektabs button[aria-selected="true"]::after { top: auto; bottom: 7px; clip-path: polygon(0 100%, 100% 100%, 100% 30%, 50% 0, 0 30%); }
+  /* The bottom strip's active button: a thin black line at each side, in every league, in place of the top strip's markers (the user, Nov 3 2026) */
+  :root .tabrows.bottom .weektabs button[aria-selected="true"]::before, :root .tabrows.bottom .weektabs button[aria-selected="true"]::after { top: 7px; bottom: 7px; height: auto; width: 2px; background: #000; clip-path: none; }
+  :root .tabrows.bottom .weektabs button[aria-selected="true"]::before { left: 0; }
+  :root .tabrows.bottom .weektabs button[aria-selected="true"]::after { right: 0; }
   /* the bottom strip: a section's buttons, in two rows of equal cells (--n columns) */
   .weektabs.sectiontabs button { -webkit-user-drag: none; user-select: none; }
   .weektabs.sectiontabs { grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); }
@@ -205,12 +209,6 @@
   .tabrows.bottom #tab-ledger { position: relative; width: auto; height: 41px; }
   .tabrows.bottom .strip-row2 button { padding-inline: 14px; font: 600 20px/1.1 "Source Sans 3", "Segoe UI", system-ui, sans-serif; letter-spacing: .04em; }   /* every bottom strip button in Ledger's plain type, the settings window's (the user's, Nov 2 2026) */
   .tabrows.bottom .strip-row2 { position: absolute; left: 0; right: 0; top: 41px; height: 41px; display: flex; align-items: center; gap: 8px; padding-right: 10px; box-sizing: border-box; z-index: 2; }
-  /* The bottom strip's buttons (the user, Nov 3 2026): black lines between them, a faint dark shade in each, the right-hand ones side by side */
-  .tabrows.bottom .strip-row2 > :not(.strip-left) { margin-left: -8px; }
-  .tabrows.bottom .strip-row2 > .pagetabs { margin-left: auto; }
-  .tabrows.bottom .strip-row2 button:not([style*="display: none"]) { background-color: rgb(0 0 0 / .16); border-left: 2px solid #000; border-radius: 0; }
-  .tabrows.bottom .strip-row2 .ledgertab button:last-child { border-right: 2px solid #000; }
-  .tabrows.bottom .strip-row2 .weektabs.ledgertab { display: flex; }
   .fan-menu { position: absolute; right: 10px; top: 0; height: 41px; display: flex; align-items: center; z-index: 40; }   /* the top strip's upper right */
   #fanBtn { appearance: none; background: none; border: 0; padding: 0 6px; display: flex; align-items: center; gap: 8px; font: 400 26px/1 "Plaster", "Montserrat", "Helvetica Neue", Arial, sans-serif; text-transform: uppercase; color: #d50a0a; cursor: pointer; }   /* the user's (Nov 2 2026): Plaster, in capitals, in red */
   #fanBtn svg { color: #12361b; }   /* the gear keeps the strip's ink */
@@ -1023,17 +1021,17 @@
   .xy svg { display: block; }
   .xyrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
   .ledger.bare { background: none; border: 0; padding: 0; }
-  /* ===== Code: the algo grid across the top, the editor below on the left, the console with its prompt on the right (TRADING.md) ===== */
-  #code { position: fixed; left: 8px; right: 8px; z-index: 4; display: grid; grid-template-rows: minmax(120px, 32%) 1fr; gap: 8px; padding: 8px; background: #0c0f12; border-color: #2a3038; color: #e6e9ee; font: 13px/1.4 "Source Sans 3", Arial, sans-serif; }
+  /* ===== Code: the algo grid down the left; on the right the editor, taking most of the height, and the console with its prompt under it (the user, Nov 3 2026) ===== */
+  #code { position: fixed; left: 8px; right: 8px; z-index: 4; display: grid; grid-template-columns: minmax(280px, 26%) 1fr; gap: 8px; padding: 8px; background: #0c0f12; border-color: #2a3038; color: #e6e9ee; font: 13px/1.4 "Source Sans 3", Arial, sans-serif; }
   #code[hidden] { display: none; }
   .cd-grid { display: grid; grid-template-rows: auto 1fr; gap: 6px; min-height: 0; }
-  .cd-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .cd-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; align-content: flex-start; }
   .cd-btn { appearance: none; padding: 4px 12px; font: 700 12px/1 "Montserrat", Arial, sans-serif; letter-spacing: .05em; text-transform: uppercase; color: #0c0f12; background: #19e37a; border: 0; border-radius: 3px; cursor: pointer; }
   .cd-btn:disabled { color: #6b7480; background: #1c2128; cursor: default; }
   .cd-btn.sure { background: #ff6b6b; }
   .cd-nm, .cd-col { padding: 3px 6px; font: inherit; color: #e6e9ee; background: #151a20; border: 1px solid #2a3038; border-radius: 3px; }
-  .cd-nm { width: 14em; } .cd-col { width: 9em; }
-  .cd-note { margin-left: auto; color: #8b95a1; font-size: 12px; }
+  .cd-nm { flex: 1 1 8em; min-width: 0; } .cd-col { flex: 1 1 28%; min-width: 0; }
+  .cd-note { flex-basis: 100%; color: #8b95a1; font-size: 12px; }
   .cd-scroll { overflow: auto; min-height: 0; border: 1px solid #2a3038; border-radius: 3px; }
   .cd-grid table { width: 100%; max-width: none; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; }
   #code .cd-grid th, #code .cd-grid td { text-align: left; }
@@ -1042,7 +1040,7 @@
   .cd-grid tbody tr { cursor: pointer; } .cd-grid tbody tr:hover { background: #151a20; } .cd-grid tbody tr.on { background: #18324a; }
   .cd-grid .cd-none td { color: #8b95a1; cursor: default; }
   .cd-state { font-weight: 700; } .cd-state.st-0 { color: #8b95a1; } .cd-state.st-1 { color: #c9ced6; } .cd-state.st-2 { color: #f0b429; } .cd-state.st-3 { color: #ff6b6b; }
-  .cd-low { display: grid; grid-template-columns: 3fr 2fr; gap: 8px; min-height: 0; }
+  .cd-low { display: grid; grid-template-rows: 1fr minmax(150px, 30%); gap: 8px; min-height: 0; min-width: 0; }
   .cd-ed { display: grid; grid-template-columns: auto 1fr; min-height: 0; overflow: hidden; background: #0f1317; border: 1px solid #2a3038; border-radius: 3px; font: 13px/1.5 "Chivo Mono", Consolas, monospace; }
   .cd-nums { margin: 0; padding: 8px 8px 8px 10px; overflow: hidden; text-align: right; color: #4d5661; user-select: none; font: inherit; }
   .cd-edwrap { position: relative; min-width: 0; min-height: 0; }
