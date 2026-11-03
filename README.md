@@ -1,6 +1,6 @@
 # Fan
 
-The page's source files, in `src/`, in plain words. The pictures and fonts the page uses are packed into `src/data` and `src/fonts`.
+The page's files, in plain words. In the `fan` repo they're in `src/`; on `fan-site`, the published page, they sit at the top, with `fan.html` as `index.html`. The pictures and fonts the page uses are packed into `data` and `fonts`.
 
 - **fan.html**: the frame of the page: the strips, the tabs and the empty boxes the code fills in.
 - **fan.css**: every color, size and position on the page.
