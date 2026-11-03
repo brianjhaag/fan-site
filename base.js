@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzxwih8";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzxwih8";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzxwih8";
-import { Calc } from "./calc.js?v=mvzxwih8";
-import { Fan } from "./hosts.js?v=mvzxwih8";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh } from "./espn.js?v=mvzy3a8k";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzy3a8k";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzy3a8k";
+import { Calc } from "./calc.js?v=mvzy3a8k";
+import { Fan } from "./hosts.js?v=mvzy3a8k";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -19,8 +19,8 @@ import { Fan } from "./hosts.js?v=mvzxwih8";
   const changed = (...topics) => { topics.forEach(t => dirtyTopics.add(t)); if (!changeQueued) { changeQueued = true; queueMicrotask(() => { if (changeQueued) drawNow(); }); } };
   // The page shows one slate at a time, a week or a day: GAMES and tickets always hold the selected slate's games and wagers.
   // A daily league's game (the NBA, the NHL), from its pull: on its day's slate (leagues.js numbers them), with a neutral line until its own prices come.
-  const addDailyGame = (l, { t, a, h, tv }) => {
-    const w = slateOfDay(l, Number(t.slice(0, 10).replace(/-/g, ""))), g = { t, away: teamName(l, a), home: teamName(l, h), tv, league: l, noLine: true, line: { sp: 0, spj: [-110, -110], tot: LEAGUE_DEFS[l].neutralTotal, toj: [-110, -110], ml: [-110, -110] }, week: w };
+  const addDailyGame = (l, { t, a, h, tv, eid, final, now }) => {
+    const w = slateOfDay(l, Number(t.slice(0, 10).replace(/-/g, ""))), g = { t, away: teamName(l, a), home: teamName(l, h), tv, league: l, ...(eid ? { eid } : {}), ...(final ? { final } : now ? { now } : {}), noLine: true, line: { sp: 0, spj: [-110, -110], tot: LEAGUE_DEFS[l].neutralTotal, toj: [-110, -110], ml: [-110, -110] }, week: w };
     (WEEK_GAMES[w] = WEEK_GAMES[w] || []).push(g);
     return g;
   };
@@ -205,7 +205,7 @@ import { Fan } from "./hosts.js?v=mvzxwih8";
     return tag;
   }
 
-  const APP_VERSION = "0.36.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.36.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on

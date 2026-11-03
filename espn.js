@@ -1,7 +1,7 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { LEAGUE_DEFS, leagueCodes } from "./leagues.js?v=mvzxwih8";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mvzy3a8k";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = Date.UTC(2026, 9, 28, 6), NFL_WEEKS = 18;
@@ -148,25 +148,47 @@ async function pullTeams() {
 // A daily league's games (the NBA, the NHL), only once it's on: one Eastern day a slate, from its season's start through its last day tab, each day kept so a finished one is asked for once.
 // Codes are Kalshi's, because its tickers end in them (leagues.js's espnCodes); a game with a team not in the league's table, an exhibition or an All-Star game, is left out. Every network ESPN names, as for the NFL.
 const ymd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
-async function pullDaily(l) {
+// One day's scoreboard of a daily league, as rows. As for the NFL, a game under way carries its score and clock, and a finished one its final score (Nov 2 2026).
+async function dayGames(l, date) {
   const def = LEAGUE_DEFS[l], codes = leagueCodes(l), code = x => def.espnCodes[x.abbreviation] || x.abbreviation;
+  return ((await getJson(`${SITE}/${def.espn}/scoreboard?dates=${date}&limit=40`)).events || []).map(e => ({ e, c: e.competitions && e.competitions[0] })).filter(({ c }) => c && c.competitors.every(x => codes.has(code(x.team)))).map(({ e, c }) => {
+    const [A, H] = sides(c), score = [Number(A.score), Number(H.score)];
+    return { eid: e.id, t: etIso(e.date), a: code(A.team), h: code(H.team), tv: (c.broadcasts || []).flatMap(b => b.names || []).join(" / "), final: e.status.type.completed ? score : null, now: e.status.type.state === "in" ? { score, clock: e.status.type.shortDetail || "" } : null };
+  });
+}
+async function pullDaily(l) {
+  const def = LEAGUE_DEFS[l];
   const rows = [], today = Math.floor(Date.now() / 864e5) * 864e5;
   for (let d = def.start; d <= today + def.days * 864e5; d += 864e5) {
     const key = l + ymd(d), had = keptPull(key);
     let day = had && (d < today - 864e5 && had.at > d + 2 * 864e5 || Date.now() - had.at < TEAMS_MS) ? had.data : null;
     if (!day) {
-      try {
-        day = ((await getJson(`${SITE}/${def.espn}/scoreboard?dates=${ymd(d)}&limit=40`)).events || []).map(e => ({ e, c: e.competitions && e.competitions[0] })).filter(({ c }) => c && c.competitors.every(x => codes.has(code(x.team)))).map(({ e, c }) => {
-          const [A, H] = sides(c);
-          return { t: etIso(e.date), a: code(A.team), h: code(H.team), tv: (c.broadcasts || []).flatMap(b => b.names || []).join(" / ") };
-        });
-        keepPull(key, day);
-      } catch (e) { day = had ? had.data : []; }
+      try { day = await dayGames(l, ymd(d)); keepPull(key, day); } catch (e) { day = had ? had.data : []; }
     }
     rows.push(...day);
   }
   return rows;
 }
+// A daily league's live scores (the user asked, Nov 2 2026): every minute [C] while one of its games is on and this tab is showing, the Eastern day's scoreboard, and the day before's
+// until 6 AM, onto the games on the page. A league that's off has no games here, so it's never asked for.
+const dailyGames = l => Object.values(WEEK_GAMES).flat().filter(g => g.league === l);
+const dailyOn = g => !g.final && (!!g.now || (Date.now() >= Date.parse(g.t) && Date.now() - Date.parse(g.t) < 5 * 3600e3));
+const easternDay = ms => etIso(ms).slice(0, 10).replace(/-/g, "");
+async function refreshDaily(l) {
+  const games = dailyGames(l);
+  for (const date of new Set([easternDay(Date.now() - 6 * 3600e3), easternDay(Date.now())])) {
+    (await dayGames(l, date)).forEach(r => {
+      const g = games.find(x => (x.eid && x.eid === r.eid) || (x.t === r.t && x.away === teamName(l, r.a) && x.home === teamName(l, r.h)));
+      if (!g) return;
+      g.eid = r.eid;
+      if (r.final) { g.final = r.final; delete g.now; } else if (r.now) g.now = r.now; else delete g.now;
+    });
+  }
+}
+setInterval(() => {
+  if (document.hidden) return;
+  for (const l of new Set(Object.values(WEEK_GAMES).flat().map(g => g.league).filter(Boolean))) if (dailyGames(l).some(dailyOn)) refreshDaily(l).then(() => onRefresh(), () => {});
+}, 60e3);
 
 // NCAA FB's list: today's games involving a top 25 team, asked for when its page opens.
 async function pullNcaafb() {
