@@ -3,7 +3,7 @@
 // the connector's lines.rs and ingest.rs, and checked against them on the same real answers before they were retired (tools/dev/compare-lines.js).
 // It reaches the network only through fan.fetch, which keeps to the connector's list of hosts, and saves nothing: the connector saves what it returns and keeps the timer. A feed problem
 // comes back as an error for the connector to act on. No retries here, on purpose: the feeds are free (CLAUDE.md rule 7). The page never loads it.
-import { SHARED } from "./shared.js?v=mw11zite";
+import { SHARED } from "./shared.js?v=mw12oc0o";
 
 const Lines = (() => {
   const MAX_GAP = 0.08;   // a wider book says nothing about the price
@@ -161,7 +161,7 @@ const Lines = (() => {
   const asOf = now => { const t = fan.local(now, "America/Denver"), h = t.hour % 12 || 12; return `${label(MONTHS[t.month - 1].toLowerCase())} ${t.day}, ${t.year}, ${h}:${String(t.minute).padStart(2, "0")} ${t.hour < 12 ? "AM" : "PM"} MT`; };
 
   // sources: [name, games] in order. liveOnly writes only games under way, with no meta. The answer: { docs: [[id, data]], meta: [id, data] or null }.
-  const merge = (sources, metaId, liveOnly, now) => {
+  const merge = (sources, metaId, liveOnly, now, lg) => {
     const ids = [...new Set(sources.flatMap(s => s[1].map(g => g.id)))].sort(), docs = [];
     for (const id of ids) {
       let gs = sources.flatMap(([n, m]) => { const g = m.find(x => x.id === id); return g ? [[n, { ...g, spreads: g.spreads.map(e => ({ ...e })) }]] : []; });
@@ -194,23 +194,25 @@ const Lines = (() => {
       if (!mls.length) continue;
       const ml = [american(lowest(mls.map(m => m[0]))), american(lowest(mls.map(m => m[1])))];
       const sp = pick(gs.map(x => x[1].spreads).filter(l => l.length), e => `${e.fav}|${e.k}`, e => e.mid), tt = pick(gs.map(x => x[1].totals).filter(l => l.length), e => String(e.k), e => e.mid);
-      if (!sp || !tt) continue;
-      const fav = sp[0].fav, k = sp[0].k, favAsk = lowest(sp.map(e => e.favAsk)), dogAsk = lowest(sp.map(e => e.dogAsk)), favP = american(favAsk), dogP = american(dogAsk);
-      const line = { sp: fav === "away" ? -k : k, spj: fav === "away" ? [favP, dogP] : [dogP, favP], tot: tt[0].k, toj: [american(lowest(tt.map(e => e.over))), american(lowest(tt.map(e => e.under)))], ml };
+      // A market missing its spread or total still gives a line (the user's, Nov 3 2026: "get something up on the screen"): what's missing is flagged, noSp or noTot, over placeholder numbers the page dashes.
+      const fav = sp ? sp[0].fav : "home", k = sp ? sp[0].k : 0, favAsk = sp ? lowest(sp.map(e => e.favAsk)) : null, dogAsk = sp ? lowest(sp.map(e => e.dogAsk)) : null, favP = sp ? american(favAsk) : -110, dogP = sp ? american(dogAsk) : -110;
+      const line = { sp: fav === "away" ? -k : k, spj: fav === "away" ? [favP, dogP] : [dogP, favP], tot: tt ? tt[0].k : (lg && lg.neutralTotal) || 45, toj: tt ? [american(lowest(tt.map(e => e.over))), american(lowest(tt.map(e => e.under)))] : [-110, -110], ml };
+      if (!sp) line.noSp = true;
+      if (!tt) line.noTot = true;
       const data = {};
       if (started) data.live = { ...line, at: now };
       else {
         // The band the flagged-pair popup builds; see lines.js in the get-lines skill for what each rung means.
         const k2 = Math.floor(k) + 4.5, dogSide = fav === "home" ? "away" : "home";
         const at = (side, strike) => gs.flatMap(x => x[1].spreads).filter(e => e.fav === side && e.k === strike).map(e => [e.src, e.dogAsk]);
-        const c2 = cheapest(at(fav, k2));
+        const c2 = sp ? cheapest(at(fav, k2)) : null;
         if (c2) {
           const band = { fav, K: k, K2: k2, c1: f4(favAsk), c2: f4(c2[1]), src2: c2[0] }, c3 = cheapest(at(dogSide, 3.5));
           if (c3) Object.assign(band, { K3: 3.5, c3: f4(c3[1]), src3: c3[0] });
           data.band = band;
         }
         const mlVenue = away => { const c = cheapest(gs.filter(x => x[1].ml).map(x => [label(x[0]), x[1].ml[away ? 0 : 1]])); return c ? [c[0], f4(c[1])] : null; };
-        const leg = of => { const c = cheapest(sp.map(e => [e.src, of(e)])); return c ? [c[0], f4(c[1])] : null; };
+        const leg = of => { const c = sp ? cheapest(sp.map(e => [e.src, of(e)])) : null; return c ? [c[0], f4(c[1])] : null; };
         data.line = line;
         data.venue = { ml: { away: mlVenue(true), home: mlVenue(false) }, sp: { fav: leg(e => e.favAsk), dog: leg(e => e.dogAsk) } };
       }
@@ -223,9 +225,9 @@ const Lines = (() => {
   // One pull of a league's slate, from the venues whose prices are on (`prices`). A full pull is Kalshi and, for a league with Polymarket US, it too; live is Kalshi alone.
   const pull = (f, n, live, lg, now, prices) => {
     const on = v => prices.includes(v), id = metaKey(lg, n), none = { docs: [], meta: null };
-    if (live || !lg.polymarket) return on("kalshi") ? merge([["kalshi", kalshi(f, n, lg)]], id, live, now) : none;
+    if (live || !lg.polymarket) return on("kalshi") ? merge([["kalshi", kalshi(f, n, lg)]], id, live, now, lg) : none;
     const sources = [["kalshi", () => kalshi(f, n, lg)], ["polymarket", () => polymarket(f, n, lg)]].filter(s => on(s[0])).map(([v, get]) => [v, get()]);
-    return sources.length ? merge(sources, id, false, now) : none;
+    return sources.length ? merge(sources, id, false, now, lg) : none;
   };
 
   // ---- Final scores from ESPN's public scoreboard: an NFL week's regular-season games, or a daily league's day ----
@@ -277,8 +279,13 @@ const Lines = (() => {
     }
     return out;
   };
-  // Between full turns, the NFL's games under way, every 5 minutes in its live window.
-  const liveSteps = (at, p) => { const n = nflWeek(at); return p.market && p.leagues.includes("nfl") && liveWindow(at) && n >= 1 && n <= 17 ? [["live", "nfl", n], ["finals", "nfl", n]] : []; };
+  // Between full turns, games under way, every 5 minutes: the NFL's in its live window; a daily league's today, 3 PM to 11:59 PM MT, from 10 AM on weekends (Nov 3 2026, so every league has in-game prices).
+  const dailyLive = at => { const t = denver(at); return t.hour >= (t.weekday === 0 || t.weekday === 6 ? 10 : 15); };
+  const liveSteps = (at, p) => {
+    const n = nflWeek(at), out = p.market && p.leagues.includes("nfl") && liveWindow(at) && n >= 1 && n <= 17 ? [["live", "nfl", n], ["finals", "nfl", n]] : [];
+    if (p.market && dailyLive(at)) for (const lg of LEAGUES.filter(l => l.daily && p.leagues.includes(l.code))) { const d = ymd(denver(at)); out.push(["live", lg.code, d], ["finals", lg.code, d]); }
+    return out;
+  };
 
   // One step, for the connector to save: { docs, meta }, or { error: { status, message } }. f: the feeds' addresses, { kalshi, polymarket, espn, gamesTable }.
   const answer = job => { try { return job(); } catch (e) { return { error: { status: e && typeof e.status === "number" ? e.status : null, message: String((e && e.message) || e) } }; } };

@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw11zite";
-import { BOOK_ICONS } from "./data/assets.js?v=mw11zite";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw11zite";
-import { Calc } from "./calc.js?v=mw11zite";
-import { Fan } from "./hosts.js?v=mw11zite";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw12oc0o";
+import { BOOK_ICONS } from "./data/assets.js?v=mw12oc0o";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw12oc0o";
+import { Calc } from "./calc.js?v=mw12oc0o";
+import { Fan } from "./hosts.js?v=mw12oc0o";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -164,7 +164,7 @@ import { Fan } from "./hosts.js?v=mw11zite";
   const LEAGUES = [];   // the league picker's leagues that are stubs: none now. NCAA FB's list (drawNcaafb) is off, on the user's word: adding "ncaafb" here and to leagues.js brings it back
   const leagueNames = () => Object.fromEntries(LEAGUE_ORDER.map(k => [k, LEAGUE_DEFS[k].name]));
   // The games the Graphs panel plots: those of the selected week still to kick off.
-  const graphGames = () => GAMES.filter(g => !g.final && status(g)[0] === "Upcoming");
+  const graphGames = () => GAMES.filter(g => !g.final && status(g)[0] === "Upcoming" && !(g.line && (g.line.noSp || g.line.noTot)));   // a game missing its spread or total has nothing to graph yet
   const ALL_GAMES = Object.keys(WEEK_GAMES).map(Number).sort((p, q) => p - q).flatMap(w => WEEK_GAMES[w]);
   // The calculations live in calc.js; here they are bound to the page's games and tickets.
   const calc = Calc.make({ games: ALL_GAMES, now: () => Date.now(), abbr: n => abbr(n) });
@@ -211,7 +211,7 @@ import { Fan } from "./hosts.js?v=mw11zite";
     return tag;
   }
 
-  const APP_VERSION = "0.40.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.40.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -323,9 +323,10 @@ import { Fan } from "./hosts.js?v=mw11zite";
       if (!g) return;
       if (Array.isArray(v.final)) g.final = v.final; else if (v.final === null) delete g.final;
       if (!pricesOn()) return;
-      if (v.line) { g.line = v.line; delete g.noLine; }
-      else if (v.live && g.noLine) { g.line = v.live; delete g.noLine; }   // first seen after tipoff: no pre-game line was saved
-      if (v.live) g.live = v.live; else delete g.live;
+      const implied = l => (l && l.noSp ? { ...l, sp: Calc.spreadFromMl(l.ml, leagueOf(g).sigma) } : l);   // no spread market yet: the moneyline's, for the models; the card dashes it
+      if (v.line) { g.line = implied(v.line); delete g.noLine; }
+      else if (v.live && g.noLine) { g.line = implied(v.live); delete g.noLine; }   // first seen after tipoff: no pre-game line was saved
+      if (v.live) g.live = implied(v.live); else delete g.live;
       if (v.lad) g.lad = v.lad; else delete g.lad;   // the cross-venue ladder (cheapest asks on Kalshi and Polymarket) for hedge suggestions   // the in-game prices (Kalshi), kept next to the saved pre-game line
       if (v.band) g.band = v.band; else delete g.band;
       if (v.venue) g.venue = v.venue; else delete g.venue;   // where each leg was cheapest, for the Graphs popup's transaction list   // market prices for the flagged-pair band bet (see the Graphs popup)
@@ -370,13 +371,14 @@ import { Fan } from "./hosts.js?v=mw11zite";
     ["Risk detail", '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 13.5c3 0 3.8-1.6 4.8-4.8C6.6 6 7 3 8 3s1.400 3 2.200 5.700c1 3.200 1.800 4.800 4.800 4.800"/></svg>']
   ];
   // A final NFL game's replays on nfl.com, in the user's own browser, where their sign-in is. Condensed Replay is a button on that tab. Every 2026 game to Week 8 answered at this address, Nov 1 2026.
-  const tapeLink = g => `https://www.nfl.com/games/${nick(g, "away").toLowerCase()}-at-${nick(g, "home").toLowerCase()}-2026-reg-${g.week}?tab=highlights-replays`;
+  // Tape: the NFL's condensed replay on nfl.com; the NBA's and NHL's recap with its highlights on ESPN (Nov 3 2026), by ESPN's game id.
+  const tapeLink = g => (leagueOf(g).daily ? `https://www.espn.com/${leagueOf(g).code.toLowerCase()}/recap/_/gameId/${g.eid}` : `https://www.nfl.com/games/${nick(g, "away").toLowerCase()}-at-${nick(g, "home").toLowerCase()}-2026-reg-${g.week}?tab=highlights-replays`);
   function cardGutter(g) {
     const box = el("div", "g-gut");
     box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
     const st = status(g)[1];
     CARD_ACTIONS.forEach(([name, icon]) => {
-      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!telecastFor(g) : name === "Tape" ? st === "final" && leagueOf(g).code === "NFL" : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
+      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!telecastFor(g) : name === "Tape" ? st === "final" && (!leagueOf(g).daily || !!g.eid) : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
@@ -449,15 +451,16 @@ import { Fan } from "./hosts.js?v=mw11zite";
     const ml = el("td", "ml", !pricesOn() ? "" : nl ? "—" : odds(L.ml[n]));   // tracking off: no prices anywhere, not dashes
     ml.style.color = brighterOf(g, side);
     if (!nl && pricesOn() && trackingOn) { ml.classList.add("ml-go"); ml.addEventListener("click", e => { e.stopPropagation(); later.fillMoneyline(g, n); }); }   // a moneyline click fills the wager ticket instead of selecting the card
-    const spc = el("td", "sp", !pricesOn() || nl ? "" : sp < 0 ? Calc.winPct(L.ml, away) + "%" : pts(sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1)));   // one decimal always: +4.0, +3.5
+    const nsp = !nl && !!L.noSp, favRow = L.ml[n] < L.ml[1 - n] || (L.ml[n] === L.ml[1 - n] && !away);   // no spread market yet: the favorite's row keeps its chance to win, the other a dash
+    const spc = el("td", "sp", !pricesOn() || nl ? "" : nsp ? (favRow ? Calc.winPct(L.ml, away) + "%" : "—") : sp < 0 ? Calc.winPct(L.ml, away) + "%" : pts(sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1)));   // one decimal always: +4.0, +3.5
     spc.style.color = brighterOf(g, side);
     if (spc.textContent.endsWith("%")) spc.classList.add("wp");
-    if (!nl && sp >= 0 && pricesOn() && trackingOn) { spc.classList.add("ml-go"); spc.addEventListener("click", e => { e.stopPropagation(); later.fillSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
+    if (!nl && !nsp && sp >= 0 && pricesOn() && trackingOn) { spc.classList.add("ml-go"); spc.addEventListener("click", e => { e.stopPropagation(); later.fillSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
     tr.append(ml, name, spc);
     // The total is the same for both teams: one cell on the first row spanning both, centered between them.
     if (away) {
-      const tot = el("td", "tot", !pricesOn() ? "" : nl ? "—" : Number(L.tot).toFixed(1)); tot.rowSpan = 2;
-      if (!nl && pricesOn() && trackingOn) { tot.classList.add("ml-go"); tot.title = "Top half: over. Bottom half: under."; tot.addEventListener("click", e => { e.stopPropagation(); const r = tot.getBoundingClientRect(); later.fillTotal(g, e.clientY < r.top + r.height / 2 ? 0 : 1); }); }   // a total click fills the wager ticket
+      const tot = el("td", "tot", !pricesOn() ? "" : nl || L.noTot ? "—" : Number(L.tot).toFixed(1)); tot.rowSpan = 2;
+      if (!nl && !L.noTot && pricesOn() && trackingOn) { tot.classList.add("ml-go"); tot.title = "Top half: over. Bottom half: under."; tot.addEventListener("click", e => { e.stopPropagation(); const r = tot.getBoundingClientRect(); later.fillTotal(g, e.clientY < r.top + r.height / 2 ? 0 : 1); }); }   // a total click fills the wager ticket
       tr.append(tot);
     }
     return tr;
@@ -841,7 +844,8 @@ import { Fan } from "./hosts.js?v=mw11zite";
   };
   const weekNow = () => (LG().daily ? slateOfDay(league, nbaDay()) : nflWeek());   // the current slate of the league on screen
   function graphsOK() {
-    if (!LG().graphs || (curWeek !== weekNow() && curWeek !== weekNow() + 1)) return false;   // the graphs are built on the NFL's margins
+    const next = LG().daily ? slateOfDay(league, nbaDay(1)) : weekNow() + 1;   // this slate and the next: today and tomorrow for a daily league
+    if (!LG().graphs || (curWeek !== weekNow() && curWeek !== next)) return false;
     const open = graphGames();
     return open.length > 0 && open.every(g => !g.noLine);
   }

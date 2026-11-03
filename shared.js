@@ -16,9 +16,9 @@ const SHARED = {
       espnCodes: { WAS: "WSH", JAC: "JAX", LA: "LAR" },
       polymarket: { spreads: 20, totals: [30, 60], totalWord: true } },
     nba: { name: "NBA", slate: "day", base: 0, tag: "w", kalshi: "KXNBA", espn: "basketball/nba", start: Date.UTC(2026, 9, 20), days: 7, neutralTotal: 220,
-      codes: {},
+      codes: { GS: "GSW", NO: "NOP", NY: "NYK", PHO: "PHX", SA: "SAS" },   // Polymarket US's own five (Nov 3 2026); Kalshi's are Fan's
       espnCodes: { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" },
-      polymarket: null },
+      polymarket: { spreads: 16, totals: [200, 250], totalWord: false } },   // spreads to 16.5 and totals 200.5 to 250.5, one request a game
     // The NHL: Kalshi's codes are ESPN's but UTA for Utah; Polymarket US has four of its own. Puck lines at 1.5 and 2.5 goals, and totals named without "total-".
     nhl: { name: "NHL", slate: "day", base: 1e8, tag: "nhl", kalshi: "KXNHL", espn: "hockey/nhl", start: Date.UTC(2026, 9, 6), days: 7, neutralTotal: 6,   // the season's start [C]
       codes: { UTAH: "UTA", MON: "MTL", NAS: "NSH", VEG: "VGK", WAS: "WSH" },

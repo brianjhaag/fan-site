@@ -1,11 +1,11 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { Fan } from "./hosts.js?v=mw11zite";
-import { calc, setWeirdFills, nick, $, setAcc, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw11zite";
-import { TEAM, abbr } from "./leagues.js?v=mw11zite";
-import { setPlaybook } from "./panels.js?v=mw11zite";
+import { Fan } from "./hosts.js?v=mw12oc0o";
+import { calc, setWeirdFills, nick, $, setAcc, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw12oc0o";
+import { TEAM, abbr } from "./leagues.js?v=mw12oc0o";
+import { setPlaybook } from "./panels.js?v=mw12oc0o";
   Object.assign(later, { syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
-  const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))} ${pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };
+  const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))}${g.line.noSp ? "" : " " + pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };   // no spread market yet: no spread named
   const vigText = v => v < -0.5 ? "−" + money(-v) : money(Math.max(0, v));
   // One-time copy of this browser's saved wagers into the database, then the database becomes the source.
   async function startRecords() {
@@ -654,7 +654,7 @@ import { setPlaybook } from "./panels.js?v=mw11zite";
   const helmetImg = n => TEAM[n] && TEAM[n].art ? helmImg(n, "hl") : null;
   function gameFace(g) {   // helmet, abbreviation and the visitor's spread @ helmet and abbreviation
     const f = el("span", "gface"); f.style.display = "inline-flex"; f.style.alignItems = "center"; f.style.gap = "7px";
-    [helmetImg(nick(g, "away")), el("span", null, abbr(nick(g, "away"))), el("span", "sp", g.noLine ? "" : pts(g.line.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1))), el("span", "at", "@"), helmetImg(nick(g, "home")), el("span", null, abbr(nick(g, "home")))].forEach(x => x && f.append(x));
+    [helmetImg(nick(g, "away")), el("span", null, abbr(nick(g, "away"))), el("span", "sp", g.noLine || g.line.noSp ? "" : pts(g.line.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1))), el("span", "at", "@"), helmetImg(nick(g, "home")), el("span", null, abbr(nick(g, "home")))].forEach(x => x && f.append(x));
     return f;
   }
   function syncGame() {
