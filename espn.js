@@ -1,10 +1,11 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw00lj85";
+import { SHARED } from "./shared.js?v=mw0lig6n";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw0lig6n";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
-const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = Date.UTC(2026, 9, 28, 6), NFL_WEEKS = 18;
+const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;
 let stopped = false;
 let pullAt = 0, pullFailed = "";
 async function getJson(url) {
@@ -43,7 +44,7 @@ const gameOfRow = r => ({ eid: r.eid, t: r.t, away: r.away, home: r.home, tv: r.
 const lastName = n => n.split(" ").pop();
 const envKey = (w, r) => `${w}|${lastName(r.away)}|${lastName(r.home)}`;
 const pullWeek = async w => {
-  const rows = ((await getJson(`${SITE}/football/nfl/scoreboard?seasontype=2&week=${w}&dates=2026`)).events || []).map(nflRow).sort((p, q) => p.ms - q.ms);
+  const rows = ((await getJson(`${SITE}/football/nfl/scoreboard?seasontype=2&week=${w}&dates=${SHARED.season.year}`)).events || []).map(nflRow).sort((p, q) => p.ms - q.ms);
   keepPull("nfl" + w, rows);
   return rows;
 };
@@ -133,7 +134,7 @@ function teamSchedule(code) {
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 // ESPN's plain team address refuses browsers; standings, statistics and injuries answer. Standings gives every team in one request.
 async function pullTeams() {
-  const standings = await getJson(`https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=3&season=2026&seasontype=2`), injuries = injuryList(await getJson(`${SITE}/football/nfl/injuries`)), out = {};
+  const standings = await getJson(`https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=3&season=${SHARED.season.year}&seasontype=2`), injuries = injuryList(await getJson(`${SITE}/football/nfl/injuries`)), out = {};
   for (const conf of standings.children) for (const div of conf.children) for (const [i, row] of div.standings.entries.entries()) {
     const t = row.team, st = await getJson(`${SITE}/football/nfl/teams/${t.id}/statistics`), stat = n => row.stats.find(x => x.name === n) || {}, streak = String(stat("streak").displayValue || "");
     const cats = st.results.stats.categories, inj = injuries[t.id] || { list: [] }, sch = teamSchedule(t.abbreviation);

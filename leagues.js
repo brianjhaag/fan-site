@@ -1,17 +1,11 @@
 // Each league's identity in one place, from what adding the NBA and NHL taught on Nov 2 2026: how its slates are numbered and named, where ESPN keeps it,
 // and its teams, with their codes, colors, home states and art, keyed the way calc.js's nick() keys them. The money and model rules stay in calc.js (RULES.leagues).
-import { HELMETS, NBA_LOGOS, NHL_LOGOS } from "./data/assets.js?v=mw00lj85";
-import { Calc } from "./calc.js?v=mw00lj85";
+import { HELMETS, NBA_LOGOS, NHL_LOGOS } from "./data/assets.js?v=mw0lig6n";
+import { Calc } from "./calc.js?v=mw0lig6n";
+import { SHARED } from "./shared.js?v=mw0lig6n";
 
-// A slate is what one tab shows. An NFL week is its number; a daily league's slate is its base plus the Eastern-time day as yyyymmdd, so no two leagues share a tab, a ticket's week
-// or a slate document. tag starts the slate documents' ids, as the connector writes them (w8-…, w20261102-…, nhl20261102-…). espnCodes turn ESPN's team codes into Kalshi's,
-// which the slate documents and tickers use. neutralTotal: the total a game holds before its own prices, never shown. days: how many day tabs it shows, today first [U, Nov 2 2026: the next seven days].
-const LEAGUE_DEFS = {
-  nfl: { name: "NFL", slate: "week", tag: "w" },
-  nba: { name: "NBA", slate: "day", base: 0, tag: "w", espn: "basketball/nba", start: Date.UTC(2026, 9, 20), days: 7, neutralTotal: 220, espnCodes: { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" } },
-  nhl: { name: "NHL", slate: "day", base: 1e8, tag: "nhl", espn: "hockey/nhl", start: Date.UTC(2026, 9, 6), days: 7, neutralTotal: 6, espnCodes: { UTAH: "UTA" } },   // the season's start [C]
-  mlb: { name: "MLB", nextYear: true }
-};
+// A slate is what one tab shows: an NFL week is its number, a daily league's slate its base plus the Eastern-time day. The leagues themselves are the shared config's (shared.js), which the connector reads too.
+const LEAGUE_DEFS = SHARED.leagues;
 // On the user's word (Nov 2 2026): a first visit has the NFL only; the NBA and NHL can be turned on, and stay as the user left them. MLB waits for next year: struck through in the Leagues tab, not in the league picker.
 const LEAGUE_ORDER = Object.keys(LEAGUE_DEFS);
 const LEAGUES_READY = LEAGUE_ORDER.filter(k => !LEAGUE_DEFS[k].nextYear), LEAGUES_LATER = LEAGUE_ORDER.filter(k => LEAGUE_DEFS[k].nextYear);
