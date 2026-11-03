@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mvzyf90p";
-import { Fan } from "./hosts.js?v=mvzyf90p";
-import { LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzyf90p";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mvzyf90p";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzyf90p";
-import { demoAway, setBet } from "./trade.js?v=mvzyf90p";
+import { espnState } from "./espn.js?v=mvzym8e5";
+import { Fan } from "./hosts.js?v=mvzym8e5";
+import { programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mvzym8e5";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mvzym8e5";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mvzym8e5";
+import { demoAway, setBet } from "./trade.js?v=mvzym8e5";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -163,7 +163,6 @@ import { demoAway, setBet } from "./trade.js?v=mvzyf90p";
       return wrap;
     };
     // A new connector program is a new minor version, so the page's own major.minor says what's newest. A program too old to say its version is behind.
-    const programBehind = v => { const minor = s => s.split(".").slice(0, 2).map(Number); if (!v) return true; const [a, b] = minor(v), [c, d] = minor(APP_VERSION); return a < c || (a === c && b < d); };
     const newestProgram = () => APP_VERSION.replace(/\d+$/, "0");
     // The Update button: the connector replaces itself, and this page reloads when the new one answers. A failure says why, and it can be pressed again.
     const updateItem = from => {

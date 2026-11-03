@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mvzyf90p";
-import { BOOK_ICONS } from "./data/assets.js?v=mvzyf90p";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzyf90p";
-import { Calc } from "./calc.js?v=mvzyf90p";
-import { Fan } from "./hosts.js?v=mvzyf90p";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mvzym8e5";
+import { BOOK_ICONS } from "./data/assets.js?v=mvzym8e5";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mvzym8e5";
+import { Calc } from "./calc.js?v=mvzym8e5";
+import { Fan } from "./hosts.js?v=mvzym8e5";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -205,11 +205,24 @@ import { Fan } from "./hosts.js?v=mvzyf90p";
     return tag;
   }
 
-  const APP_VERSION = "0.36.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.36.4";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
   $("infoVer").textContent = APP_VERSION;   // and at the info line's far right
+  // A connector whose program is a minor version behind this page (the Update button's rule).
+  const programBehind = v => { const minor = s => s.split(".").slice(0, 2).map(Number); if (!v) return true; const [a, b] = minor(v), [c, d] = minor(APP_VERSION); return a < c || (a === c && b < d); };
+  // The info line's version, highlighted with an upgrade mark while the connector's program is behind (the user's, Nov 2 2026); a press opens the settings window, where Update is.
+  function showVersion(v) {
+    const ver = $("infoVer"), behind = !!v && programBehind(v);
+    if (behind === ver.classList.contains("behind")) return;
+    ver.classList.toggle("behind", behind);
+    ver.title = behind ? `The Fan connector is ${v}: update it on the Application tab` : "";
+    ver.replaceChildren(APP_VERSION);
+    if (behind) { const up = el("span", "up-mark"); up.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 17V7M7.5 11.5 12 7l4.5 4.5"/></svg>'; ver.append(up); }
+    fitSlateLine();
+  }
+  $("infoVer").addEventListener("click", () => { if ($("infoVer").classList.contains("behind")) $("fanBtn").click(); });
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;   // times show in the viewer's own zone
   const dayFmt = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: tz });
   const shortDayFmt = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: tz });
@@ -258,7 +271,8 @@ import { Fan } from "./hosts.js?v=mvzyf90p";
   // A problem at the connector takes the note's place until it clears: a stopped line refresh, or no answer at all.
   let noteText = "", hostProblem = "";
   function slateNote(text) { noteText = text; if (pullStatus()) text = pullStatus(); if (hostProblem) text = hostProblem; $("slateNote").textContent = text; $("slateNote").classList.toggle("problem", !!hostProblem); fitSlateLine(); }
-  setInterval(() => { if (Fan.hostHello) Fan.hostHello().then(hi => hi.refresh || "", () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); }, 30000);
+  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
+  setTimeout(askHost, 3000); setInterval(askHost, 30000);
   // the update text turns amber when the lines are more than an hour old (checked every minute)
   let slateAt = 0;
   const staleCheck = () => $("slateNote").classList.toggle("stale", slateAt > 0 && Date.now() - slateAt > 3600000);
@@ -922,4 +936,4 @@ import { Fan } from "./hosts.js?v=mvzyf90p";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { setAcc, LAYOUTS, isTall, layoutPref, setLayoutPref, WATCH_SETUPS, nick, telecastFor, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+export { programBehind, setAcc, LAYOUTS, isTall, layoutPref, setLayoutPref, WATCH_SETUPS, nick, telecastFor, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
