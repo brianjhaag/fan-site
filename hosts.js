@@ -172,6 +172,10 @@ Fan.connectStore = async () => {
     read: after => window.fetch("/connector/algos" + (after == null ? "" : "?after=" + after)).then(r => r.json()),
     ask: q => window.fetch("/connector/algos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q) }).then(r => r.json())
   };
+  if (hi && hi.remote && hi.remote.available) Fan.remote = {   // a tablet or phone on the home network as a remote (PLAN.md E, 3b): its switch, and whether this page is the remote
+    info: hi.remote, here: !!hi.fromRemote,
+    set: on => window.fetch("/connector/remote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) }).then(r => r.json()).then(r => { if (!r.ok) throw new Error(r.error); Fan.remote.info = r.remote; return r.remote; })
+  };
   if (hi && hi.telecast) {
     const send =(path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };

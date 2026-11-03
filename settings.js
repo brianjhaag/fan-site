@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw0zubtl";
-import { Fan } from "./hosts.js?v=mw0zubtl";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0zubtl";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0zubtl";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0zubtl";
-import { demoAway, setBet } from "./trade.js?v=mw0zubtl";
+import { espnState } from "./espn.js?v=mw10x4tz";
+import { Fan } from "./hosts.js?v=mw10x4tz";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw10x4tz";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw10x4tz";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw10x4tz";
+import { demoAway, setBet } from "./trade.js?v=mw10x4tz";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -81,9 +81,27 @@ import { demoAway, setBet } from "./trade.js?v=mw0zubtl";
       if (!Fan.screens) { mon.disabled = true; monitorsOpen = false; }   // dimmed with no connector, which is what reads the monitors and places the windows
       set();
       links.append(...hdhrRows(), ...networkRows(), ...captureRows());
-      const row = el("div", "fan-monrow"); row.append(mon); if (!Fan.screens) row.append(el("span", "fan-note", Fan.hostHello ? "The connector can't place telecast windows on this computer, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it reads your monitors and places each telecast's window. Without it, a telecast opens as a plain link."));
+      const row = el("div", "fan-monrow"); row.append(mon);
+      grid.append(remoteRows()); if (!Fan.screens) row.append(el("span", "fan-note", Fan.hostHello ? "The connector can't place telecast windows on this computer, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it reads your monitors and places each telecast's window. Without it, a telecast opens as a plain link."));
       grid.append(row, picker, links);
       return [grid];
+    };
+    // The remote (the user's, Nov 3 2026; PLAN.md E, 3b): a tablet or phone on the home network opens this page from the connector and its telecasts open on this computer.
+    const remoteRows = () => {
+      const box = el("div", "fan-remote");
+      if (!Fan.remote) return box;
+      if (Fan.remote.here) { box.append(el("p", "fan-remote-here", "This is the remote: telecasts you start here open on the computer running Fan, in its spots, with sound.")); return box; }
+      const draw = () => {
+        const i = Fan.remote.info, lab = el("label", "fan-check"), c = el("input");
+        c.type = "checkbox"; c.checked = !!i.on;
+        c.addEventListener("change", () => { c.disabled = true; Fan.remote.set(c.checked).then(draw, e => { box.append(el("p", "fan-note", "Couldn't: " + e.message)); c.disabled = false; }); });
+        lab.append(c, "Let a tablet or phone on this network control telecasts");
+        box.replaceChildren(lab);
+        if (i.on && i.url) box.append(el("p", "fan-note", "On the iPad, open this in Chrome, then use Add to Home Screen. It pairs that device, once."), el("div", "fan-remote-url", i.url), el("p", "fan-note", "If Windows asks whether Fan's connector may use the network, choose Private networks. Telecasts started there open here, placed in your spots, with sound."));
+        else if (i.on) box.append(el("p", "fan-note", "On, but this computer's address on the network couldn't be found."));
+      };
+      draw();
+      return box;
     };
     // The telecast router's probe (PLAN.md E): one press on a Sunday morning saves what Sunday Ticket's page shows in Fan's TV window, so Claude can build the link finder from it.
     const captureRows = () => {

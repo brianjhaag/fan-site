@@ -266,6 +266,10 @@
   .fan-telecasts { display: grid; gap: 12px; padding: 8px; }
   .fan-telecasts .fan-monbtn:disabled { opacity: .4; cursor: default; }
   .fan-monrow { display: flex; align-items: center; gap: 4px; }
+  .fan-remote { padding: 0 12px; }
+  .fan-remote .fan-check { font-size: 18px; }
+  .fan-remote-url { margin: 6px 0; font: 600 26px/1.2 var(--font-mono); color: var(--accent); user-select: all; }   /* typed into the iPad, so large */
+  .fan-remote-here { margin: 0; font-size: 18px; color: var(--accent); }
   .fan-monrow .fan-note { margin: 0; }
   .fan-telecasts .fan-monbtn { justify-self: start; margin: 4px 12px; padding: 12px 28px; font-size: 20px; font-weight: 600; }   /* the monitor map is behind it */
   .fan-netcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; row-gap: 4px; }   /* the networks in two columns, with room */
