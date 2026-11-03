@@ -1,5 +1,26 @@
   /* ===== Foundation: variables, the page, form controls ===== */
-  /* The leagues' own fonts (Google Fonts, Open Font License), shipped with the page so a connector needs no new program for them: the NHL's Iceberg, the NBA's Bungee. */
+  /* Every font the page uses (Google Fonts, Open Font License), shipped with it in src/fonts, so the page asks no one else for them and a connector needs no fonts of its own (Nov 3 2026). */
+  @font-face { font-family: "Archivo Black"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/ArchivoBlack-400.ttf) format("truetype"); }
+  @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/BarlowCondensed-500.ttf) format("truetype"); }
+  @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/BarlowCondensed-700.ttf) format("truetype"); }
+  @font-face { font-family: "Chivo Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/ChivoMono-400.ttf) format("truetype"); }
+  @font-face { font-family: "Chivo Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/ChivoMono-500.ttf) format("truetype"); }
+  @font-face { font-family: "Chivo Mono"; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/ChivoMono-600.ttf) format("truetype"); }
+  @font-face { font-family: "Chivo Mono"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/ChivoMono-700.ttf) format("truetype"); }
+  @font-face { font-family: "Doto"; font-style: normal; font-weight: 800; font-display: swap; src: url(fonts/Doto-800.ttf) format("truetype"); }
+  @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/IBMPlexMono-500.ttf) format("truetype"); }
+  @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/IBMPlexMono-700.ttf) format("truetype"); }
+  @font-face { font-family: "Montserrat"; font-style: normal; font-weight: 300; font-display: swap; src: url(fonts/Montserrat-300.ttf) format("truetype"); }
+  @font-face { font-family: "Montserrat"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/Montserrat-400.ttf) format("truetype"); }
+  @font-face { font-family: "Montserrat"; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/Montserrat-500.ttf) format("truetype"); }
+  @font-face { font-family: "Montserrat"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/Montserrat-700.ttf) format("truetype"); }
+  @font-face { font-family: "Saira Stencil One"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/SairaStencilOne-400.ttf) format("truetype"); }
+  @font-face { font-family: "Sofia Sans Condensed"; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/SofiaSansCondensed-600.ttf) format("truetype"); }
+  @font-face { font-family: "Sofia Sans Extra Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/SofiaSansExtraCondensed-700.ttf) format("truetype"); }
+  @font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/SourceSans3-400.ttf) format("truetype"); }
+  @font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/SourceSans3-600.ttf) format("truetype"); }
+  @font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/SourceSans3-700.ttf) format("truetype"); }
+  @font-face { font-family: "Plaster"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/Plaster-400.ttf) format("truetype"); }
   @font-face { font-family: "Iceberg"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/Iceberg-400.ttf) format("truetype"); }
   @font-face { font-family: "Bungee"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/Bungee-400.ttf) format("truetype"); }
   :root[data-league="nhl"] { --font-league: "Iceberg", var(--font-display); }
