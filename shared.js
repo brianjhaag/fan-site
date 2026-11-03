@@ -24,7 +24,10 @@ const SHARED = {
       codes: { UTAH: "UTA", MON: "MTL", NAS: "NSH", VEG: "VGK", WAS: "WSH" },
       espnCodes: { UTAH: "UTA", MON: "MTL", NAS: "NSH", VEG: "VGK", WAS: "WSH" },
       polymarket: { spreads: 2, totals: [3, 9], totalWord: false } },
-    mlb: { name: "MLB", nextYear: true }
+    mlb: { name: "MLB", nextYear: true },
+    // Listed and nothing more, on the user's word (Nov 3 2026), like MLB: struck through in the Leagues tab, not in the league picker. listedAs: the word shown instead of "next year".
+    ncaafb: { name: "NCAA FB", nextYear: true, listedAs: "later" },
+    ncaabb: { name: "NCAA BB", nextYear: true, listedAs: "later" }
   }
 };
 export { SHARED };
