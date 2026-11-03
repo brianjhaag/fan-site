@@ -1,8 +1,8 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { SHARED } from "./shared.js?v=mw0x8ad1";
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw0x8ad1";
+import { SHARED } from "./shared.js?v=mw0xb76g";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw0xb76g";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;
@@ -196,7 +196,7 @@ async function pullDaily(l) {
   const rows = [], today = Math.floor(Date.now() / 864e5) * 864e5;
   for (let d = def.start; d <= today + def.days * 864e5; d += 864e5) {
     const key = l + ymd(d), had = keptPull(key);
-    let day = had && had.data.every(r => r.eid) && (d < today - 864e5 && had.at > d + 2 * 864e5 || Date.now() - had.at < TEAMS_MS) ? had.data : null;   // a day kept before rows had ESPN's id, and so their scores, is asked for once more
+    let day = had && had.data.every(r => r.eid) && (d < today - 864e5 && had.at > d + 2 * 864e5 || d === today - 864e5 && had.data.every(r => r.final) || d >= today && Date.now() - had.at < TEAMS_MS) ? had.data : null;   // yesterday's tab is read again until every game on it is final   // a day kept before rows had ESPN's id, and so their scores, is asked for once more
     if (!day) {
       try { day = await dayGames(l, ymd(d)); keepPull(key, day); } catch (e) { day = had ? had.data : []; }
     }
