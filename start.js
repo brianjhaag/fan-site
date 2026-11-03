@@ -1,19 +1,18 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mw0p6i9d";
-import "./risk.js?v=mw0p6i9d";
-import "./panels.js?v=mw0p6i9d";
-import "./tracker.js?v=mw0p6i9d";
-import "./trade.js?v=mw0p6i9d";
-import "./settings.js?v=mw0p6i9d";
-import { Fan } from "./hosts.js?v=mw0p6i9d";
-import { watchAuto } from "./trade.js?v=mw0p6i9d";
-import { WEEK_GAMES } from "./espn.js?v=mw0p6i9d";
-import { setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mw0p6i9d";
-import { LEAGUES_READY } from "./leagues.js?v=mw0p6i9d";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw0p6i9d";
-import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mw0p6i9d";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw0p6i9d";
-import { fillSettings, findConnector } from "./settings.js?v=mw0p6i9d";
+import "./base.js?v=mw0q2jcy";
+import "./risk.js?v=mw0q2jcy";
+import "./panels.js?v=mw0q2jcy";
+import "./tracker.js?v=mw0q2jcy";
+import "./trade.js?v=mw0q2jcy";
+import "./settings.js?v=mw0q2jcy";
+import { Fan } from "./hosts.js?v=mw0q2jcy";
+import { WEEK_GAMES } from "./espn.js?v=mw0q2jcy";
+import { setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mw0q2jcy";
+import { LEAGUES_READY } from "./leagues.js?v=mw0q2jcy";
+import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw0q2jcy";
+import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mw0q2jcy";
+import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw0q2jcy";
+import { fillSettings, findConnector } from "./settings.js?v=mw0q2jcy";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };
@@ -45,7 +44,6 @@ import { fillSettings, findConnector } from "./settings.js?v=mw0p6i9d";
     try { const saved = JSON.parse(localStorage.getItem("fan.leagues") || "[]"); for (const k of saved) if (k !== "nfl" && LEAGUES_READY.includes(k)) await setLeagueOn(k, true); if (saved.some(k => k !== "nfl" && leaguesOn.has(k)) && !saved.includes("nfl")) await setLeagueOn("nfl", false); } catch (e) {}
     try { await Fan.connectStore(); } catch (e) {}
     findConnector();
-    watchAuto();
     await startRecords();
     changed("settings");
     initLines();

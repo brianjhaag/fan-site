@@ -1,5 +1,5 @@
 // The risk detail and the totals: the payoff grid, the selected game's card, the week's sums.
-import { nick, pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitTicketColumn, gameBets, gameKey, gameLabel, gamesInView, hedgeFor, last, later, leagueOf, legResult, legText, money, odds, parlayShares, profitOf, projectedPL, pts, resultCell, riskGame, riskKey, riskOf, setRiskGame, shareRisk, shareTerm, shortDayFmt, signedMoney, spentShares, status, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, updateGameArrows } from "./base.js?v=mw0p6i9d";
+import { nick, pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes, fitTicketColumn, gameBets, gameKey, gameLabel, gamesInView, hedgeFor, last, later, leagueOf, legResult, legText, money, odds, parlayShares, profitOf, projectedPL, pts, resultCell, riskGame, riskKey, riskOf, setRiskGame, shareRisk, shareTerm, shortDayFmt, signedMoney, spentShares, status, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, updateGameArrows } from "./base.js?v=mw0q2jcy";
   // extLegs: legs on this game from parlays that also span other games, as { t, l }. Their win zones are shaded over the grid
   // (they say nothing about profit, since a parlay needs its other legs too), and where every wager here wins is outlined.
   function riskGrid(g, bets, W, extLegs = [], shares = [], minHX = 0, shrink = 0, lfs = 18) {   // lfs: the figures' font size (13 over the wager ticket), for spacing them apart   // shrink takes that many px off the plot height (the Graphs popup is shorter)   // minHX widens the margin axis (the Graphs popup needs its band and blowout regions in view)
@@ -313,8 +313,8 @@ import { nick, pricesOn, $, GAMES, bdBadge, bookTag, calc, deadFor, el, extremes
         hedgeEl.append(el("div", "hh", h.kind === "lock" ? "Locks in a profit" : "Suggested bet"), hb, hr, hx);
       }
     }
-    const armEl = overlay && !g.final && (bets.length || shares.length) ? later.armControls(g) : null;   // the game's Arm switch and its settings
-    box.classList.toggle("has-arm", !!armEl);
+    const armEl = overlay && !g.final && (bets.length || shares.length) ? later.hedgeControls() : null;   // the hedge suggestion's settings
+    box.classList.toggle("has-tune", !!armEl);
     box.append(head, top, grid.el, ...(hedgeEl ? [hedgeEl] : []), ...(armEl ? [armEl] : []), ...(overlay ? [stats] : []), ul);
     if (overlay) { const x = el("button", "bd-close", "×"); x.type = "button"; x.title = "Close"; x.setAttribute("aria-label", "Close risk detail"); x.addEventListener("click", () => setRiskGame(null)); box.append(x); }
   }

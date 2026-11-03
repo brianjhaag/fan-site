@@ -844,22 +844,14 @@
   .rk-hedge .hxres { font-size: 11.5px; line-height: 1.3; color: var(--ink-dim); }
   .rk-hedge .hxres.ok { color: #19e37a; }
   .rk-hedge .hxres.err { color: #ff6b6b; }
-  .col.left .riskcard.rk-over.has-arm { height: auto; min-height: var(--tk-h, 411px); }
+  .col.left .riskcard.rk-over.has-tune { height: auto; min-height: var(--tk-h, 411px); }
   .demo-badge[hidden] { display: none; }
   .one-line .demo-badge { order: 5; flex: none; align-self: flex-end; margin: 0 0 5px 14px; }   /* at the info line's far right, after the version */
   .demo-badge { padding: 3px 7px; font: 700 12px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; color: #231400; background: #ffb020; border-radius: 3px; pointer-events: none; }
-  .rk-arm { display: grid; gap: 3px; padding: 4px 6px; border: 1px solid var(--card-rule); border-radius: 3px; font-size: 11.5px; line-height: 1.25; color: var(--ink-dim); }
-  .rk-arm.on { border-color: #ff6b6b; }
-  .rk-arm .ar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 7px; }
-  .rk-arm label { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
-  .rk-arm input { width: 3.4em; padding: 1px 2px; font: inherit; color: var(--ink); background: none; border: 1px solid var(--card-rule); border-radius: 2px; }
-  .rk-arm select { padding: 1px; font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--card-rule); border-radius: 2px; }
-  .rk-arm .arbtn { appearance: none; padding: 3px 8px; font: 700 11px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #ff6b6b; background: none; border: 1px solid #ff6b6b; border-radius: 2px; cursor: pointer; }
-  .rk-arm.on .arbtn { color: #1a0505; background: #ff6b6b; }
-  .rk-arm .arbtn:disabled { color: var(--ink-dim); border-color: var(--card-rule); cursor: default; }
-  .rk-arm .arwhy { color: var(--ink); }
-  .rk-arm .arlog .ok { color: #19e37a; }
-  .rk-arm .arlog .err { color: #ff6b6b; }
+  .rk-tune { display: grid; gap: 3px; padding: 4px 6px; border: 1px solid var(--card-rule); border-radius: 3px; font-size: 11.5px; line-height: 1.25; color: var(--ink-dim); }
+  .rk-tune .ar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 7px; }
+  .rk-tune label { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .rk-tune input { width: 3.4em; padding: 1px 2px; font: inherit; color: var(--ink); background: none; border: 1px solid var(--card-rule); border-radius: 2px; }
   .rk-over .rk-stats .stat .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }   /* the totals card's header type */
   .rk-over .rk-game .bd-badge { height: 26.6px; padding: 0 10.6px 0 0; font-size: 17.8px; border-radius: 4px; position: absolute; top: 0; }   /* the two top badges: 33% bigger than the ones under the axis, helmets included */
   .rk-over .rk-game .bd-bhelm { height: 39.2px; margin: -6.3px 3.6px -6.3px -8.9px; }
