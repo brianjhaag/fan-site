@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw0yd27r";
-import { Fan } from "./hosts.js?v=mw0yd27r";
-import { weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0yd27r";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0yd27r";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0yd27r";
-import { demoAway, setBet } from "./trade.js?v=mw0yd27r";
+import { espnState } from "./espn.js?v=mw0yq4ae";
+import { Fan } from "./hosts.js?v=mw0yq4ae";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0yq4ae";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0yq4ae";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0yq4ae";
+import { demoAway, setBet } from "./trade.js?v=mw0yq4ae";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -83,7 +83,7 @@ import { demoAway, setBet } from "./trade.js?v=mw0yd27r";
       });
       return [el("h3", null, "Sunday Ticket"), note, b];
     };
-    const networkRows = () => [el("h3", null, "Network links"), el("p", "fan-note", "YouTube TV links. Open a channel in your browser, copy its address and paste it here."), ...NETWORKS.map(n => {
+    const networkRows = () => [el("h3", null, "Network links"), el("p", "fan-note", "YouTube TV links. Open a channel in your browser, copy its address and paste it here."), ...allNetworks().map(n => {
       const row = el("label", "fan-net"), c = el("input");
       c.type = "url"; c.value = networkLinks[n] || ""; c.placeholder = "https://tv.youtube.com/watch/..."; c.spellcheck = false;
       c.addEventListener("input", () => setNetworkLink(n, c.value));
@@ -275,13 +275,14 @@ import { demoAway, setBet } from "./trade.js?v=mw0yd27r";
       return watchSetup === "hdhomerun" ? [s, hdhrBox()] : [s];
     };
     // An HDHomeRun: its address on the user's network, then its channels read from it, each broadcast network matched to one. The match is guessed from Chicago's call signs and set by hand on the Telecasts tab.
-    const CALL_SIGNS = { WBBM: "CBS", WFLD: "Fox", WMAQ: "NBC", WLS: "ABC", WGN: "CW" };
+    const CALL_SIGNS = { WBBM: "CBS", WFLD: "Fox", WMAQ: "NBC", WLS: "ABC", WGN: "CW", KCNC: "CBS", KDVR: "Fox", KUSA: "NBC", KMGH: "ABC", KWGN: "CW" };   // Chicago's, then Denver's
+    const guessOf = c => { const name = String(c.name || "").toUpperCase(), sign = name.split(/[-\s]/)[0]; return CALL_SIGNS[sign] || allNetworks().find(n => n.toUpperCase() === name || n.toUpperCase() === sign) || null; };
     let hdhrList = null;   // the device's channels, read this session
     const hdhrRead = () => Fan.hdhrLineup(hdhr.ip).then(r => {
       if (!r.ok) throw new Error(r.error);
       hdhrList = r.channels;
       const guessed = { ...hdhr.channels };
-      BROADCAST.forEach(n => { if (guessed[n]) return; const c = hdhrList.find(x => CALL_SIGNS[String(x.name || "").toUpperCase().split(/[-\s]/)[0]] === n); if (c) guessed[n] = String(c.number); });
+      allNetworks().forEach(n => { if (guessed[n]) return; const c = hdhrList.find(x => guessOf(x) === n); if (c) guessed[n] = String(c.number); });
       setHdhr({ channels: guessed });
       return r.channels.length;
     });
@@ -293,19 +294,21 @@ import { demoAway, setBet } from "./trade.js?v=mw0yd27r";
       b.title = Fan.hdhrLineup ? "Read its channel list" : "Needs a connector of 0.33 or later";
       b.addEventListener("click", () => {
         setHdhr({ ip: ip.value.trim() }); b.disabled = true; note.textContent = "Reading…";
-        hdhrRead().then(n => { note.textContent = `${n} channels; ` + (BROADCAST.filter(x => hdhr.channels[x]).map(x => `${x} ${hdhr.channels[x]}`).join(", ") || "set the networks on the Telecasts tab"); }, e => { note.textContent = "Couldn't: " + e.message; }).then(() => { b.disabled = false; });
+        hdhrRead().then(n => { note.textContent = `${n} channels; ` + (allNetworks().filter(x => hdhr.channels[x]).map(x => `${x} ${hdhr.channels[x]}`).join(", ") || "set the networks on the Telecasts tab"); }, e => { note.textContent = "Couldn't: " + e.message; }).then(() => { b.disabled = false; });
       });
       d.append(ip, b, note);
       return d;
     };
-    // The Telecasts tab's part for an HDHomeRun: each broadcast network's channel, picked from the device's list.
+    // The Telecasts tab's part for an HDHomeRun: every network's channel, picked from the device's list, and Rescan, which reads the list again and fills in what it can match (the user's, Nov 3 2026).
     const hdhrRows = () => {
       if (watchSetup !== "hdhomerun") return [];
       const box = el("div"), draw = () => {
-        box.replaceChildren(el("h3", null, "HDHomeRun channels"));
+        const rescan = el("button", "fan-start", "Rescan"); rescan.type = "button"; rescan.disabled = !Fan.hdhrLineup || !hdhr.ip; rescan.title = "Read its channels again and match them to networks";
+        rescan.addEventListener("click", () => { rescan.disabled = true; hdhrList = null; draw(); });
+        box.replaceChildren(el("h3", null, "HDHomeRun channels"), rescan);
         if (!hdhr.ip) { box.append(el("p", "fan-note", "Set its address in the Provider box on the Application tab.")); return; }
         if (!hdhrList) { box.append(el("p", "fan-note", "Reading its channels…")); if (Fan.hdhrLineup) hdhrRead().then(draw, e => { box.lastChild.textContent = "Couldn't read its channels: " + e.message; }); return; }
-        BROADCAST.forEach(n => {
+        allNetworks().forEach(n => {
           const row = el("label", "fan-net"), s = el("select", "fan-pick");
           [["", "None"], ...hdhrList.map(c => [String(c.number), `${c.number} ${c.name || ""}`])].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; s.append(o); });
           s.value = hdhr.channels[n] || "";

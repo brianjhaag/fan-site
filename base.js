@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0yd27r";
-import { BOOK_ICONS } from "./data/assets.js?v=mw0yd27r";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0yd27r";
-import { Calc } from "./calc.js?v=mw0yd27r";
-import { Fan } from "./hosts.js?v=mw0yd27r";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0yq4ae";
+import { BOOK_ICONS } from "./data/assets.js?v=mw0yq4ae";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0yq4ae";
+import { Calc } from "./calc.js?v=mw0yq4ae";
+import { Fan } from "./hosts.js?v=mw0yq4ae";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -107,7 +107,9 @@ import { Fan } from "./hosts.js?v=mw0yd27r";
     return true;
   }
   // The networks the slates name, each with a link the user pastes in the settings window. Claude's default list. Kept per browser.
-  const NETWORKS = ["CBS", "Fox", "NBC", "ABC", "ESPN", "ESPN2", "SEC Network", "BTN", "CW", "Peacock", "NFL Network", "Prime Video", "TNT", "truTV", "NBA TV", "NHL Network", "Altitude Sports"];   // the NBA's and NHL's national networks and Colorado's own (Nov 3 2026)
+  // Every network Claude knows of (the user's word, Nov 3 2026: "a link for every network you know of"): broadcast, national cable, streaming, then Colorado's own. allNetworks adds any other a game names, the regional ones mostly.
+  const NETWORKS = ["CBS", "Fox", "NBC", "ABC", "CW", "ION", "ESPN", "ESPN2", "ESPNU", "ESPNews", "ESPN+", "ESPN Deportes", "TNT", "truTV", "TBS", "USA Network", "FS1", "FS2", "NFL Network", "NBA TV", "NHL Network", "MLB Network", "CBS Sports Network", "SEC Network", "BTN", "ACC Network", "Golf Channel",
+    "Peacock", "Prime Video", "Paramount+", "Netflix", "Apple TV", "HBO Max", "Disney+", "Hulu", "YouTube", "NFL+", "DAZN", "Altitude Sports"];   // the NBA's and NHL's national networks and Colorado's own (Nov 3 2026)
   let networkLinks = {};
   try { const v = JSON.parse(localStorage.getItem("fan.networks")); if (v && typeof v === "object") networkLinks = v; } catch (e) {}
   function setNetworkLink(n, url) {
@@ -134,6 +136,7 @@ import { Fan } from "./hosts.js?v=mw0yd27r";
   const isMonday = g => new Date(g.t).toLocaleDateString("en-US", { weekday: "short", timeZone: "America/New_York" }) === "Mon";
   const NETWORK_RULES = [[isMonday, "ESPN", "ABC"]];   // ESPN's Monday night games are on ABC too [U, Nov 2 2026]
   const gameNetworks = g => { const nets = String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean); NETWORK_RULES.forEach(([when, has, add]) => { if (nets.includes(has) && !nets.includes(add) && when(g)) nets.push(add); }); return nets; };
+  const allNetworks = () => { const seen = new Set(NETWORKS); ALL_GAMES.forEach(g => gameNetworks(g).forEach(n => seen.add(n))); return [...seen]; };
   // What a game's Live telecast button does, so also whether it's lit: one decision for both. An HDHomeRun channel for one of its networks, when that's how the user watches;
   // else a pasted https link for one of them; else null.
   function telecastFor(g) {
@@ -206,7 +209,7 @@ import { Fan } from "./hosts.js?v=mw0yd27r";
     return tag;
   }
 
-  const APP_VERSION = "0.38.6";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.38.7";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -972,4 +975,4 @@ import { Fan } from "./hosts.js?v=mw0yd27r";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { ticketFromFill, weirdFills, setWeirdFills, programBehind, setAcc, LAYOUTS, isTall, layoutPref, setLayoutPref, WATCH_SETUPS, nick, telecastFor, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+export { allNetworks, ticketFromFill, weirdFills, setWeirdFills, programBehind, setAcc, LAYOUTS, isTall, layoutPref, setLayoutPref, WATCH_SETUPS, nick, telecastFor, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
