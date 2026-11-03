@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0yq4ae";
-import { BOOK_ICONS } from "./data/assets.js?v=mw0yq4ae";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0yq4ae";
-import { Calc } from "./calc.js?v=mw0yq4ae";
-import { Fan } from "./hosts.js?v=mw0yq4ae";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0z2fzp";
+import { BOOK_ICONS } from "./data/assets.js?v=mw0z2fzp";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0z2fzp";
+import { Calc } from "./calc.js?v=mw0z2fzp";
+import { Fan } from "./hosts.js?v=mw0z2fzp";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -143,7 +143,9 @@ import { Fan } from "./hosts.js?v=mw0yq4ae";
     const nets = gameNetworks(g), ch = watchSetup === "hdhomerun" && hdhr.ip ? nets.find(n => hdhr.channels[n]) : null;
     if (ch) return { how: "hdhr", network: ch, channel: hdhr.channels[ch] };
     const ln = nets.find(n => /^https:\/\//i.test(networkLinks[n] || ""));
-    return ln ? { how: "link", network: ln, url: networkLinks[ln] } : null;
+    if (!ln) return null;
+    // ESPN+ (ESPN Select) opens the game's own page on espn.com, whose Watch button plays it for a subscriber signed in there (the user's, Nov 3 2026); its pasted link only says the user has it
+    return { how: "link", network: ln, url: ln === "ESPN+" && g.eid ? `https://www.espn.com/${leagueOf(g).code.toLowerCase()}/game/_/gameId/${g.eid}` : networkLinks[ln] };
   }
   // A word at the bottom of the screen for a few seconds, for what a press couldn't do.
   function toast(text) { let t = document.querySelector(".fan-toast"); if (!t) { t = el("div", "fan-toast"); document.body.append(t); } t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 7000); }
@@ -209,7 +211,7 @@ import { Fan } from "./hosts.js?v=mw0yq4ae";
     return tag;
   }
 
-  const APP_VERSION = "0.38.7";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.38.8";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on

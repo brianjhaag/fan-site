@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw0yq4ae";
-import { Fan } from "./hosts.js?v=mw0yq4ae";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0yq4ae";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0yq4ae";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0yq4ae";
-import { demoAway, setBet } from "./trade.js?v=mw0yq4ae";
+import { espnState } from "./espn.js?v=mw0z2fzp";
+import { Fan } from "./hosts.js?v=mw0z2fzp";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0z2fzp";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0z2fzp";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0z2fzp";
+import { demoAway, setBet } from "./trade.js?v=mw0z2fzp";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -85,7 +85,7 @@ import { demoAway, setBet } from "./trade.js?v=mw0yq4ae";
     };
     const networkRows = () => [el("h3", null, "Network links"), el("p", "fan-note", "YouTube TV links. Open a channel in your browser, copy its address and paste it here."), ...allNetworks().map(n => {
       const row = el("label", "fan-net"), c = el("input");
-      c.type = "url"; c.value = networkLinks[n] || ""; c.placeholder = "https://tv.youtube.com/watch/..."; c.spellcheck = false;
+      c.type = "url"; c.value = networkLinks[n] || ""; c.placeholder = n === "ESPN+" ? "https://www.espn.com/watch/ (each game opens its own page)" : "https://tv.youtube.com/watch/..."; c.spellcheck = false;
       c.addEventListener("input", () => setNetworkLink(n, c.value));
       row.append(n, c);
       return row;
