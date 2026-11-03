@@ -1,10 +1,11 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw13rp77";
-import { Fan } from "./hosts.js?v=mw13rp77";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw13rp77";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw13rp77";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw13rp77";
-import { demoAway, setBet } from "./trade.js?v=mw13rp77";
+import { espnState } from "./espn.js?v=mw14mp7l";
+import { Fan } from "./hosts.js?v=mw14mp7l";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw14mp7l";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw14mp7l";
+import { wallPanel } from "./wall.js?v=mw14mp7l";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw14mp7l";
+import { demoAway, setBet } from "./trade.js?v=mw14mp7l";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -72,60 +73,68 @@ import { demoAway, setBet } from "./trade.js?v=mw13rp77";
       Fan.screens.list().then(draw, () => box.replaceChildren(el("p", "fan-note", "Couldn't read the monitors.")));
       return box;
     };
-    // The monitor map waits behind a big button, so the networks get the tab (the user's, Nov 3 2026); it stays open or closed for the session.
+    // The Telecasts tab (the user's, Nov 3 2026: "a sports bar controlling a bunch of screens they can see from one place"): the wall first, this computer and every screen that
+    // joined it, with the day's games; then its two switches, each with its own address; then, on a computer whose wall takes no one, joining another computer's wall as a screen.
+    // With a connector from before the wall, the monitor map waits behind its own button, as before.
     let monitorsOpen = false;
     const telecastRows = () => {
-      const grid = el("div", "fan-telecasts"), links = el("div"), mon = el("button", "fan-start fan-monbtn"), picker = el("div");
+      const grid = el("div", "fan-telecasts"), links = el("div");
+      links.append(...hdhrRows(), ...networkRows(), ...captureRows());
+      if (Fan.wall) { if (Fan.screen && Fan.screen.of) grid.append(screenRows(), links); else grid.append(wallPanel(), doorRows(), screenRows(), links); return [grid]; }
+      const mon = el("button", "fan-start fan-monbtn"), picker = el("div");
       const set = () => { mon.textContent = monitorsOpen ? "Close monitors" : "Configure monitors"; mon.setAttribute("aria-expanded", String(monitorsOpen)); picker.hidden = !monitorsOpen; if (monitorsOpen && !picker.childNodes.length) picker.append(screenPicker()); };
       mon.type = "button"; mon.addEventListener("click", () => { monitorsOpen = !monitorsOpen; set(); });
       if (!Fan.screens) { mon.disabled = true; monitorsOpen = false; }   // dimmed with no connector, which is what reads the monitors and places the windows
       set();
-      links.append(...hdhrRows(), ...networkRows(), ...captureRows());
       const row = el("div", "fan-monrow"); row.append(mon);
-      grid.append(remoteRows(), houseRows()); if (!Fan.screens) row.append(el("span", "fan-note", Fan.hostHello ? "The connector can't place telecast windows on this computer, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it reads your monitors and places each telecast's window. Without it, a telecast opens as a plain link."));
+      if (!Fan.screens) row.append(el("span", "fan-note", Fan.hostHello ? "The connector can't place telecast windows on this computer, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it reads your monitors and places each telecast's window. Without it, a telecast opens as a plain link."));
       grid.append(row, picker, links);
       return [grid];
     };
-    // The remote (the user's, Nov 3 2026; PLAN.md E, 3b): a tablet or phone on the home network opens this page from the connector and its telecasts open on this computer.
-    // The house (PLAN.md E, step 3): on a computer whose remote is off, joining another computer's house as one of its screens, with the address its Telecasts tab shows; on the hub, the screens that joined.
-    const houseRows = () => {
+    // The wall's two switches, on the computer that runs it: other computers may join as screens, and tablets or phones may control it. Each has its own code and address.
+    const doorRows = () => {
       const box = el("div", "fan-remote");
-      if (!Fan.house) return box;
-      const draw = () => {
-        const j = Fan.house.joined;
-        if (j) {
-          const leave = el("button", "fan-start", "Leave"); leave.type = "button";
-          leave.addEventListener("click", () => { leave.disabled = true; Fan.house.set({ op: "leave" }).then(draw, e => { box.append(el("p", "fan-note", "Couldn't: " + e.message)); leave.disabled = false; }); });
-          box.replaceChildren(el("p", "fan-remote-here", `This computer is a screen of the house at ${j.hub}, as ${j.name}. Its Screens view puts telecasts here.`), leave);
-          return;
-        }
-        if (Fan.remote && Fan.remote.info.on) {   // the hub: its screens
-          box.replaceChildren(el("p", "fan-note", "Other computers join this house from their own Telecasts tab, with the address above. Joined computers show in Screens."));
-          return;
-        }
-        const ip = el("input"), name = el("input"), go = el("button", "fan-start", "Join");
-        ip.type = "text"; ip.placeholder = "http://192.168.1.20:5280/?pair=123456"; ip.spellcheck = false; ip.setAttribute("aria-label", "The house's address");
-        name.type = "text"; name.value = Fan.house.name; name.setAttribute("aria-label", "This computer's name");
-        go.type = "button";
-        go.addEventListener("click", () => { go.disabled = true; Fan.house.set({ op: "join", address: ip.value, name: name.value }).then(draw, e => { box.lastChild.textContent = "Couldn't: " + e.message; go.disabled = false; }); });
-        const row = el("div", "fan-houserow"); row.append(ip, name, go);
-        box.replaceChildren(el("h3", null, "Join a house"), el("p", "fan-note", "To make this computer one of another's screens: paste the address its Telecasts tab shows, under the tablet or phone checkbox."), row, el("p", "fan-note", ""));
+      if (!Fan.door) return box;
+      if (Fan.door.here) { box.append(el("p", "fan-remote-here", "This is a remote for the wall: telecasts you start here open on its computers.")); return box; }
+      const draw = (note = "") => {
+        const d = Fan.door.info, row = (kind, label, on, url, how) => {
+          const lab = el("label", "fan-check"), c = el("input");
+          c.type = "checkbox"; c.checked = !!on;
+          c.addEventListener("change", () => { c.disabled = true; Fan.door.set(kind, c.checked).then(() => fill(), e => draw("Couldn't: " + e.message)); });
+          lab.append(c, label);
+          const out = [lab];
+          if (on && url) out.push(el("p", "fan-note", how), el("div", "fan-remote-url", url));
+          else if (on) out.push(el("p", "fan-note", "On, but this computer's address on the network couldn't be found."));
+          return out;
+        };
+        box.replaceChildren(el("h3", null, "This computer's wall"),
+          ...row("screens", "Let other computers join this wall as screens", d.screens.on, d.screens.url, "On each of the other computers: Settings, Telecasts, Join a wall, and paste this."),
+          ...row("remote", "Let a tablet or phone control this wall", d.remote.on, d.remote.url, "On the tablet or phone, open this in Chrome, then Add to Home Screen. It pairs that device, once."));
+        if (d.open) box.append(el("p", "fan-note", "If Windows asks whether Fan's connector may use the network, choose Private networks."));
+        if (note) box.append(el("p", "fan-note", note));
       };
       draw();
       return box;
     };
-    const remoteRows = () => {
+    // This computer as a screen on another computer's wall: join with the screens address that one's Telecasts tab shows, or leave. Not while this computer's own wall takes screens.
+    const screenRows = () => {
       const box = el("div", "fan-remote");
-      if (!Fan.remote) return box;
-      if (Fan.remote.here) { box.append(el("p", "fan-remote-here", "This is the remote: telecasts you start here open on the computer running Fan, in its spots, with sound.")); return box; }
+      if (!Fan.screen || (Fan.door && Fan.door.info.screens.on)) return box;
       const draw = () => {
-        const i = Fan.remote.info, lab = el("label", "fan-check"), c = el("input");
-        c.type = "checkbox"; c.checked = !!i.on;
-        c.addEventListener("change", () => { c.disabled = true; Fan.remote.set(c.checked).then(draw, e => { box.append(el("p", "fan-note", "Couldn't: " + e.message)); c.disabled = false; }); });
-        lab.append(c, "Let a tablet or phone on this network control telecasts");
-        box.replaceChildren(lab);
-        if (i.on && i.url) box.append(el("p", "fan-note", "On the iPad, open this in Chrome, then use Add to Home Screen. It pairs that device, once."), el("div", "fan-remote-url", i.url), el("p", "fan-note", "If Windows asks whether Fan's connector may use the network, choose Private networks. Telecasts started there open here, placed in your spots, with sound."));
-        else if (i.on) box.append(el("p", "fan-note", "On, but this computer's address on the network couldn't be found."));
+        const j = Fan.screen.of;
+        if (j) {
+          const leave = el("button", "fan-start", "Leave"); leave.type = "button";
+          leave.addEventListener("click", () => { leave.disabled = true; Fan.screen.set({ op: "leave" }).then(() => fill(), e => { box.append(el("p", "fan-note", "Couldn't: " + e.message)); leave.disabled = false; }); });
+          box.replaceChildren(el("p", "fan-remote-here", `This computer is a screen on the wall at ${j.wall}, as ${j.name}. That wall puts telecasts here.`), leave);
+          return;
+        }
+        const ip = el("input"), name = el("input"), go = el("button", "fan-start", "Join"), say = el("p", "fan-note", "");
+        ip.type = "text"; ip.placeholder = "http://192.168.1.20:5280/?screen=123456"; ip.spellcheck = false; ip.setAttribute("aria-label", "The wall's screens address");
+        name.type = "text"; name.value = Fan.screen.name; name.setAttribute("aria-label", "This computer's name on the wall");
+        go.type = "button";
+        go.addEventListener("click", () => { go.disabled = true; say.textContent = "Joining…"; Fan.screen.set({ op: "join", address: ip.value, name: name.value }).then(() => fill(), e => { say.textContent = "Couldn't: " + e.message; go.disabled = false; }); });
+        const row = el("div", "fan-joinrow"); row.append(ip, name, go);
+        box.replaceChildren(el("h3", null, "Join a wall"), el("p", "fan-note", "To make this computer a screen on another computer's wall: paste the screens address that computer's Telecasts tab shows, and name this one."), row, say);
       };
       draw();
       return box;
@@ -446,5 +455,6 @@ import { demoAway, setBet } from "./trade.js?v=mw13rp77";
     $("fanClose").addEventListener("click", () => open(false));
     win.addEventListener("close", toNow);   // Escape closes it too
     setTimeout(() => { fill(); open(true); }, 0);
-    fillSettings = () => { if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
+    let remoteTab = false;   // a remote opens on Telecasts, the wall: that's its whole job
+    fillSettings = () => { if (Fan.door && Fan.door.here && !remoteTab) { remoteTab = true; tab = "telecasts"; } if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
 export { fillSettings, findConnector };

@@ -270,14 +270,14 @@
   .fan-remote .fan-check { font-size: 18px; }
   .fan-remote-url { margin: 6px 0; font: 600 26px/1.2 var(--font-mono); color: var(--accent); user-select: all; }   /* typed into the iPad, so large */
   .fan-remote-here { margin: 0; font-size: 18px; color: var(--accent); }
-  .fan-houserow { display: flex; gap: 8px; align-items: center; }
-  .fan-houserow input { flex: 1; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); color: var(--ink); font: 400 15px var(--font-mono); }
-  .fan-houserow input + input { flex: 0 0 160px; }
+  .fan-joinrow { display: flex; gap: 8px; align-items: center; }
+  .fan-joinrow input { flex: 1; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); color: var(--ink); font: 400 15px var(--font-mono); }
+  .fan-joinrow input + input { flex: 0 0 160px; }
 
-  /* The Screens view (wall.js): the house's computers, their monitors and telecast windows, and the day's games */
-  .screens { overflow: auto; }
+  /* The wall (wall.js), at the top of the Telecasts tab: the computers, their monitors and telecast windows, and the day's games */
+  .wl-panel { padding: 0 12px 12px; border-bottom: 1px solid var(--paper-edge); }
   .wl-top { display: flex; align-items: baseline; gap: 16px; }
-  .wl-top h2 { margin: 0; }
+  .wl-top h3 { margin: 0; padding: 0 !important; }
   .wl-note { margin: 0 !important; color: var(--accent) !important; font-size: 14px !important; }
   .wl-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 24px; margin-top: 10px; }
   .wl-wall { display: flex; flex-wrap: wrap; gap: 20px; align-content: start; }

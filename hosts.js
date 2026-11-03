@@ -172,13 +172,11 @@ Fan.connectStore = async () => {
     read: after => window.fetch("/connector/algos" + (after == null ? "" : "?after=" + after)).then(r => r.json()),
     ask: q => window.fetch("/connector/algos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q) }).then(r => r.json())
   };
-  if (hi && hi.remote && hi.remote.available) Fan.remote = {   // a tablet or phone on the home network as a remote (PLAN.md E, 3b): its switch, and whether this page is the remote
-    info: hi.remote, here: !!hi.fromRemote,
-    set: on => window.fetch("/connector/remote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) }).then(r => r.json()).then(r => { if (!r.ok) throw new Error(r.error); Fan.remote.info = r.remote; return r.remote; })
-  };
-  if (hi && hi.wall) {   // the house's wall (wall.js): this connector as the hub of the user's computers, and this computer as a screen of another's
-    Fan.wall = { get: () => window.fetch("/connector/wall").then(r => r.json()), act: body => window.fetch("/connector/wall", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()) };
-    if (!hi.fromRemote) Fan.house = { joined: hi.house || null, name: hi.machineName || "", set: body => window.fetch("/connector/house", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).then(r => { if (!r.ok) throw new Error(r.error); Fan.house.joined = r.house || null; return r.house; }) };
+  if (hi && hi.door && hi.wall) {   // the wall (wall.js, PLAN.md E step 3): this connector runs it; its home-network door's two switches, screens and remote control; and this computer as a screen on another's
+    const post = (path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+    Fan.wall = { get: () => window.fetch("/connector/wall").then(r => r.json()), act: body => post("/connector/wall", body) };
+    Fan.door = { info: hi.door, here: !!hi.fromRemote, set: (kind, on) => post("/connector/door", { kind, on }).then(r => { if (r.door) Fan.door.info = r.door; if (!r.ok) throw new Error(r.error); return r.door; }) };
+    if (!hi.fromRemote) Fan.screen = { of: hi.screenOf || null, name: hi.machineName || "", set: body => post("/connector/screen", body).then(r => { if (!r.ok) throw new Error(r.error); Fan.screen.of = r.screenOf || null; return r.screenOf; }) };
   }
   if (hi && hi.telecast) {
     const send =(path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());

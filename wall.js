@@ -1,12 +1,13 @@
-// The Screens view (the house's wall, PLAN.md E step 3; the user's, Nov 3 2026), opened by the Screens button as Code is: every computer of the house with its monitors and the telecast
-// windows on them, where they really sit, and the day's games to put on any of them. The hub (this page's connector) keeps it; the other computers are its screens (house.rs in the connector).
-// Tap a window for its sound, which mutes every other stream in the house; x closes it; Snap back puts a computer's windows back in their spots; each computer's monitor and layout pick its spots.
-import { Fan } from "./hosts.js?v=mw13rp77";
-import { $, el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt, view } from "./base.js?v=mw13rp77";
-import { abbr } from "./leagues.js?v=mw13rp77";
+// The wall (PLAN.md E step 3; the user's, Nov 3 2026: "a sports bar controlling a bunch of screens they can see from one place"), at the top of the Telecasts tab: this computer and every
+// screen that joined its wall, with their monitors and the telecast windows on them, where they really sit, and the day's games to put on any of them. This page's connector keeps it;
+// the other computers are its screens (wall.rs in the connector). Tap a window for its sound, which mutes every other telecast on the wall; x closes it; Snap back puts a computer's
+// windows back in their spots; each computer's monitor and layout pick its spots.
+import { Fan } from "./hosts.js?v=mw14mp7l";
+import { el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw14mp7l";
+import { abbr } from "./leagues.js?v=mw14mp7l";
 
-const WALL_MS = 3000;   // how often the open Screens view reads the wall
-let wallTimer = null, wallData = null, wallNote = "";
+const WALL_MS = 3000;   // how often the open Telecasts tab reads the wall
+let wallTimer = null, wallData = null, wallNote = "", wallBox = null, wallShown = "";
 
 const wallAct = (body, say) => Fan.wall.act(body).then(r => { wallNote = r.ok ? (say || "") : "Couldn't: " + r.error; readWall(); }, e => { wallNote = "Couldn't: " + e.message; drawWall(); });
 function readWall() { if (!Fan.wall) return; Fan.wall.get().then(d => { wallData = d; drawWall(); }, () => {}); }
@@ -71,28 +72,34 @@ function gameRows(machines) {
   return list;
 }
 
+// Redrawn only when something changed, and not while a menu in it is open, so a pick isn't snatched away.
 function drawWall() {
-  const box = $("screens");
-  if (!box || view !== "screens") return;
-  if (!Fan.wall) { box.replaceChildren(el("h2", null, "Screens"), el("p", "fan-note", "The wall needs the Fan connector: it holds every computer's screens.")); return; }
-  if (!wallData) { box.replaceChildren(el("h2", null, "Screens"), el("p", "fan-note", "Reading the wall…")); return; }
+  const box = wallBox;
+  if (!box || !box.isConnected) return;
+  if (!wallData) { box.replaceChildren(el("h3", null, "Wall"), el("p", "fan-note", "Reading the wall…")); return; }
+  const now = JSON.stringify([wallData, wallNote, leaguesOn.size]);
+  if (now === wallShown && box.childNodes.length > 1) return;
+  if (box.contains(document.activeElement) && document.activeElement.tagName === "SELECT") return;
+  wallShown = now;
   const ms = wallData.machines || [], head = el("div", "wl-top");
-  head.append(el("h2", null, "Screens"), el("small", "wl-note", wallNote));
+  head.append(el("h3", null, "Wall"), el("small", "wl-note", wallNote));
   const off = el("button", "fan-start", "Sound off"); off.type = "button"; off.disabled = !wallData.sound;
   off.addEventListener("click", () => wallAct({ op: "sound", machine: "self", target: null }, "Sound off"));
   head.append(off);
   const wall = el("div", "wl-wall");
-  if (!ms.length) wall.append(el("p", "fan-note", "No screens yet. This computer shows here once it can open telecasts; other computers join from their own Telecasts tab."));
+  if (!ms.length) wall.append(el("p", "fan-note", "No screens yet. This computer shows here once it can open telecasts; other computers join below, with this computer's screens switch on."));
   ms.forEach(m => wall.append(machineBox(m, wallData.sound)));
   const body = el("div", "wl-body");
   body.append(wall, gameRows(ms));
   box.replaceChildren(head, body);
 }
 
-// Drawn when Screens opens, then read every few seconds while it's open.
-function renderWall() {
+// The panel for the Telecasts tab, read every few seconds while it's on screen.
+function wallPanel() {
+  wallBox = el("div", "wl-panel"); wallShown = "";
   drawWall(); readWall();
   clearInterval(wallTimer);
-  wallTimer = setInterval(() => { if (view !== "screens" || document.hidden) { if (view !== "screens") clearInterval(wallTimer); return; } readWall(); }, WALL_MS);
+  wallTimer = setInterval(() => { if (!wallBox || !wallBox.isConnected) { clearInterval(wallTimer); return; } if (!document.hidden && wallBox.offsetParent) readWall(); }, WALL_MS);
+  return wallBox;
 }
-export { renderWall };
+export { wallPanel };
