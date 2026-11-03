@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw0xza50";
-import { Fan } from "./hosts.js?v=mw0xza50";
-import { weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0xza50";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0xza50";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0xza50";
-import { demoAway, setBet } from "./trade.js?v=mw0xza50";
+import { espnState } from "./espn.js?v=mw0yd27r";
+import { Fan } from "./hosts.js?v=mw0yd27r";
+import { weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0yd27r";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0yd27r";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0yd27r";
+import { demoAway, setBet } from "./trade.js?v=mw0yd27r";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.

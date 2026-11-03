@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0xza50";
-import { BOOK_ICONS } from "./data/assets.js?v=mw0xza50";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0xza50";
-import { Calc } from "./calc.js?v=mw0xza50";
-import { Fan } from "./hosts.js?v=mw0xza50";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0yd27r";
+import { BOOK_ICONS } from "./data/assets.js?v=mw0yd27r";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0yd27r";
+import { Calc } from "./calc.js?v=mw0yd27r";
+import { Fan } from "./hosts.js?v=mw0yd27r";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -206,7 +206,7 @@ import { Fan } from "./hosts.js?v=mw0xza50";
     return tag;
   }
 
-  const APP_VERSION = "0.38.5";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.38.6";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -843,6 +843,7 @@ import { Fan } from "./hosts.js?v=mw0xza50";
     LEAGUES.forEach(k => { $(k).hidden = v !== k; });
     ["ledger", "xy", "season", "playbook", "code"].forEach(k => $("tab-" + k).setAttribute("aria-selected", String(v === k)));
     document.querySelectorAll(".weektabs [data-week]").forEach(b => { const w = Number(b.dataset.week); b.classList.toggle("now", w === weekNow()); b.setAttribute("aria-selected", String(!SECTIONS[v] && w === curWeek)); });   // Graphs belongs to the selected week; one top tab is active at a time
+    syncDayArrows();
     changed("view", "view:" + v);
     syncLeaguePick();
   }
@@ -850,8 +851,28 @@ import { Fan } from "./hosts.js?v=mw0xza50";
   // Season stats, Playbook and Ledger: clicking the active one closes it, onto the current week's cards.
   ["season", "playbook", "ledger", "code"].forEach(k => $("tab-" + k).addEventListener("click", () => { if (view === k) { detailGame = null; switchWeek(weekNow()); } else showView(k); }));
   // The week tabs follow the league: Weeks 1-17, or for a daily league (the NBA, the NHL) yesterday, for its results, then its days from today (leagues.js), the spare tabs hidden.
-  // A daily league's arrows move its tabs a day at a time through the season (Nov 3 2026): dayShift days later than the usual eight, never past the season's first day or the usual last tab.
+  // A daily league's arrows step the open day, one a press, through the season (the user's, Nov 3 2026): the dates slide under the highlight, which stays in its slot,
+  // until the tabs reach the season's first day or the last day pulled (today + days), and then the highlight moves along them instead. dayShift: days later than the usual eight.
   let dayShift = 0;
+  const maxShift = l => LEAGUE_DEFS[l].days - 6;   // the last tab on the last day pulled
+  const canShiftBack = l => nbaDay(dayShift - 2) >= seasonDay(l);
+  const dayTabs = () => [...document.querySelectorAll(".weektabs [data-week]")].slice(0, LEAGUE_DEFS[league].days + 1);
+  function openSlot() { const tabs = dayTabs(), i = tabs.findIndex(b => Number(b.dataset.week) === curWeek); return i >= 0 ? i : tabs.findIndex(b => Number(b.dataset.week) === weekNow()); }
+  function syncDayArrows() {
+    const daily = Calc.RULES.leagues[league].daily, i = daily ? openSlot() : -1;
+    $("dayPrev").hidden = $("dayNext").hidden = !daily;
+    $("dayPrev").disabled = !daily || (!canShiftBack(league) && i <= 0);
+    $("dayNext").disabled = !daily || (dayShift >= maxShift(league) && i >= dayTabs().length - 1);
+  }
+  function stepDay(by) {
+    const i = openSlot();
+    let to = i + by;
+    if (by > 0 ? dayShift < maxShift(league) : canShiftBack(league)) { dayShift += by; labelTabs(league); to = i; }   // the dates slide under the highlight
+    const b = dayTabs()[to];
+    if (!b) return;
+    detailGame = null;
+    switchWeek(Number(b.dataset.week));
+  }
   const seasonDay = l => Number(new Date(LEAGUE_DEFS[l].start).toISOString().slice(0, 10).replace(/-/g, ""));
   function labelTabs(l) {
     const daily = Calc.RULES.leagues[l].daily;
@@ -864,12 +885,10 @@ import { Fan } from "./hosts.js?v=mw0xza50";
       b.classList.toggle("now", Number(b.dataset.week) === weekNow());
       b.setAttribute("aria-selected", String(!SECTIONS[view] && Number(b.dataset.week) === curWeek));
     });
-    $("dayPrev").hidden = $("dayNext").hidden = !daily;
-    $("dayPrev").disabled = !daily || nbaDay(dayShift - 2) < seasonDay(l);
-    $("dayNext").disabled = dayShift >= 0;
+    syncDayArrows();
   }
-  $("dayPrev").addEventListener("click", () => { dayShift--; labelTabs(league); });
-  $("dayNext").addEventListener("click", () => { dayShift++; labelTabs(league); });
+  $("dayPrev").addEventListener("click", () => stepDay(-1));
+  $("dayNext").addEventListener("click", () => stepDay(1));
   function setLeague(l) {
     league = l;
     document.documentElement.dataset.league = l;
