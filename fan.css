@@ -308,9 +308,7 @@
   .wl-win.loud { background: rgb(255 140 26 / .35); border-color: #ff8c1a; }
   .wl-title { display: block; padding: 2px 18px 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .wl-x { position: absolute; top: 0; right: 0; width: 18px; height: 18px; padding: 0; border: 0; background: rgb(0 0 0 / .45); color: var(--ink); cursor: pointer; font-size: 14px; line-height: 18px; }
-  .wl-pick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .wl-lay { padding: 4px 8px; background: none; border: 1px solid var(--card-rule); color: var(--ink); cursor: pointer; font-size: 13px; }
-  .wl-lay[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .wl-pick { max-width: 100%; }
   .wl-games h3 { margin: 0 0 6px; }
   .wl-game { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid var(--paper-edge); }
   .wl-gname { font-size: 16px; }
@@ -463,7 +461,8 @@
   #fanWindow .fan-st.checked b::before, #fanWindow .fan-about b[data-checked]::before { content: "✓"; margin-right: 6px; font-weight: 800; }
   @keyframes fan-pulse { 0%, 100% { background: rgb(var(--st) / .14); box-shadow: inset 0 0 0 1px rgb(var(--st) / .5), 0 0 0 0 rgb(var(--st) / 0); } 50% { background: rgb(var(--st) / .34); box-shadow: inset 0 0 0 1px rgb(var(--st) / .9), 0 0 14px 1px rgb(var(--st) / .4); } }
   .fan-note { margin: 0; padding: 8px 12px; font-size: 14px; line-height: 1.3; color: var(--ink-dim); }
-  .fan-net { display: grid; grid-template-columns: 210px minmax(0, 1fr); align-items: center; gap: 12px; padding: 6px 12px; font: 500 20px/1.15 var(--font-display); color: var(--ink); }
+  .fan-net { display: grid; grid-template-columns: 170px 170px minmax(0, 1fr); align-items: center; gap: 12px; padding: 6px 12px; font: 500 20px/1.15 var(--font-display); color: var(--ink); }
+  .fan-net select { width: 100%; }   /* each network's source, the same width in every row */
   .fan-net input { box-sizing: border-box; width: 100%; padding: 6px 8px; background: rgb(0 0 0 / .25); border: 1px solid var(--card-rule); border-radius: 2px; color: var(--ink); font: 400 15px var(--font-mono); }
   .fan-list button { appearance: none; background: none; border: 0; padding: 8px 12px; text-align: left; font: 500 18px/1.1 var(--font-display); color: var(--ink); cursor: pointer; border-radius: 2px; }
   .fan-list button:hover { background: rgb(255 255 255 / .08); }

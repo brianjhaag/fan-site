@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw17x9rh";
-import { BOOK_ICONS } from "./data/assets.js?v=mw17x9rh";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw17x9rh";
-import { Calc } from "./calc.js?v=mw17x9rh";
-import { Fan } from "./hosts.js?v=mw17x9rh";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw1botuu";
+import { BOOK_ICONS } from "./data/assets.js?v=mw1botuu";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw1botuu";
+import { Calc } from "./calc.js?v=mw1botuu";
+import { Fan } from "./hosts.js?v=mw1botuu";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -120,8 +120,8 @@ import { Fan } from "./hosts.js?v=mw17x9rh";
   }
   // The wall's manifest (the user's, Nov 3 2026): the computer that runs the wall hands its connector its network links and leagues, and a remote uses them as its own,
   // so nothing needs setting on a remote. A remote's links are the wall's, held in memory, never saved over its own.
-  function sendManifest() { if (Fan.wall && Fan.door && !Fan.door.here) Fan.wall.act({ op: "manifest", links: networkLinks, leagues: [...leaguesOn] }).catch(() => {}); }
-  function useWallLinks(links) { if (links && typeof links === "object") { networkLinks = { ...links }; changed("cards"); } }
+  function sendManifest() { if (Fan.wall && Fan.door && !Fan.door.here) Fan.wall.act({ op: "manifest", links: Object.fromEntries(Object.entries(networkLinks).filter(([n]) => liveSource(n) === "link")), leagues: [...leaguesOn] }).catch(() => {}); }   // the links in use only: a remote can't tune this computer's HDHomeRun
+  function useWallLinks(links) { if (links && typeof links === "object") { networkLinks = { ...links }; networkSource = Object.fromEntries(Object.keys(links).map(n => [n, "link"])); changed("cards"); } }   // a remote's sources are the wall's links, in memory too
   // Which monitor and layout telecasts use, picked in the settings window. Null: Fan's suggestion. Kept per browser.
   const TELECAST_LAYOUTS = [["1", 1, 1], ["2 stacked", 2, 1], ["3 stacked", 3, 1], ["2 across", 1, 2], ["2x2", 2, 2]];
   let telecastPref = null;
@@ -130,25 +130,28 @@ import { Fan } from "./hosts.js?v=mw17x9rh";
     telecastPref = p;
     try { if (p) localStorage.setItem("fan.telecast", JSON.stringify(p)); else localStorage.removeItem("fan.telecast"); } catch (e) {}
   }
-  // How this browser's user watches, its provider (the Application tab's Provider box): YouTube TV, with a link pasted per network, or an HDHomeRun on their home network, with the channel each broadcast network is on there. Kept per browser.
-  const WATCH_SETUPS = [["youtubetv", "YouTube TV"], ["hdhomerun", "HDHomeRun"]];   // HDHomeRun on the user's word (Nov 2 2026): an antenna's channels, played in VLC
+  // Where each network comes from, by type (the user's, Nov 3 2026): "link", a link pasted from any streaming service (YouTube TV, Xfinity, Peacock); "hdhr", its channel on the HDHomeRun,
+  // a tuner on the home network, played in VLC (Nov 2 2026); or "none". Other tuners join as types of their own. Kept per browser. With none picked: the HDHomeRun's channel where this browser
+  // watched by HDHomeRun in the old Provider box (before 0.45.1), else a pasted link, else a channel.
   const BROADCAST = ["CBS", "Fox", "NBC", "ABC", "CW"];   // the networks an antenna gets
-  let watchSetup = "youtubetv", hdhr = { ip: "", channels: {} };
-  try { watchSetup = localStorage.getItem("fan.watchSetup") || "youtubetv"; const v = JSON.parse(localStorage.getItem("fan.hdhomerun")); if (v && typeof v === "object") hdhr = { ip: String(v.ip || ""), channels: v.channels && typeof v.channels === "object" ? v.channels : {} }; } catch (e) {}
-  function setWatchSetup(s) { watchSetup = s; try { localStorage.setItem("fan.watchSetup", s); } catch (e) {} changed("cards"); }
+  let hdhr = { ip: "", channels: {} }, networkSource = {}, oldSetup = "";
+  try { oldSetup = localStorage.getItem("fan.watchSetup") || ""; const v = JSON.parse(localStorage.getItem("fan.hdhomerun")); if (v && typeof v === "object") hdhr = { ip: String(v.ip || ""), channels: v.channels && typeof v.channels === "object" ? v.channels : {} }; const s = JSON.parse(localStorage.getItem("fan.sources")); if (s && typeof s === "object") networkSource = s; } catch (e) {}
   function setHdhr(patch) { hdhr = { ...hdhr, ...patch }; try { localStorage.setItem("fan.hdhomerun", JSON.stringify(hdhr)); } catch (e) {} changed("cards"); }
+  const sourceOf = n => networkSource[n] || (oldSetup === "hdhomerun" && hdhr.channels[n] ? "hdhr" : networkLinks[n] ? "link" : hdhr.channels[n] ? "hdhr" : "none");
+  function setNetworkSource(n, s) { networkSource = { ...networkSource, [n]: s }; try { localStorage.setItem("fan.sources", JSON.stringify(networkSource)); } catch (e) {} sendManifest(); changed("cards"); }
+  // A network's source when it's ready to play: its link, or its channel on an HDHomeRun with an address; else null.
+  const liveSource = n => { const s = sourceOf(n); return s === "link" && /^https:\/\//i.test(networkLinks[n] || "") ? "link" : s === "hdhr" && hdhr.ip && hdhr.channels[n] ? "hdhr" : null; };
   // A game's networks: ESPN's list ("ESPN / ABC" is two), plus what ESPN's data leaves out, one rule a line: [when, has, add].
   const isMonday = g => new Date(g.t).toLocaleDateString("en-US", { weekday: "short", timeZone: "America/New_York" }) === "Mon";
   const NETWORK_RULES = [[isMonday, "ESPN", "ABC"]];   // ESPN's Monday night games are on ABC too [U, Nov 2 2026]
   const gameNetworks = g => { const nets = String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean); NETWORK_RULES.forEach(([when, has, add]) => { if (nets.includes(has) && !nets.includes(add) && when(g)) nets.push(add); }); return nets; };
   const allNetworks = () => { const seen = new Set(NETWORKS); ALL_GAMES.forEach(g => gameNetworks(g).forEach(n => seen.add(n))); return [...seen]; };
-  // What a game's Live telecast button does, so also whether it's lit: one decision for both. An HDHomeRun channel for one of its networks, when that's how the user watches;
-  // else a pasted https link for one of them; else null.
+  // What a game's Live telecast button does, so also whether it's lit: one decision for both. The first of its networks with a source ready to play, its HDHomeRun channel or its link; else null.
   function telecastFor(g) {
-    const nets = gameNetworks(g), ch = watchSetup === "hdhomerun" && hdhr.ip ? nets.find(n => hdhr.channels[n]) : null;
-    if (ch) return { how: "hdhr", network: ch, channel: hdhr.channels[ch] };
-    const ln = nets.find(n => /^https:\/\//i.test(networkLinks[n] || ""));
-    if (!ln) return null;
+    const nets = gameNetworks(g), net = nets.find(liveSource);
+    if (!net) return null;
+    if (liveSource(net) === "hdhr") return { how: "hdhr", network: net, channel: hdhr.channels[net] };
+    const ln = net;
     // ESPN+ (ESPN Select) opens the game's own page on espn.com, whose Watch button plays it for a subscriber signed in there (the user's, Nov 3 2026); its pasted link only says the user has it
     return { how: "link", network: ln, url: ln === "ESPN+" && g.eid ? `https://www.espn.com/${leagueOf(g).code.toLowerCase()}/game/_/gameId/${g.eid}` : networkLinks[ln] };
   }
@@ -218,7 +221,7 @@ import { Fan } from "./hosts.js?v=mw17x9rh";
     return tag;
   }
 
-  const APP_VERSION = "0.45.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.45.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -993,4 +996,4 @@ import { Fan } from "./hosts.js?v=mw17x9rh";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { nflWeek, sendManifest, useWallLinks, allNetworks, ticketFromFill, weirdFills, setWeirdFills, programBehind, setAcc, LAYOUTS, isTall, layoutPref, setLayoutPref, WATCH_SETUPS, nick, telecastFor, BROADCAST, hdhr, setHdhr, setWatchSetup, watchSetup, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+export { nflWeek, sendManifest, useWallLinks, allNetworks, ticketFromFill, weirdFills, setWeirdFills, programBehind, setAcc, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, telecastFor, BROADCAST, hdhr, setHdhr, sourceOf, setNetworkSource, liveSource, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };

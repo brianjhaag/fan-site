@@ -1,12 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw17x9rh";
-import { Fan } from "./hosts.js?v=mw17x9rh";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw17x9rh";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw17x9rh";
-import { wallPanel } from "./wall.js?v=mw17x9rh";
-import { qrSvg } from "./qr.js?v=mw17x9rh";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw17x9rh";
-import { demoAway, setBet } from "./trade.js?v=mw17x9rh";
+import { espnState } from "./espn.js?v=mw1botuu";
+import { Fan } from "./hosts.js?v=mw1botuu";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, hdhr, setHdhr, sourceOf, setNetworkSource, liveSource, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw1botuu";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw1botuu";
+import { wallPanel } from "./wall.js?v=mw1botuu";
+import { qrSvg } from "./qr.js?v=mw1botuu";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw1botuu";
+import { demoAway, setBet } from "./trade.js?v=mw1botuu";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -80,7 +80,7 @@ import { demoAway, setBet } from "./trade.js?v=mw17x9rh";
     let monitorsOpen = false;
     const telecastRows = () => {
       const grid = el("div", "fan-telecasts"), links = el("div");
-      links.append(...hdhrRows(), ...networkRows(), ...captureRows());
+      links.append(...networkRows(), ...captureRows());
       if (Fan.wall) { const joined = !!(Fan.screen && Fan.screen.of); grid.append(wallSetup(joined ? [screenRows()] : [doorRows(), screenRows()]), ...(joined ? [] : [wallPanel()]), links); return [grid]; }
       const mon = el("button", "fan-start fan-monbtn"), picker = el("div");
       const set = () => { mon.textContent = monitorsOpen ? "Close monitors" : "Configure monitors"; mon.setAttribute("aria-expanded", String(monitorsOpen)); picker.hidden = !monitorsOpen; if (monitorsOpen && !picker.childNodes.length) picker.append(screenPicker()); };
@@ -183,13 +183,40 @@ import { demoAway, setBet } from "./trade.js?v=mw17x9rh";
       });
       return [el("h3", null, "Sunday Ticket"), note, b];
     };
-    const networkRows = () => [el("h3", null, "Network links"), el("p", "fan-note", "YouTube TV links. Open a channel in your browser, copy its address and paste it here."), netCols(allNetworks().map(n => {
-      const row = el("label", "fan-net"), c = el("input");
-      c.type = "url"; c.value = networkLinks[n] || ""; c.placeholder = n === "ESPN+" ? "https://www.espn.com/watch/ (each game opens its own page)" : "https://tv.youtube.com/watch/..."; c.spellcheck = false;
-      c.addEventListener("input", () => setNetworkLink(n, c.value));
-      row.append(n, c);
-      return row;
-    }))];
+    // The Telecasts tab's networks (the user's, Nov 3 2026: sources divided by type): each network's source, None, a link pasted from any streaming service, or its channel on the HDHomeRun,
+    // from the list read from it when its address is set. Rescan reads the list again and fills in what it can match.
+    const networkRows = () => {
+      const box = el("div"), draw = () => {
+        const note = el("p", "fan-note", "Where each network comes from: a link from any streaming service (YouTube TV, Xfinity, Peacock), copied from your browser while the channel plays, or its channel on your HDHomeRun" + (hdhr.ip ? "." : ", once its address is set in the Networks box on the Application tab."));
+        box.replaceChildren(el("h3", null, "Networks"), note);
+        if (hdhr.ip) {
+          const rescan = el("button", "fan-start", "Rescan"); rescan.type = "button"; rescan.disabled = !Fan.hdhrLineup; rescan.title = "Read the HDHomeRun's channels again and match them to networks";
+          rescan.addEventListener("click", () => { rescan.disabled = true; hdhrList = null; draw(); });
+          box.append(rescan);
+          if (!hdhrList && Fan.hdhrLineup) { const reading = el("p", "fan-note", "Reading the HDHomeRun's channels…"); box.append(reading); hdhrRead().then(draw, e => { reading.textContent = "Couldn't read its channels: " + e.message; }); }
+        }
+        box.append(netCols(allNetworks().map(n => {
+          const row = el("div", "fan-net"), s = el("select", "fan-pick"), c = el("input"), saved = hdhr.channels[n];
+          const chans = hdhrList ? hdhrList.map(x => [String(x.number), `HDHomeRun ${x.number} ${x.name || ""}`.trim()]) : [];
+          if (saved && !chans.some(([v]) => v === saved)) chans.unshift([saved, "HDHomeRun " + saved]);
+          [["none", "None"], ["link", "Link"], ...(hdhr.ip ? chans.map(([v, t]) => ["hdhr:" + v, t]) : [])].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; s.append(o); });
+          const src = sourceOf(n);
+          s.value = src === "hdhr" && hdhr.ip && saved ? "hdhr:" + saved : src === "link" ? "link" : "none";
+          s.setAttribute("aria-label", n + "'s source");
+          c.type = "url"; c.value = networkLinks[n] || ""; c.placeholder = n === "ESPN+" ? "https://www.espn.com/watch/ (each game opens its own page)" : "https://..."; c.spellcheck = false; c.hidden = s.value !== "link";
+          c.setAttribute("aria-label", n + "'s link");
+          s.addEventListener("change", () => {
+            if (s.value.startsWith("hdhr:")) { setHdhr({ channels: { ...hdhr.channels, [n]: s.value.slice(5) } }); setNetworkSource(n, "hdhr"); } else setNetworkSource(n, s.value);
+            c.hidden = s.value !== "link"; if (!c.hidden) c.focus();
+          });
+          c.addEventListener("input", () => setNetworkLink(n, c.value));
+          row.append(el("span", null, n), s, c);
+          return row;
+        })));
+      };
+      draw();
+      return [box];
+    };
     const netCols = rows => { const d = el("div", "fan-netcols"); d.append(...rows); return d; };   // the networks in two columns
     const trackItem = () => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = trackingOn; c.addEventListener("change", () => { setTracking(c.checked); fill(); }); lab.append(c, "Track"); return lab; };
     const pricesItem = () => {
@@ -292,7 +319,7 @@ import { demoAway, setBet } from "./trade.js?v=mw17x9rh";
       let hi = null, away = false;
       if (stopPressed) away = true;
       else if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
-      const espn = espnState(), feed = $("feedNote"), book = hi && hi.book, rec = hi && Fan.lines === Fan.store && hi.records, kal = hi && Fan.lines === Fan.store && hi.env === "prod" && hi.reconcile && !hi.reconcile.skipped ? hi.reconcile : null, kalOk = !!(kal && !kal.error && kal.bad === 0), nets = Object.values(networkLinks).filter(u => /^https:\/\//i.test(u)).length, time = at => timeZoned(new Date(at));
+      const espn = espnState(), feed = $("feedNote"), book = hi && hi.book, rec = hi && Fan.lines === Fan.store && hi.records, kal = hi && Fan.lines === Fan.store && hi.env === "prod" && hi.reconcile && !hi.reconcile.skipped ? hi.reconcile : null, kalOk = !!(kal && !kal.error && kal.bad === 0), linked = allNetworks().filter(n => liveSource(n) === "link").length, tuned = allNetworks().filter(n => liveSource(n) === "hdhr").length, time = at => timeZoned(new Date(at));
       return { hi, away, rows: [
         ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? programBehind(hi.version) ? ["warn", hi.update ? programName(hi.version) : `${hi.version ? programName(hi.version) + ", u" : "U"}pdate to ${newestProgram()}`] : ["ok", "Running " + programName(hi.version), true] : ["off", "Not on this page"]],
         ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at), true] : ["ok", "Using this browser's saved copy"]],
@@ -300,7 +327,7 @@ import { demoAway, setBet } from "./trade.js?v=mw17x9rh";
         ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !linesAt ? ["off", "No lines yet"] : Date.now() - linesAt > 3600000 ? ["warn", "Lines from " + time(linesAt) + ", over an hour old"] : book && book.note ? ["warn", book.note[0].toUpperCase() + book.note.slice(1)] : [book && book.live && book.games ? "live" : "ok", "Lines from " + time(slateAt) + (book && book.live && book.games ? `, live on ${book.games} game${book.games === 1 ? "" : "s"}` : ""), true]],
         ["Kalshi", !hi ? ["off", "Needs the connector"] : hi.keyError ? ["bad", hi.keyError] : !hi.env ? ["off", "No key connected"] : ["ok", `${feed.classList.contains("on") ? "Signed in" : "Connected"}${hi.env === "demo" ? " to demo, fake money" : ""}, orders ${hi.orders ? "on" : "off"}`, feed.classList.contains("on")]],   // the fill feed's connection is signed with the key, so Kalshi taking it proves the key
         ["Fill feed", !hi ? ["off", "Needs the connector"] : !hi.env ? ["off", "Waits for a Kalshi key"] : !feed.textContent || feed.classList.contains("wait") ? ["wait", "Starting"] : feed.classList.contains("on") ? ["live", "Live"] : ["bad", feed.textContent]],
-        ["Provider", watchSetup === "hdhomerun" ? (!hdhr.ip ? ["off", "HDHomeRun: set its address"] : !Fan.playHdhr ? ["warn", "HDHomeRun needs a connector of 0.33 or later"] : Object.keys(hdhr.channels).length ? ["ok", `HDHomeRun at ${hdhr.ip}, ${Object.keys(hdhr.channels).length} networks set`] : ["warn", "HDHomeRun: read its channels"]) : nets ? ["ok", nets + (nets === 1 ? " network linked" : " networks linked")] : ["off", "No links pasted"]],
+        ["Networks", hdhr.ip && !Fan.playHdhr ? ["warn", "HDHomeRun needs a connector of 0.33 or later"] : hdhr.ip && !Object.keys(hdhr.channels).length ? ["warn", "HDHomeRun: read its channels"] : linked + tuned ? ["ok", [linked && `${linked} by link`, tuned && `${tuned} on the HDHomeRun at ${hdhr.ip}`].filter(Boolean).join(", ")] : ["off", "No sources set"]],
         ["Leagues", ["ok", [...leaguesOn].map(k => leagueNames()[k]).join(", ")]]
       ] };
     };
@@ -366,15 +393,8 @@ import { demoAway, setBet } from "./trade.js?v=mw17x9rh";
     const conGear = () => { const g = el("div", "fan-gear"); g.innerHTML = GEAR; return g; };   // outside the box, level with its bottom section
     // Under the box, on the user's word (Nov 2 2026): what the gear means, with a curved arrow up and to the left, at the gear.
     const gearNote = () => { const n = el("p", "fan-gear-note"); n.innerHTML = '<svg viewBox="0 0 28 34" aria-hidden="true"><path d="M24 32C24 20 12 12 5 5"/><path d="M6.8 11.8 5 5l6.8 1.8"/></svg>'; n.append("If this gear is rotating, all systems are go as configured."); return n; };
-    // How this user watches (base.js's WATCH_SETUPS): the watching setup the telecast router will read (PLAN.md E).
-    const networkPick = () => {
-      const s = el("select", "fan-pick");
-      WATCH_SETUPS.forEach(([v, name]) => { const o = el("option", null, name); o.value = v; s.append(o); });
-      s.value = watchSetup;
-      s.setAttribute("aria-label", "How you watch");
-      s.addEventListener("change", () => { setWatchSetup(s.value); fill(); });
-      return watchSetup === "hdhomerun" ? [s, hdhrBox()] : [s];
-    };
+    // The Networks box: the HDHomeRun's address, the one tuner so far; each network's source is picked on the Telecasts tab.
+    const networkPick = () => [el("small", null, "HDHomeRun"), hdhrBox()];
     // An HDHomeRun: its address on the user's network, then its channels read from it, each broadcast network matched to one. The match is guessed from Chicago's call signs and set by hand on the Telecasts tab.
     const CALL_SIGNS = { WBBM: "CBS", WFLD: "Fox", WMAQ: "NBC", WLS: "ABC", WGN: "CW", KCNC: "CBS", KDVR: "Fox", KUSA: "NBC", KMGH: "ABC", KWGN: "CW" };   // Chicago's, then Denver's
     const guessOf = c => { const name = String(c.name || "").toUpperCase(), sign = name.split(/[-\s]/)[0]; return CALL_SIGNS[sign] || allNetworks().find(n => n.toUpperCase() === name || n.toUpperCase() === sign) || null; };
@@ -388,38 +408,17 @@ import { demoAway, setBet } from "./trade.js?v=mw17x9rh";
       return r.channels.length;
     });
     const hdhrBox = () => {
-      const d = el("div", "fan-hdhr"), ip = el("input"), b = el("button", "fan-start", "Read channels"), note = el("small", null, hdhr.ip ? `${Object.keys(hdhr.channels).length} networks set` : "Its address on your network");
+      const d = el("div", "fan-hdhr"), ip = el("input"), b = el("button", "fan-start", "Read channels"), note = el("small", null, hdhr.ip ? `${Object.keys(hdhr.channels).length} channels matched` : "Its address on your network");
       ip.type = "text"; ip.value = hdhr.ip; ip.placeholder = "192.168.1.50"; ip.spellcheck = false; ip.setAttribute("aria-label", "HDHomeRun address");
       ip.addEventListener("change", () => setHdhr({ ip: ip.value.trim() }));
       b.type = "button"; b.disabled = !Fan.hdhrLineup;
       b.title = Fan.hdhrLineup ? "Read its channel list" : "Needs a connector of 0.33 or later";
       b.addEventListener("click", () => {
         setHdhr({ ip: ip.value.trim() }); b.disabled = true; note.textContent = "Reading…";
-        hdhrRead().then(n => { note.textContent = `${n} channels; ` + (allNetworks().filter(x => hdhr.channels[x]).map(x => `${x} ${hdhr.channels[x]}`).join(", ") || "set the networks on the Telecasts tab"); }, e => { note.textContent = "Couldn't: " + e.message; }).then(() => { b.disabled = false; });
+        hdhrRead().then(n => { note.textContent = `${n} channels; ` + (allNetworks().filter(x => hdhr.channels[x]).map(x => `${x} ${hdhr.channels[x]}`).join(", ") || "pick the networks' channels on the Telecasts tab"); }, e => { note.textContent = "Couldn't: " + e.message; }).then(() => { b.disabled = false; });
       });
       d.append(ip, b, note);
       return d;
-    };
-    // The Telecasts tab's part for an HDHomeRun: every network's channel, picked from the device's list, and Rescan, which reads the list again and fills in what it can match (the user's, Nov 3 2026).
-    const hdhrRows = () => {
-      if (watchSetup !== "hdhomerun") return [];
-      const box = el("div"), draw = () => {
-        const rescan = el("button", "fan-start", "Rescan"); rescan.type = "button"; rescan.disabled = !Fan.hdhrLineup || !hdhr.ip; rescan.title = "Read its channels again and match them to networks";
-        rescan.addEventListener("click", () => { rescan.disabled = true; hdhrList = null; draw(); });
-        box.replaceChildren(el("h3", null, "HDHomeRun channels"), rescan);
-        if (!hdhr.ip) { box.append(el("p", "fan-note", "Set its address in the Provider box on the Application tab.")); return; }
-        if (!hdhrList) { box.append(el("p", "fan-note", "Reading its channels…")); if (Fan.hdhrLineup) hdhrRead().then(draw, e => { box.lastChild.textContent = "Couldn't read its channels: " + e.message; }); return; }
-        const cols = el("div", "fan-netcols"); box.append(cols);
-        allNetworks().forEach(n => {
-          const row = el("label", "fan-net"), s = el("select", "fan-pick");
-          [["", "None"], ...hdhrList.map(c => [String(c.number), `${c.number} ${c.name || ""}`])].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; s.append(o); });
-          s.value = hdhr.channels[n] || "";
-          s.addEventListener("change", () => { const ch = { ...hdhr.channels }; if (s.value) ch[n] = s.value; else delete ch[n]; setHdhr({ channels: ch }); });
-          row.append(n, s); cols.append(row);
-        });
-      };
-      draw();
-      return [box];
     };
     // Each part card's mockup of an element of the page it brings, named under it, on the user's word (Nov 2 2026). Made-up figures, no game data.
     const MOCK = { watch: "Game card badge", track: "Wager ticket", price: "Line", bet: "Place button" };
@@ -452,7 +451,7 @@ import { demoAway, setBet } from "./trade.js?v=mw17x9rh";
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Everywhere else"), 1, 5),
         at(conFrame(here), "3 / 7", 3),   // the box around the connector's three jobs and its program
-        card("watch", 2), wire("scores, networks", true, false, 2, "2 / 5"), at(stack(outBox("ESPN", true, slot("ESPN", true)), outBox("Provider", true, ...networkPick(), slot("Provider", true))), 2, 5),
+        card("watch", 2), wire("scores, networks", true, false, 2, "2 / 5"), at(stack(outBox("ESPN", true, slot("ESPN", true)), outBox("Networks", true, ...networkPick(), slot("Networks", true))), 2, 5),
         at(con, 6, 3),   // the box's bottom section: its badge, Stop or Update, Start at login
         card("track", 3), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 3, 2) : at(el("span"), 3, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 3),
         card("price", 4), wire("lines", here && pricesWanted, false, 4, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 4), wire("prices", here && pricesWanted, false, 4, 4), service("Kalshi, Polymarket US", 4, here && pricesWanted, routeBox("prices")),

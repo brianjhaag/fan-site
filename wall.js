@@ -2,10 +2,10 @@
 // screen that joined its wall, with their monitors and the telecast windows on them, where they really sit, and the day's games to put on any of them. This page's connector keeps it;
 // the other computers are its screens (wall.rs in the connector). Tap a window for its sound, which mutes every other telecast on the wall; x closes it; Snap back puts a computer's
 // windows back in their spots; each computer's monitor and layout pick its spots.
-import { Fan } from "./hosts.js?v=mw17x9rh";
-import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw17x9rh";
-import { slateOfDay } from "./leagues.js?v=mw17x9rh";
-import { abbr } from "./leagues.js?v=mw17x9rh";
+import { Fan } from "./hosts.js?v=mw1botuu";
+import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw1botuu";
+import { slateOfDay } from "./leagues.js?v=mw1botuu";
+import { abbr } from "./leagues.js?v=mw1botuu";
 
 const WALL_MS = 3000;   // how often the open Telecasts tab reads the wall
 let wallTimer = null, wallData = null, wallNote = "", wallBox = null, wallShown = "";
@@ -25,8 +25,9 @@ function machineBox(m, sound) {
   const ds = Array.isArray(m.displays) ? m.displays : [], ws = Array.isArray(m.windows) ? m.windows : [];
   if (!ds.length) { box.append(el("p", "fan-note", m.online ? "No monitors reported." : "Asleep or off: its screens come back when it does.")); return box; }
   const minX = Math.min(...ds.map(d => d.bounds.x)), minY = Math.min(...ds.map(d => d.bounds.y)), w = Math.max(...ds.map(d => d.bounds.x + d.bounds.width)) - minX, h = Math.max(...ds.map(d => d.bounds.y + d.bounds.height)) - minY, k = Math.min(360 / w, 300 / h);
+  const nameOf = (d, i) => (ds.length > 1 ? (i + 1) + " " : "") + (d.label || "Monitor");   // numbered on the map and in the menu alike, when there are several
   const map = el("div", "wl-map"); map.style.width = Math.round(w * k) + "px"; map.style.height = Math.round(h * k) + "px";
-  ds.forEach(d => { const s = el("div", "wl-display"); s.style.cssText = `left:${Math.round((d.bounds.x - minX) * k)}px;top:${Math.round((d.bounds.y - minY) * k)}px;width:${Math.round(d.bounds.width * k)}px;height:${Math.round(d.bounds.height * k)}px`; s.append(el("small", null, d.label || "Monitor")); map.append(s); });
+  ds.forEach((d, i) => { const s = el("div", "wl-display"); s.style.cssText = `left:${Math.round((d.bounds.x - minX) * k)}px;top:${Math.round((d.bounds.y - minY) * k)}px;width:${Math.round(d.bounds.width * k)}px;height:${Math.round(d.bounds.height * k)}px`; s.append(el("small", null, nameOf(d, i))); map.append(s); });
   ws.forEach(win => {
     const b = win.bounds || {}, loud = sound && sound.machine === m.id && sound.target === win.target, t = el("div", "wl-win" + (loud ? " loud" : ""));
     t.style.cssText = `left:${Math.round(((b.left || 0) - minX) * k)}px;top:${Math.round(((b.top || 0) - minY) * k)}px;width:${Math.max(24, Math.round((b.width || 0) * k))}px;height:${Math.max(18, Math.round((b.height || 0) * k))}px`;
@@ -39,18 +40,22 @@ function machineBox(m, sound) {
     map.append(t);
   });
   box.append(map);
-  // where its telecasts open: a monitor and a layout, kept by the hub for this computer
-  const p = m.pref || {}, pick = el("div", "wl-pick"), mon = el("select", "fan-pick");
-  [["", "Portrait monitor, or Fan's choice"], ...ds.map((d, i) => [String(i), `${d.label || "Monitor"} ${d.bounds.width}x${d.bounds.height}`])].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; mon.append(o); });
-  const cur = ds.findIndex(d => d.label === p.label && d.bounds.width === p.width && d.bounds.height === p.height);
-  mon.value = cur >= 0 ? String(cur) : "";
-  const prefOf = (i, rows, cols) => { const d = ds[i]; return d ? { label: d.label, width: d.bounds.width, height: d.bounds.height, x: d.bounds.x, y: d.bounds.y, rows, cols } : null; };
-  mon.addEventListener("change", () => wallAct({ op: "pref", machine: m.id, pref: mon.value === "" ? null : prefOf(Number(mon.value), p.rows || 3, p.cols || 1) }));
-  pick.append(mon);
-  TELECAST_LAYOUTS.forEach(([name, r, c]) => {
-    const b = el("button", "wl-lay", name); b.type = "button"; b.disabled = cur < 0; b.setAttribute("aria-pressed", String(cur >= 0 && p.rows === r && p.cols === c));
-    b.addEventListener("click", () => wallAct({ op: "pref", machine: m.id, pref: prefOf(cur, r, c) }));
-    pick.append(b);
+  // where its telecasts open, one menu of every monitor and layout (the user's, Nov 3 2026), kept by the hub for this computer. A monitor is matched as the connector does (spot_for):
+  // by name and size, then by position, so two of the same make are told apart.
+  const p = m.pref || {}, pick = el("select", "fan-pick wl-pick");
+  pick.setAttribute("aria-label", `Where ${m.name || "this computer"}'s telecasts open`);
+  const def = el("option", null, "Fan's choice: the portrait monitor, 3 stacked"); def.value = ""; pick.append(def);
+  ds.forEach((d, i) => {
+    const g = el("optgroup"); g.label = `${nameOf(d, i)} ${d.bounds.width}x${d.bounds.height}`;
+    TELECAST_LAYOUTS.forEach(([name], j) => { const o = el("option", null, `${g.label}, ${name}`); o.value = i + ":" + j; g.append(o); });
+    pick.append(g);
+  });
+  const same = ds.map((d, i) => i).filter(i => ds[i].label === p.label && ds[i].bounds.width === p.width && ds[i].bounds.height === p.height);
+  const cur = same.find(i => ds[i].bounds.x === p.x && ds[i].bounds.y === p.y) ?? same[0] ?? -1, lay = TELECAST_LAYOUTS.findIndex(([, r, c]) => r === p.rows && c === p.cols);
+  pick.value = cur >= 0 && lay >= 0 ? cur + ":" + lay : "";
+  pick.addEventListener("change", () => {
+    const [i, j] = pick.value.split(":").map(Number), d = ds[i], l = TELECAST_LAYOUTS[j];
+    wallAct({ op: "pref", machine: m.id, pref: pick.value === "" || !d || !l ? null : { label: d.label, width: d.bounds.width, height: d.bounds.height, x: d.bounds.x, y: d.bounds.y, rows: l[1], cols: l[2] } });
   });
   box.append(pick);
   return box;
