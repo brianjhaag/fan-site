@@ -1,7 +1,7 @@
 // The Code section (TRADING.md's first scope, Nov 3 2026): the algo grid, the code editor and the console with its prompt, in one page opened by the Code button, as Ledger is.
 // The connector's runtime isn't built yet, so for now an algo is a draft kept in this browser, every one not approved, and the prompt answers from the page itself, saying so. When the runtime
 // comes, the grid shows what it reports, the editor's code goes to it to be checked, and the prompt and the console are its.
-import { $, el } from "./base.js?v=mw0rwru7";
+import { $, el } from "./base.js?v=mw0s3q7m";
 
 const KEPT = "fan.algos";   // the drafts, per browser, until the runtime keeps them
 const STATES = ["not approved", "off", "running", "armed"];   // TRADING.md: an algo's states, in order
