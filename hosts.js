@@ -168,6 +168,10 @@ Fan.connectStore = async () => {
     const r = await (await window.fetch("/connector/update", { method: "POST" })).json();
     if (!r.ok) throw new Error(r.error);
   };
+  if (hi && hi.algos) Fan.algos = {   // the algo runtime: the grid's rows and the console's lines after a number, and save, delete, state and the prompt's eval
+    read: after => window.fetch("/connector/algos" + (after == null ? "" : "?after=" + after)).then(r => r.json()),
+    ask: q => window.fetch("/connector/algos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q) }).then(r => r.json())
+  };
   if (hi && hi.telecast) {
     const send =(path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };

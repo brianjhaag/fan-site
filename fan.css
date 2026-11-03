@@ -1052,7 +1052,10 @@
   .cd-con { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; background: #0f1317; border: 1px solid #2a3038; border-radius: 3px; font: 12.5px/1.45 "Chivo Mono", Consolas, monospace; }
   .cd-head { padding: 5px 10px; font: 700 11px/1.2 "Montserrat", Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #8b95a1; border-bottom: 1px solid #1c2128; }
   .cd-out { overflow: auto; padding: 6px 10px; white-space: pre-wrap; word-break: break-word; min-height: 0; }
-  .cl-sys { color: #8b95a1; } .cl-in { color: #6bb8f0; } .cl-out { color: #d7dce3; } .cl-err { color: #ff6b6b; }
+  .cl-sys, .cl-note { color: #8b95a1; } .cl-in { color: #6bb8f0; } .cl-out, .cl-print { color: #d7dce3; } .cl-err { color: #ff6b6b; } .cl-order { color: #f0b429; } .cl-state { color: #19e37a; }
+  .cd-who { color: #8b95a1; }   /* the algo a console line came from */
+  .cd-state.cd-err { text-decoration: underline wavy #ff6b6b; }   /* its last run threw: the error is its title, and in the console */
+  .cd-btn.cd-arm:not(:disabled) { background: #ff6b6b; }
   .cd-prompt { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-top: 1px solid #1c2128; }
   .cd-ps { color: #19e37a; } .cd-in { flex: 1; padding: 2px 0; font: inherit; color: #fff; background: transparent; border: 0; outline: none; }   /* the Graphs panel draws straight onto the page: no boxes, no captions */
   #xy.bare { background: #000; border-radius: 3px; position: relative; }   /* the Graphs panel sits on black */
