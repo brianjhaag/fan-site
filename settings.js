@@ -1,10 +1,10 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw0zmvej";
-import { Fan } from "./hosts.js?v=mw0zmvej";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0zmvej";
-import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0zmvej";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0zmvej";
-import { demoAway, setBet } from "./trade.js?v=mw0zmvej";
+import { espnState } from "./espn.js?v=mw0zubtl";
+import { Fan } from "./hosts.js?v=mw0zubtl";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw0zubtl";
+import { LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw0zubtl";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw0zubtl";
+import { demoAway, setBet } from "./trade.js?v=mw0zubtl";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -78,9 +78,11 @@ import { demoAway, setBet } from "./trade.js?v=mw0zmvej";
       const grid = el("div", "fan-telecasts"), links = el("div"), mon = el("button", "fan-start fan-monbtn"), picker = el("div");
       const set = () => { mon.textContent = monitorsOpen ? "Close monitors" : "Configure monitors"; mon.setAttribute("aria-expanded", String(monitorsOpen)); picker.hidden = !monitorsOpen; if (monitorsOpen && !picker.childNodes.length) picker.append(screenPicker()); };
       mon.type = "button"; mon.addEventListener("click", () => { monitorsOpen = !monitorsOpen; set(); });
+      if (!Fan.screens) { mon.disabled = true; monitorsOpen = false; }   // dimmed with no connector, which is what reads the monitors and places the windows
       set();
       links.append(...hdhrRows(), ...networkRows(), ...captureRows());
-      grid.append(mon, picker, links);
+      const row = el("div", "fan-monrow"); row.append(mon); if (!Fan.screens) row.append(el("span", "fan-note", Fan.hostHello ? "The connector can't place telecast windows on this computer, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it reads your monitors and places each telecast's window. Without it, a telecast opens as a plain link."));
+      grid.append(row, picker, links);
       return [grid];
     };
     // The telecast router's probe (PLAN.md E): one press on a Sunday morning saves what Sunday Ticket's page shows in Fan's TV window, so Claude can build the link finder from it.

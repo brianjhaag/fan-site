@@ -264,6 +264,9 @@
   .fan-list { display: grid; align-content: start; box-sizing: border-box; padding: 4px; }
   .fan-list[hidden] { display: none; }
   .fan-telecasts { display: grid; gap: 12px; padding: 8px; }
+  .fan-telecasts .fan-monbtn:disabled { opacity: .4; cursor: default; }
+  .fan-monrow { display: flex; align-items: center; gap: 4px; }
+  .fan-monrow .fan-note { margin: 0; }
   .fan-telecasts .fan-monbtn { justify-self: start; margin: 4px 12px; padding: 12px 28px; font-size: 20px; font-weight: 600; }   /* the monitor map is behind it */
   .fan-netcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; row-gap: 4px; }   /* the networks in two columns, with room */
   .fan-telecasts h3 { margin: 0; padding: 4px 12px 8px; font: 700 15px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
