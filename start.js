@@ -1,20 +1,20 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mw14mp7l";
-import "./risk.js?v=mw14mp7l";
-import "./panels.js?v=mw14mp7l";
-import "./tracker.js?v=mw14mp7l";
-import "./trade.js?v=mw14mp7l";
-import "./wall.js?v=mw14mp7l";
-import "./settings.js?v=mw14mp7l";
-import { renderCode } from "./code.js?v=mw14mp7l";
-import { Fan } from "./hosts.js?v=mw14mp7l";
-import { WEEK_GAMES } from "./espn.js?v=mw14mp7l";
-import { setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mw14mp7l";
-import { LEAGUES_READY } from "./leagues.js?v=mw14mp7l";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw14mp7l";
-import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mw14mp7l";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw14mp7l";
-import { fillSettings, findConnector } from "./settings.js?v=mw14mp7l";
+import "./base.js?v=mw15yroz";
+import "./risk.js?v=mw15yroz";
+import "./panels.js?v=mw15yroz";
+import "./tracker.js?v=mw15yroz";
+import "./trade.js?v=mw15yroz";
+import "./wall.js?v=mw15yroz";
+import "./settings.js?v=mw15yroz";
+import { renderCode } from "./code.js?v=mw15yroz";
+import { Fan } from "./hosts.js?v=mw15yroz";
+import { WEEK_GAMES } from "./espn.js?v=mw15yroz";
+import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, renderByes, renderGames, renderSectionTabs, switchWeek, view, weekNow } from "./base.js?v=mw15yroz";
+import { LEAGUES_READY } from "./leagues.js?v=mw15yroz";
+import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw15yroz";
+import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mw15yroz";
+import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw15yroz";
+import { fillSettings, findConnector } from "./settings.js?v=mw15yroz";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };
@@ -45,6 +45,7 @@ import { fillSettings, findConnector } from "./settings.js?v=mw14mp7l";
   (async () => {
     // The connector first: it doesn't wait on ESPN, so the Application tab shows it at once, however long the daily leagues' pulls take (Nov 3 2026).
     try { await Fan.connectStore(); } catch (e) {}
+    if (Fan.door && Fan.door.here) { setTrackingOn(false); document.documentElement.classList.add("remote"); }   // a remote is Watch and the wall only (the user's, Nov 3 2026): no Track, Price, Bet or Code
     findConnector();
     changed("settings");
     // The leagues this browser had on besides the NFL, with the NHL's games from ESPN (its saved copies, mostly), and the NFL off if it was.

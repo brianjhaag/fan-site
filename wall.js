@@ -2,9 +2,9 @@
 // screen that joined its wall, with their monitors and the telecast windows on them, where they really sit, and the day's games to put on any of them. This page's connector keeps it;
 // the other computers are its screens (wall.rs in the connector). Tap a window for its sound, which mutes every other telecast on the wall; x closes it; Snap back puts a computer's
 // windows back in their spots; each computer's monitor and layout pick its spots.
-import { Fan } from "./hosts.js?v=mw14mp7l";
-import { el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw14mp7l";
-import { abbr } from "./leagues.js?v=mw14mp7l";
+import { Fan } from "./hosts.js?v=mw15yroz";
+import { el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw15yroz";
+import { abbr } from "./leagues.js?v=mw15yroz";
 
 const WALL_MS = 3000;   // how often the open Telecasts tab reads the wall
 let wallTimer = null, wallData = null, wallNote = "", wallBox = null, wallShown = "";
@@ -65,7 +65,10 @@ function gameRows(machines) {
     row.append(el("span", "wl-gname", `${leagueOf(g).code} ${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("small", null, `${shortDayFmt.format(new Date(g.t))} ${timeZoned(new Date(g.t))} · ${g.tv || "no network"}`));
     const btns = el("span", "wl-go");
     if (!tv || tv.how !== "link") btns.append(el("small", "fan-note", tv ? "an HDHomeRun channel: from its card" : "no link for its network"));
-    else on.forEach(m => { const b = el("button", "fan-start", m.name); b.type = "button"; b.title = `Watch on ${m.name}`; b.addEventListener("click", () => wallAct({ op: "open", machine: m.id, url: tv.url }, `Opening on ${m.name}`)); btns.append(b); });
+    else {
+      if (Fan.door && Fan.door.here) { const b = el("button", "fan-start", "Here"); b.type = "button"; b.title = "Watch on this device"; b.addEventListener("click", () => window.open(tv.url, "_blank", "noopener")); btns.append(b); }   // a remote can watch on itself too, as a plain link
+      on.forEach(m => { const b = el("button", "fan-start", m.name); b.type = "button"; b.title = `Watch on ${m.name}`; b.addEventListener("click", () => wallAct({ op: "open", machine: m.id, url: tv.url }, `Opening on ${m.name}`)); btns.append(b); });
+    }
     row.append(btns);
     list.append(row);
   });

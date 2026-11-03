@@ -1,11 +1,11 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw14mp7l";
-import { Fan } from "./hosts.js?v=mw14mp7l";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw14mp7l";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw14mp7l";
-import { wallPanel } from "./wall.js?v=mw14mp7l";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw14mp7l";
-import { demoAway, setBet } from "./trade.js?v=mw14mp7l";
+import { espnState } from "./espn.js?v=mw15yroz";
+import { Fan } from "./hosts.js?v=mw15yroz";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, WATCH_SETUPS, bdBadge, switchWeek, weekNow, hdhr, setHdhr, setWatchSetup, watchSetup, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw15yroz";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw15yroz";
+import { wallPanel } from "./wall.js?v=mw15yroz";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw15yroz";
+import { demoAway, setBet } from "./trade.js?v=mw15yroz";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -212,7 +212,7 @@ import { demoAway, setBet } from "./trade.js?v=mw14mp7l";
     const partCheck = (name, on, change) => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.disabled = !change; if (change) c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, name); return lab; };
     const ABOUT = () => ({
       watch: [partCheck("Watch", true), "See the slate, scores, previews, telecasts, and tape.", ", no install."],
-      track: [partCheck("Track", trackingOn, on => setTracking(on)), "Enter bets and see scenario risk.", ", no install."],
+      track: [partCheck("Track", trackingOn, Fan.door && Fan.door.here ? null : on => setTracking(on)), "Enter bets and see scenario risk.", ", no install."],
       price: [partCheck("Price", Fan.lines ? pricesWanted : false, Fan.lines && !connectorAway ? on => setPrices(on) : null), "Live lines and risk, plus trends and analytics.", ", requires the Connector."],
       bet: [partCheck("Bet", !!Fan.trader, Fan.setBet && Fan.keyed && !connectorAway ? on => setBet(on) : null), "Execute directly on prediction markets.", ", requires the Connector and API keys."]
     });
