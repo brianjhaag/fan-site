@@ -2,9 +2,10 @@
 // screen that joined its wall, with their monitors and the telecast windows on them, where they really sit, and the day's games to put on any of them. This page's connector keeps it;
 // the other computers are its screens (wall.rs in the connector). Tap a window for its sound, which mutes every other telecast on the wall; x closes it; Snap back puts a computer's
 // windows back in their spots; each computer's monitor and layout pick its spots.
-import { Fan } from "./hosts.js?v=mw16woq7";
-import { el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw16woq7";
-import { abbr } from "./leagues.js?v=mw16woq7";
+import { Fan } from "./hosts.js?v=mw17x9rh";
+import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw17x9rh";
+import { slateOfDay } from "./leagues.js?v=mw17x9rh";
+import { abbr } from "./leagues.js?v=mw17x9rh";
 
 const WALL_MS = 3000;   // how often the open Telecasts tab reads the wall
 let wallTimer = null, wallData = null, wallNote = "", wallBox = null, wallShown = "";
@@ -55,12 +56,13 @@ function machineBox(m, sound) {
   return box;
 }
 
-// The day's games, every league that's on: not over, and starting within the next 36 hours or under way. Each can go on any computer that's on.
+// The games to queue, every league that's on and not over (the user's, Nov 3 2026): today's and tomorrow's in a daily league, the current week's in the NFL. Each can go on any computer that's on.
 function gameRows(machines) {
-  const now = Date.now(), games = ALL_GAMES.filter(g => leaguesOn.has(g.league || "nfl") && !g.final && Date.parse(g.t) < now + 36 * 3600e3 && Date.parse(g.t) > now - 4 * 3600e3).sort((p, q) => Date.parse(p.t) - Date.parse(q.t));
+  const wanted = g => { const l = g.league || "nfl"; if (!leaguesOn.has(l)) return false; return leagueOf(g).daily ? g.week === slateOfDay(l, nbaDay(0)) || g.week === slateOfDay(l, nbaDay(1)) : g.week === nflWeek(); };
+  const games = ALL_GAMES.filter(g => !g.final && wanted(g)).sort((p, q) => Date.parse(p.t) - Date.parse(q.t));
   const list = el("div", "wl-games");
   list.append(el("h3", null, "Games"));
-  if (!games.length) list.append(el("p", "fan-note", "No games in the next 36 hours."));
+  if (!games.length) list.append(el("p", "fan-note", "No games left today, tomorrow or this NFL week, in the leagues that are on."));
   games.forEach(g => {
     const row = el("div", "wl-game"), tv = telecastFor(g), on = machines.filter(m => m.online);
     row.append(el("span", "wl-gname", `${leagueOf(g).code} ${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("small", null, `${shortDayFmt.format(new Date(g.t))} ${timeZoned(new Date(g.t))} · ${g.tv || "no network"}`));
