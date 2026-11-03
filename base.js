@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0z2fzp";
-import { BOOK_ICONS } from "./data/assets.js?v=mw0z2fzp";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0z2fzp";
-import { Calc } from "./calc.js?v=mw0z2fzp";
-import { Fan } from "./hosts.js?v=mw0z2fzp";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw0z4abq";
+import { BOOK_ICONS } from "./data/assets.js?v=mw0z4abq";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw0z4abq";
+import { Calc } from "./calc.js?v=mw0z4abq";
+import { Fan } from "./hosts.js?v=mw0z4abq";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -211,7 +211,7 @@ import { Fan } from "./hosts.js?v=mw0z2fzp";
     return tag;
   }
 
-  const APP_VERSION = "0.38.8";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.38.9";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -380,7 +380,7 @@ import { Fan } from "./hosts.js?v=mw0z2fzp";
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
-      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { watchGame(g); } : name === "Tape" ? () => { window.open(tapeLink(g), "_blank", "noopener"); } : name === "Box score" ? () => { window.open(`https://www.espn.com/nfl/boxscore/_/gameId/${g.eid}`, "_blank", "noopener"); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
+      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { watchGame(g); } : name === "Tape" ? () => { window.open(tapeLink(g), "_blank", "noopener"); } : name === "Box score" ? () => { window.open(`https://www.espn.com/${leagueOf(g).code.toLowerCase()}/boxscore/_/gameId/${g.eid}`, "_blank", "noopener"); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
       box.append(b);
     });
     return box;
