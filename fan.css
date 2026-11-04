@@ -1167,6 +1167,10 @@
   #handicap .hc-table .pb-g { text-align: center; border-left: 1px solid var(--paper-edge); }
   #handicap .hc-table .pb-l { border-left: 1px solid var(--paper-edge); }
   #handicap .hc-adj { width: 60px; }
+  #handicap .hc-keys table { width: 100%; font-size: 13px; }
+  #handicap .hc-keys th, #handicap .hc-keys td { padding: 3px 8px; text-align: right; }
+  #handicap .hc-keys th:first-child, #handicap .hc-keys td:first-child { text-align: left; }
+  #handicap .hc-keys tr.hc-key td { color: var(--accent); }   /* the key numbers, 3 and 7 */
   /* ===== Season stats and its Trends (the old Playbook) ===== */
   /* Season stats' heading: the title, and right of it the This season / Last 5 seasons toggle (the user, Nov 4 2026) */
   #season .season-head { display: flex; align-items: center; gap: 16px; }

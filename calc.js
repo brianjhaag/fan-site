@@ -322,7 +322,8 @@ const Calc = (() => {
     return s;
   }
 
-  /* ==== Handicap (the user, Nov 4 2026): the user's own theo for a game, from linear models they control ==== */
+  /* ==== Handicap (the user, Nov 4 2026): the user's own theo for a game. The main calc is the projected game result, the home team's margin, from a linear
+  // regression the user controls; the projected spread is that result, and the key number model turns it into a moneyline. Totals are a different calc, not here yet. ==== */
   // How each team stood before a game, from that season's earlier finals only, so a fit never sees the future: per game points for and against, net, win share
   // (a tie a half), and rest days (days since its last game, 14 at most, 14 before its first). games: [{ season, ms, away, home, final: [a, h] | null }].
   // Out: one row per game, sorted by kickoff, { g, a, h }, each side { gp, pf, pa, net, win, rest }; a game without a final is a row too, and changes nothing.
@@ -340,7 +341,7 @@ const Calc = (() => {
     });
     return out;
   }
-  // The variables a model may use, each from the two sides' standing: the spread's are home minus away, the total's both together.
+  // The variables the regression may use, each the home team's standing minus the away team's.
   const HC_VARS = {
     spread: [
       { k: "net", h: "Net points per game", f: (h, a) => h.net - a.net },
@@ -348,15 +349,10 @@ const Calc = (() => {
       { k: "pa", h: "Points against per game", f: (h, a) => h.pa - a.pa },
       { k: "win", h: "Win share", f: (h, a) => h.win - a.win },
       { k: "rest", h: "Rest days", f: (h, a) => h.rest - a.rest }
-    ],
-    total: [
-      { k: "pf", h: "Points for per game", f: (h, a) => h.pf + a.pf },
-      { k: "pa", h: "Points against per game", f: (h, a) => h.pa + a.pa },
-      { k: "rest", h: "Rest days", f: (h, a) => h.rest + a.rest }
     ]
   };
   // Least squares with an intercept, the variables centered on their means, so the intercept is the average result: the home team's average margin (home field
-  // advantage) for the spread, the average total for the total. X: rows of numbers, y: results. Out: { b0, b, means, se, r2, rmse, n }, or null when it can't be solved.
+  // advantage). X: rows of numbers, y: results. Out: { b0, b, means, se, r2, rmse, n }, or null when it can't be solved.
   function olsFit(X, y) {
     const n = y.length, p = n ? X[0].length : 0;
     if (n < p + 2) return null;
@@ -382,11 +378,11 @@ const Calc = (() => {
   function hcPredict(kind, model, row) {
     return model.vars.reduce((s, v) => { const def = HC_VARS[kind].find(x => x.k === v.k); return s + v.b * (def.f(row.h, row.a) - (v.mean || 0)); }, model.b0);
   }
-  // The theo from a home margin and a total: the home team's spread (its line, minus when favored), each side's moneyline, rounded the way a quote is, from the league's
-  // margin model (winProb = marginModel(sigma)), and the total itself.
-  function hcTheo(margin, total, winProb) {
+  // The theo from the projected result, the home team's margin: its spread (the home line, minus when favored) and each side's moneyline, rounded the way a quote is,
+  // from the key number model (winProb = marginModel(sigma)).
+  function hcTheo(margin, winProb) {
     const pHome = margin === 0 ? 0.5 : margin > 0 ? winProb(margin) : 1 - winProb(-margin);
-    return { spread: -margin, pHome, ml: [quoteOf(1 - pHome), quoteOf(pHome)], total };
+    return { spread: -margin, pHome, ml: [quoteOf(1 - pHome), quoteOf(pHome)] };
   }
 
   // Is this a usable number for a bet? A moneyline is 100 or more either way; a total is above zero.
