@@ -1145,7 +1145,21 @@
   .xypair .bd-bhelm { height: 44px; margin: -7px 4px -7px -10px; }
 
   /* ===== Handicap (the NFL first, Nov 4 2026): the two models' cards side by side, then the week's games, in a pane that scrolls ===== */
-  #handicap .hc-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  #handicap .hc-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }   /* the week picker at the left, the title and its buttons at the right */
+  #handicap .hc-title { display: flex; align-items: center; gap: 12px; }
+  /* the week picker: the strip's week tabs in the league's type, light on the panel, the strip's orange bars on the week on screen, a chevron either side */
+  #handicap .hc-wk { display: flex; align-items: stretch; flex: none; }
+  #handicap .hc-wk button { appearance: none; background: none; border: 0; cursor: pointer; color: var(--ink-dim); font: 400 20px/1.1 var(--font-league); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  #handicap .hc-wk .hc-wkt { position: relative; flex: none; width: var(--cell, 112px); border-top: 5px solid transparent; padding: 4.75px 4px 9.25px; text-align: center; letter-spacing: .04em; font-size: min(20px, calc((var(--cell, 180px) - 8px) / 4.9)); }   /* the top strip's pinned weeks: their width, type and spacing (--cell, set by fitHcTable) */
+  #handicap .hc-wkt.now { color: var(--ink); }
+  #handicap .hc-wkt[aria-selected="true"] { color: var(--ink); }
+  #handicap .hc-wkt[aria-selected="true"]::before, #handicap .hc-wkt[aria-selected="true"]::after { content: ""; position: absolute; top: 1px; z-index: 1; width: 8px; height: 35px; background: #ff8c1a; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); pointer-events: none; }   /* the strip's 8px bars */
+  #handicap .hc-wkt[aria-selected="true"]::before { left: -4px; }
+  #handicap .hc-wkt[aria-selected="true"]::after { right: -4px; }
+  #handicap .hc-wkt:hover, #handicap .hc-wka:hover:not(:disabled) { color: var(--ink); }
+  #handicap .hc-wka { display: grid; place-items: center; flex: 1 0 34px; }   /* at least HC_ARROW; the two share what the weeks leave */
+  #handicap .hc-wka svg { height: 18px; width: auto; }
+  #handicap .hc-wka:disabled { opacity: .3; cursor: default; }
   #handicap .hc-head h2 { margin-block: 0; }
   #handicap .season-span { flex: none; }
   #handicap .season-span label { flex: none; }
@@ -1158,37 +1172,80 @@
   #handicap .hc-model input[type=number] { width: 90px; }
   #handicap .hc-model tr.off td:not(:first-child) { opacity: .45; }
   #handicap .hc-model tr.hc-int td { border-bottom: 1px solid var(--paper-edge); }
-  #handicap .hc-week { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font: 700 16px var(--font-label); }
-  #handicap .hc-week button { padding: 2px 10px; }
   #handicap .hc-table { font-size: 12px; }   /* narrow: three or four terms and the prediction at the right fit the window; fitHcTable scales it down if not */
   #handicap .hc-table th, #handicap .hc-table td { padding: 3px 6px; text-align: right; }
+  #handicap .hc-games .hc-table thead tr:first-child th { font-size: 20px; }   /* the column names, larger (the user, Nov 4 2026) */
+  #handicap .hc-games .hc-table thead tr:first-child th.hc-src { cursor: help; }
   #handicap .hc-table th:first-child, #handicap .hc-table td:first-child { text-align: left; }
   #handicap .hc-table .pb-g { text-align: center; border-left: 1px solid var(--paper-edge); }
   #handicap .hc-table .pb-l { border-left: 1px solid var(--paper-edge); }
   /* each game's own numbers (the user, Nov 4 2026): HFA, then each term's coefficient × value, narrow fields without spinners; one typed by hand is in the accent */
   #handicap td.hc-cv { white-space: nowrap; text-align: center; }
-  #handicap .hc-rows input { width: 44px; padding: 1px 3px; font: inherit; text-align: right; -moz-appearance: textfield; appearance: textfield; }
+  #handicap .hc-rows input { box-sizing: border-box; width: 80px; height: 30px; padding: 0 2px; line-height: 30px; font: inherit; font-size: calc(var(--slate-fs, 16px) * 1.25); vertical-align: middle; text-align: center; -moz-appearance: textfield; appearance: textfield; }   /* about a badge's size, the number centered both ways */
   #handicap .hc-rows input::-webkit-inner-spin-button, #handicap .hc-rows input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  #handicap .hc-rows .hc-val { font-family: var(--font-label); font-weight: 700; font-size: 20px; display: inline-block; box-sizing: border-box; width: 80px; height: 30px; line-height: 30px; padding: 0 5px; text-align: center; vertical-align: middle; }   /* a value shown, not typed: DVOA's, FTN's own */
   #handicap .hc-rows input.hc-set { color: var(--accent); font-weight: 700; }
-  #handicap .hc-op { color: var(--ink-dim); margin: 0 3px; }
-  #handicap .hc-reset { margin-left: 8px; padding: 0 5px; font-size: 12px; vertical-align: middle; }
+  #handicap .hc-op { color: var(--ink-dim); margin: 0 2px; }
+  /* coefficient × value close together (the user, Nov 4 2026): the coefficient right-aligned, the value after "×" left-aligned, so the two sit by the "×"; the column's name centered over both */
+  /* the pair pinned at the "×" (the user, Nov 4 2026): the coefficient against its right edge, the value against its left, both centered top to bottom */
+  #handicap .hc-op { margin: 0 2px; }
+  #handicap .hc-rows .hc-cv input:not(.hc-op + input), #handicap tr.hc-starts .hc-sv:has(+ .hc-op) { width: 80px; text-align: center; padding: 0 2px; }   /* a coefficient centered in a field just its size, so it stays by the "×" (the user, Nov 4 2026) */
+  /* a rule after the game, with room either side, between it and the numbers */
+  #handicap .hc-table td.hc-game, #handicap .hc-games .hc-table thead th:nth-child(2) { border-right: 1px solid var(--paper-edge); padding-right: 18px; }
+  #handicap .hc-games .hc-table td.hc-game + td, #handicap .hc-games .hc-table thead th:nth-child(3) { padding-left: 18px; }
+  #handicap .hc-rows .hc-op + input, #handicap .hc-rows .hc-op + .hc-val, #handicap tr.hc-starts .hc-op + .hc-sv { text-align: left; padding-left: 6px; }
+  #handicap .hc-rows td:nth-child(3) input, #handicap tr.hc-starts th:nth-child(3) .hc-sv { text-align: center; padding: 0 2px; }   /* HFA, alone in its column: centered */
+  #handicap .hc-games .hc-table thead th:nth-child(n+3) { text-align: center; }
+  #handicap .hc-side { white-space: nowrap; }   /* a flag on one team: its code, coefficient × value; both teams, one over the other */
+  #handicap .hc-side + .hc-side { margin-top: 2px; }
+  #handicap .hc-side-t { display: inline-block; width: 30px; text-align: left; font-size: 11px; color: var(--ink-dim); }
   #handicap .hc-guide-tbl { margin-bottom: 8px; }
-  #handicap .hc-week .hc-guide-btn { margin-left: 8px; padding: 2px 14px; font: inherit; font-size: 13px; }   /* Fit, beside the week */
-  #handicap .hc-week .hc-src { font: 400 11px var(--font-label); }
+  #handicap td.hc-div { text-align: center; }   /* the Divisional box */
+  #handicap td.hc-div input { width: 22px; height: 22px; margin: 0; vertical-align: middle; accent-color: var(--accent); cursor: pointer; }
+  #handicap .hc-foot { display: flex; align-items: center; gap: 8px; margin-top: 10px; font: 700 20px var(--font-label); color: var(--ink-dim); }   /* the EV hurdle, under the table */
+  #handicap .hc-foot input { box-sizing: border-box; width: 72px; height: 30px; text-align: center; font: inherit; font-family: inherit; color: var(--ink); }
+  #handicap td.hc-fit { text-align: right; }   /* each row's Fit at its far right, in the row's type and the fields' height */
+  #handicap td.hc-fit .hc-guide-btn { box-sizing: border-box; height: 25px; padding: 0 12px; font: inherit; font-size: calc(var(--slate-fs, 16px) * 1.25); line-height: 1; vertical-align: middle; }
+  #handicap td.hc-prev { padding-inline: 4px; }   /* the game preview's icon at the row's left end */
+  #handicap td.hc-prev button { display: grid; place-items: center; width: 30px; height: 25px; padding: 0; border: 0; background: none; color: var(--ink-dim); cursor: pointer; }
+  #handicap td.hc-prev button:hover { color: var(--ink); }
+  #handicap td.hc-prev svg { width: 22px; height: 22px; }
+  #handicap td.hc-fit .hc-guide-btn[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); }
+  #handicap tr.hc-fitting td { background: rgb(255 255 255 / .05); }   /* the game the guide is open for */
+  #handicap td.hc-guide-for { font-weight: 700; color: var(--ink); }
+  #handicap th .hc-src { margin: 0; font-weight: 400; text-transform: none; letter-spacing: 0; }
   #handicap tr.hc-guide td { background: rgb(255 255 255 / .02); font-size: 12px; padding-block: 3px; text-align: left; white-space: normal; }
   #handicap tr.hc-guide td.hc-guide-h { color: var(--ink-dim); padding-left: 16px; }
   #handicap tr.hc-guide button { padding: 1px 10px; font-size: 12px; }
   #handicap .hc-src { margin-left: 8px; font-size: 11px; color: var(--ink-dim); }   /* where the DVOA term's numbers stand: FTN's week, or why there are none */
-  #handicap td.hc-eqv { text-align: left; white-space: nowrap; }
-  #handicap td.hc-pred { font-weight: 700; font-size: 15px; color: var(--ink); }
-  /* each game as the byes show teams, small: the badge in team colors, its helmet over the left edge; your spread after the visitor */
-  #handicap td.hc-game { white-space: nowrap; padding-left: 14px; }
-  #handicap .hc-chip { height: 18px; padding: 0 6px 0 21px; margin-left: 0; font-size: 12px; letter-spacing: .04em; vertical-align: middle; }
-  #handicap .hc-chip .bye-helm { left: -10px; height: 24px; }
-  #handicap .hc-theo { margin: 0 2px 0 6px; font-weight: 700; color: var(--ink); vertical-align: middle; }
-  #handicap .hc-at { margin: 0 6px 0 5px; color: var(--ink-dim); vertical-align: middle; }
-  #handicap .hc-chip + .hc-at { margin-left: 6px; }
-  #handicap .hc-at + .hc-chip { margin-left: 10px; }
+  /* each game as the info line's byes show teams, at their size (the user, Nov 4 2026): the badge in team colors, its helmet over the left edge; your spread after the visitor */
+  /* the game (the user, Nov 4 2026): moneylines outside each helmet, yours over the market's; the badges the row's height; your spread over the market's and "@" in the middle */
+  #handicap td.hc-game { white-space: nowrap; padding-inline: 6px; }
+  #handicap .hc-gm { display: grid; grid-template-columns: 80px 140px 84px 34px 140px 80px; grid-template-rows: auto auto; align-items: center; line-height: 1.15; font-size: calc(var(--slate-fs, 16px) * 1.25); font-variant-numeric: tabular-nums; }
+  #handicap .hc-gm > .hc-gv, #handicap .hc-gm > .hc-gh, #handicap .hc-gm > .hc-at { grid-row: 1 / span 2; }
+  #handicap .hc-gv { justify-self: end; }
+  #handicap .hc-gh { justify-self: start; padding-left: 24px; }   /* room for its helmet, left of the badge */
+  #handicap .hc-at { justify-self: center; font-weight: 700; color: var(--ink); }
+  #handicap .hc-gs { justify-self: end; }
+  #handicap .hc-ml { color: var(--ink); padding-inline: 3px; }   /* yours padded as the market's, so both end together */
+  #handicap .hc-mlv { justify-self: end; margin-right: 7px; }   /* the visitor's, outside its helmet */
+  #handicap .hc-mlh { justify-self: end; margin-left: 11px; }   /* right-justified, so yours and the market's end together (the user, Nov 4 2026) */   /* the home team's, outside its badge */
+  #handicap .hc-mml { color: var(--ink-dim); }   /* the market's, under yours */
+  #handicap .hc-gm > .hc-ml:nth-child(1) { grid-column: 1; } #handicap .hc-gm > .hc-mml.hc-mlv { grid-column: 1; grid-row: 2; }
+  #handicap .hc-gm > .hc-gs-low { grid-column: 3; grid-row: 2; } #handicap .hc-gm > .hc-mml.hc-mlh { grid-column: 6; grid-row: 2; }
+  #handicap .hc-mkt, #handicap .hc-mml { padding-inline: 3px; border-radius: 3px; color: var(--ink-dim); }
+  #handicap .hc-mkt:empty { display: none; }
+  #handicap .hc-mkt.hc-fade { background: #b3261e; color: #fff; font-weight: 700; }   /* a deeper red (the user, Nov 4 2026): the home team's spread clears the hurdle */
+  #handicap .hc-mkt.hc-take, #handicap .hc-mml.hc-take { background: var(--accent); color: var(--accent-ink); font-weight: 700; }   /* the market's price worth taking at yours */
+  #handicap .hc-theo { font-weight: 700; color: var(--ink); }
+  #handicap .hc-pi { display: inline-block; text-align: right; }   /* a spread's sign and points, as wide as they are: the right-aligned column and the point's fixed box keep every point at one x, and a highlight hugs the number */
+  #handicap .hc-pd { display: inline-block; width: 26px; text-align: left; }   /* the point and its digit: every spread's point at the same x */
+  #handicap .hc-gs > span { display: inline-flex; padding-inline: 3px; }
+  #handicap .hc-chip { margin-left: 0; vertical-align: middle; height: 50px; padding: 0 12px 0 52px; }   /* the row's height, two lines */
+  #handicap .hc-chip .bye-helm { left: -20px; height: 52px; }   /* clear of the code: about 67px wide, 47 of it over the badge */
+  #handicap tr.hc-starts th { padding-top: 0; font: inherit; font-size: calc(var(--slate-fs, 16px) * 1.25); color: var(--ink-dim); text-align: center; white-space: nowrap; }   /* the numbers a game starts at, under each header: the fields' type, dimmer */
+  #handicap tr.hc-starts .hc-sv { display: inline-block; box-sizing: border-box; width: 80px; padding: 0 5px; text-align: center; vertical-align: middle; }   /* a field's width, so a start sits over the field it starts */
+  #handicap tr.hc-starts .hc-op { color: inherit; }
   #handicap .hc-keys { margin-bottom: 12px; max-width: 560px; }
   #handicap .hc-keys-btn { padding: 5px 14px; }
   #handicap .hc-keys-btn[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); }

@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw2j5yb6";
-import { BOOK_ICONS } from "./data/assets.js?v=mw2j5yb6";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw2j5yb6";
-import { Calc } from "./calc.js?v=mw2j5yb6";
-import { Fan } from "./hosts.js?v=mw2j5yb6";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw2nidcy";
+import { BOOK_ICONS } from "./data/assets.js?v=mw2nidcy";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw2nidcy";
+import { Calc } from "./calc.js?v=mw2nidcy";
+import { Fan } from "./hosts.js?v=mw2nidcy";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -54,7 +54,10 @@ import { Fan } from "./hosts.js?v=mw2j5yb6";
   let riskGame = null;
   const setRiskGame = g => { riskGame = g; changed("selection"); };
   let detailGame = null;   // the game whose detail replaces the cards (null = the cards)
-  const setDetailGame = g => { detailGame = g; };
+  // A game preview is a modal over wherever it was opened (the user, Nov 4 2026: "when closed should go back to where i was"): from, the view and week to go back to;
+  // closePreview goes back there. A preview opened from the cards goes back to the cards.
+  let previewFrom = null;
+  const setDetailGame = (g, from) => { detailGame = g; previewFrom = g ? from || null : null; };
   const inRiskGame = t => { const k = gameKey(riskGame); return t.key === k || (!t.key && t.kickoff === riskGame.t && t.game === gameLabel(riskGame)) || (t.parlay && t.legs.some(l => l.key === k)); };
   // What the totals and the saved tickets show: the selected game and its wagers, or the whole week.
   const ticketsInView = () => riskGame ? tickets.filter(inRiskGame) : tickets;
@@ -155,7 +158,7 @@ import { Fan } from "./hosts.js?v=mw2j5yb6";
     return tag;
   }
 
-  const APP_VERSION = "0.52.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.52.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -497,7 +500,13 @@ import { Fan } from "./hosts.js?v=mw2j5yb6";
     if (HOTKEYS.has(e.key) || e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.key) || typing(e.target) || (e.target && e.target.closest && e.target.closest("[data-keys]"))) return;
     e.preventDefault(); e.stopPropagation();
   }, true);   // before anything else hears it
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && detailGame) { detailGame = null; showView("week"); } });   // back from a game preview to the cards
+  function closePreview() {
+    const back = previewFrom;
+    detailGame = null; previewFrom = null;
+    if (back && back.week != null && back.week !== curWeek) switchWeek(back.week);
+    showView(back && back.view ? back.view : "week");
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && detailGame) closePreview(); });   // back from a game preview to where it was opened
   function clearRiskQuietly() { const col = document.querySelector(".col.left"), rc = $("riskCard"); col.classList.remove("has-sel"); rc.classList.add("rk-off"); rc.classList.remove("rk-over"); rc.setAttribute("aria-hidden", "true"); }
   function switchWeek(w) {
     if (w === curWeek) { if (view !== "week") showView("week"); return; }
@@ -510,4 +519,4 @@ import { Fan } from "./hosts.js?v=mw2j5yb6";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, newestFor, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, $, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, view, vigOf, weekNow, setRiskKey, CARD_ACTIONS, teamChip, hasArt, brighterOf, fitSlateLine, graphsOK, SECTIONS, isPhone, mq };
+export { closePreview, nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, newestFor, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, $, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, view, vigOf, weekNow, setRiskKey, CARD_ACTIONS, teamChip, hasArt, brighterOf, fitSlateLine, graphsOK, SECTIONS, isPhone, mq };

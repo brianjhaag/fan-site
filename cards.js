@@ -1,11 +1,11 @@
 // The game cards (the refactor, Nov 3 2026, from base.js): each card's badges, lines and gutter, the strip of cards in kickoff windows, a finished week's grid, and the byes.
-import { Calc } from "./calc.js?v=mw2j5yb6";
-import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw2j5yb6";
-import { CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw2j5yb6";
-import { renderSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw2j5yb6";
-import { renderGameDetail } from "./panels.js?v=mw2j5yb6";
-import { fillMoneyline, fillSpread, fillTotal, showSaved } from "./tracker.js?v=mw2j5yb6";
-import { telecastFor, watchGame } from "./telecasts.js?v=mw2j5yb6";
+import { Calc } from "./calc.js?v=mw2nidcy";
+import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw2nidcy";
+import { closePreview, CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw2nidcy";
+import { renderSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw2nidcy";
+import { renderGameDetail } from "./panels.js?v=mw2nidcy";
+import { fillMoneyline, fillSpread, fillTotal, showSaved } from "./tracker.js?v=mw2nidcy";
+import { telecastFor, watchGame } from "./telecasts.js?v=mw2nidcy";
 // base.js draws the byes as a league or week changes
 Object.assign(later, { renderByes });
 
@@ -137,7 +137,7 @@ function renderGames() {
   box.classList.toggle("bd", !!shownDetail);
   // a game preview takes over the ticket column's room: the totals, saved tickets and wager ticket are hidden (their space stays) and the preview card widens across it
   { const topEl = document.querySelector(".top"), cl = document.querySelector(".col.left"); topEl.classList.toggle("bd-open", !!shownDetail); topEl.style.setProperty("--bdx", (cl.getBoundingClientRect().width + 20) + "px"); }
-  if (shownDetail) { box.classList.remove("strip", "flat"); renderGameDetail(box, shownDetail); { const x = el("button", "bd-close", "×"); x.type = "button"; x.title = "Close"; x.setAttribute("aria-label", "Close game preview"); x.addEventListener("click", () => { setDetailGame(null); showView("week"); }); box.append(x); } renderSectionTabs(); fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); updateGameArrows(); return; }
+  if (shownDetail) { box.classList.remove("strip", "flat"); renderGameDetail(box, shownDetail); { const x = el("button", "bd-close", "×"); x.type = "button"; x.title = "Close"; x.setAttribute("aria-label", "Close game preview"); x.addEventListener("click", () => closePreview()); box.append(x); } renderSectionTabs(); fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); updateGameArrows(); return; }
   box.replaceChildren();
   box.classList.add("strip");   // every week: the cards sit in columns by kickoff window, with a scrollbar along the bottom
   const made = [];
