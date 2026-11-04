@@ -357,7 +357,8 @@ const Calc = (() => {
   ];
   // The visitor's margin from the user's equation: -HFA, then each term's coefficient times its variable. eq = { hfa, terms: [{ v, coef }] }; row = { h, a } from hcStates;
   // x as HC_VARS takes it. null when a term's variable has no value for this game (no DVOA for a team, say); a variable no longer offered counts for nothing.
-  const hcVisitorMargin = (eq, row, x) => eq.terms.reduce((s, t) => { const v = HC_VARS.find(y => y.k === t.v); if (s === null || !v) return s; const val = v.f(row.h, row.a, x); return val === null ? null : s + t.coef * val; }, -eq.hfa);
+  // A term's val, when a number, is the user's own value for this game, typed by hand (the user, Nov 4 2026), used instead of the variable's.
+  const hcVisitorMargin = (eq, row, x) => eq.terms.reduce((s, t) => { const v = HC_VARS.find(y => y.k === t.v); if (s === null || !v) return s; const val = Number.isFinite(t.val) ? t.val : v.f(row.h, row.a, x); return val === null ? null : s + t.coef * val; }, -eq.hfa);
   // Least squares with an intercept, the variables centered on their means, so the intercept is the average result: the home team's average margin (home field
   // advantage). X: rows of numbers, y: results. Out: { b0, b, means, se, r2, rmse, n }, or null when it can't be solved.
   function olsFit(X, y) {
