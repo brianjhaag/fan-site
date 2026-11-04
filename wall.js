@@ -2,10 +2,10 @@
 // screen that joined its wall, with their monitors and the telecast windows on them, where they really sit, and the day's games to put on any of them. This page's connector keeps it;
 // the other computers are its screens (wall.rs in the connector). Tap a window for its sound, which mutes every other telecast on the wall; x closes it; Snap back puts a computer's
 // windows back in their spots; each computer's monitor and layout pick its spots.
-import { Fan } from "./hosts.js?v=mw1botuu";
-import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw1botuu";
-import { slateOfDay } from "./leagues.js?v=mw1botuu";
-import { abbr } from "./leagues.js?v=mw1botuu";
+import { Fan } from "./hosts.js?v=mw1d2yjh";
+import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, telecastFor, TELECAST_LAYOUTS, timeZoned, shortDayFmt } from "./base.js?v=mw1d2yjh";
+import { slateOfDay } from "./leagues.js?v=mw1d2yjh";
+import { abbr } from "./leagues.js?v=mw1d2yjh";
 
 const WALL_MS = 3000;   // how often the open Telecasts tab reads the wall
 let wallTimer = null, wallData = null, wallNote = "", wallBox = null, wallShown = "";

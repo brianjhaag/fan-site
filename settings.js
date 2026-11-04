@@ -1,12 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw1botuu";
-import { Fan } from "./hosts.js?v=mw1botuu";
-import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, hdhr, setHdhr, sourceOf, setNetworkSource, liveSource, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw1botuu";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw1botuu";
-import { wallPanel } from "./wall.js?v=mw1botuu";
-import { qrSvg } from "./qr.js?v=mw1botuu";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw1botuu";
-import { demoAway, setBet } from "./trade.js?v=mw1botuu";
+import { espnState } from "./espn.js?v=mw1d2yjh";
+import { Fan } from "./hosts.js?v=mw1d2yjh";
+import { allNetworks, weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, hdhr, setHdhr, sourceOf, setNetworkSource, liveSource, APP_VERSION, $, BADGE_STYLES, NETWORKS, TELECAST_LAYOUTS, allTickets, badgeStyle, el, leagueNames, leaguesOn, networkLinks, pricesWanted, setBadgeStyle, setLeagueOn, setNetworkLink, setTelecastPref, slateAt, linesAt, telecastPref, timeZoned, trackingOn } from "./base.js?v=mw1d2yjh";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw1d2yjh";
+import { wallPanel } from "./wall.js?v=mw1d2yjh";
+import { qrSvg } from "./qr.js?v=mw1d2yjh";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw1d2yjh";
+import { demoAway, setBet } from "./trade.js?v=mw1d2yjh";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
