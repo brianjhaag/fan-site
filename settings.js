@@ -1,12 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw2ct4d4";
-import { Fan } from "./hosts.js?v=mw2ct4d4";
-import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw2ct4d4";
-import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw2ct4d4";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw2ct4d4";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw2ct4d4";
-import { demoAway, setBet } from "./trade.js?v=mw2ct4d4";
-import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw2ct4d4";
+import { espnState } from "./espn.js?v=mw2czbex";
+import { Fan } from "./hosts.js?v=mw2czbex";
+import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw2czbex";
+import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw2czbex";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw2czbex";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw2czbex";
+import { demoAway, setBet } from "./trade.js?v=mw2czbex";
+import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw2czbex";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -78,8 +78,8 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
         copy.type = "button"; copy.addEventListener("click", () => { navigator.clipboard?.writeText(line).then(() => { copy.textContent = "Copied"; }, () => {}); knowConnector(); });
         step(el("b", null, "Turn on Linux. "), "Once: Settings, About ChromeOS, Developers, Linux development environment, Set up. It takes a few minutes.");
         step(el("b", null, "Run one line. "), "Open the Terminal app, paste this and press Enter. Linux doesn't ask about unsigned programs. ", copy, code);
-        step(el("b", null, "You're moved. "), "It installs, starts with Linux from then on, and opens Fan from the Chromebook, at localhost:5180. That's the copy with prices. Settings and telecast links set up on this site stay with this site, so set those up once there.");
-        box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "Always start from this page. When the connector is running, this page finds it and moves you to it. It runs whenever Linux is running: opening the Terminal starts Linux if it isn't. To update, press Update on the Application tab."));
+        step(el("b", null, "You're moved. "), "It installs and opens Fan from the Chromebook, at localhost:5180. That's the copy with prices. Settings and telecast links set up on this site stay with this site, so set those up once there.");
+        box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "Always start from this page. When the connector is running, this page finds it and moves you to it. To keep it running, tick Start at login on the Application tab once you've moved: it then starts whenever Linux does, and opening the Terminal starts Linux. Otherwise it closes 30 minutes after your last Fan page, and running the same line again starts it. To update, press Update on the Application tab."));
         return [box];
       }
       if (!windows && !mac) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector runs on a Windows or Mac computer, or a Chromebook.")); return [box]; }
