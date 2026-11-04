@@ -1143,6 +1143,11 @@
   .xypair .bd-bhelm { height: 44px; margin: -7px 4px -7px -10px; }
 
   /* ===== Season stats and Playbook ===== */
+  /* Season stats' heading: the title, and right of it the This season / Last 5 seasons toggle (the user, Nov 4 2026) */
+  #season .season-head { display: flex; align-items: center; gap: 16px; }
+  #season .season-head h2 { margin-block: 0; }
+  #season .season-span { flex: none; }
+  #season .season-span span { padding: 5px 12px; }
   #playbook table { max-width: none; font-size: 13px; }
   #playbook th, #playbook td { padding: 4px 8px; }
   #playbook .pb-g { text-align: center; border-left: 1px solid var(--paper-edge); color: var(--ink); }

@@ -1,25 +1,25 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mw229vws";
-import "./layout.js?v=mw229vws";
-import "./risk.js?v=mw229vws";
-import "./panels.js?v=mw229vws";
-import "./tracker.js?v=mw229vws";
-import "./trade.js?v=mw229vws";
-import "./telecasts.js?v=mw229vws";
-import "./cards.js?v=mw229vws";
-import "./settings.js?v=mw229vws";
-import { renderCode } from "./code.js?v=mw229vws";
-import { Fan } from "./hosts.js?v=mw229vws";
-import { WEEK_GAMES } from "./espn.js?v=mw229vws";
-import { sendManifest, useWallLinks } from "./telecasts.js?v=mw229vws";
-import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, switchWeek, view, weekNow } from "./base.js?v=mw229vws";
-import { renderSectionTabs } from "./layout.js?v=mw229vws";
-import { renderByes, renderGames } from "./cards.js?v=mw229vws";
-import { LEAGUES_READY } from "./leagues.js?v=mw229vws";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw229vws";
-import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mw229vws";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw229vws";
-import { fillSettings, findConnector } from "./settings.js?v=mw229vws";
+import "./base.js?v=mw22n4pc";
+import "./layout.js?v=mw22n4pc";
+import "./risk.js?v=mw22n4pc";
+import "./panels.js?v=mw22n4pc";
+import "./tracker.js?v=mw22n4pc";
+import "./trade.js?v=mw22n4pc";
+import "./telecasts.js?v=mw22n4pc";
+import "./cards.js?v=mw22n4pc";
+import "./settings.js?v=mw22n4pc";
+import { renderCode } from "./code.js?v=mw22n4pc";
+import { Fan } from "./hosts.js?v=mw22n4pc";
+import { WEEK_GAMES } from "./espn.js?v=mw22n4pc";
+import { sendManifest, useWallLinks } from "./telecasts.js?v=mw22n4pc";
+import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, switchWeek, view, weekNow } from "./base.js?v=mw22n4pc";
+import { renderSectionTabs } from "./layout.js?v=mw22n4pc";
+import { renderByes, renderGames } from "./cards.js?v=mw22n4pc";
+import { LEAGUES_READY } from "./leagues.js?v=mw22n4pc";
+import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw22n4pc";
+import { renderPlaybook, renderSeason, renderXY } from "./panels.js?v=mw22n4pc";
+import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw22n4pc";
+import { fillSettings, findConnector } from "./settings.js?v=mw22n4pc";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };
@@ -29,7 +29,7 @@ import { fillSettings, findConnector } from "./settings.js?v=mw229vws";
     [renderTotals, [...BOARD, "view:week"]],
     [whenShowing("ledger", renderLedger), [...BOARD, "view:ledger", "balances", "leagues"]],
     [whenShowing("xy", renderXY), [...BOARD, "view:xy", "size"]],
-    [whenShowing("season", renderSeason), [...BOARD, "view:season", "size"]],
+    [whenShowing("season", renderSeason), [...BOARD, "view:season", "size", "past"]],
     [whenShowing("playbook", renderPlaybook), ["view:playbook", "playbook", "size"]],
     [whenShowing("code", renderCode), ["view:code"]],
     [drawLeagueStub, ["view"]],

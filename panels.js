@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw229vws";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams } from "./espn.js?v=mw229vws";
-import { Fan } from "./hosts.js?v=mw229vws";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw229vws";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw229vws";
+import { riskGrid } from "./risk.js?v=mw22n4pc";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw22n4pc";
+import { Fan } from "./hosts.js?v=mw22n4pc";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw22n4pc";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw22n4pc";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -101,18 +101,46 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw229vws";
     return c;
   };
 
+  // Season stats' span (the user, Nov 4 2026): this season, or the last five complete ones together. Kept per browser, the same for every league.
+  let seasonSpan = (() => { try { return localStorage.getItem("fan.seasonSpan") === "past" ? "past" : "now"; } catch (e) { return "now"; } })();
+  setPastRefresh(() => changed("past"));
+  function spanToggle() {
+    const seg = el("div", "seg season-span");
+    [["now", "This season"], ["past", "Last 5 seasons"]].forEach(([k, h]) => {
+      const lab = el("label"), r = el("input"), s = el("span", null, h);
+      r.type = "radio"; r.name = "seasonSpan"; r.checked = seasonSpan === k;
+      r.addEventListener("change", () => { seasonSpan = k; try { localStorage.setItem("fan.seasonSpan", k); } catch (e) {} changed("past"); });
+      lab.append(r, s); seg.append(lab);
+    });
+    return seg;
+  }
   // Season stats panel: this season's real results as two histograms, margins of victory and totals, in the league's own buckets (RULES.leagues' season).
   function renderSeason() {
     if (drawStub("season")) return;
     const box = $("season"), pad = 22;   // pad: a cell's border and padding
     const W = Math.max(560, box.clientWidth - 32), lg = LG(), S = lg.season;
     box.replaceChildren();
+    const head = el("div", "season-head");
+    box.append(head);
     // The NFL's weeks (1–6 hardcoded, later ones from the live slate), or a daily league's season from this browser's own ESPN pull (the user, Nov 4 2026).
     const nflWeeks = Object.keys(WEEK_GAMES).map(Number).filter(w => w <= 18);
     const finals = lg.daily ? ALL_GAMES.filter(g => g.league === league && g.final).sort((p, q) => p.t.localeCompare(q.t)) : nflWeeks.flatMap(w => WEEK_GAMES[w].filter(g => g.final));
-    const results = finals.map(g => g.final), dayOf = g => new Date(g.t.slice(0, 10) + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    const span = lg.daily ? (finals.length ? `${dayOf(finals[0])}–${dayOf(finals[finals.length - 1])}` : "none final yet") : `weeks 1–${Math.max(0, ...nflWeeks.filter(w => WEEK_GAMES[w].some(g => g.final)))}`;
-    box.append(el("h2", null, lg.daily ? `${lg.code} season stats` : "Season stats"), el("small", null, lg.daily ? "2026–27 regular season · real results only, from ESPN's scores as this browser read them" : "2026 regular season · real results only (weeks 1–6 hardcoded, weeks 7 and 8 from the live slate as games finish)"));
+    let results = finals.map(g => g.final);
+    const dayOf = g => new Date(g.t.slice(0, 10) + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    let span = lg.daily ? (finals.length ? `${dayOf(finals[0])}–${dayOf(finals[finals.length - 1])}` : "none final yet") : `weeks 1–${Math.max(0, ...nflWeeks.filter(w => WEEK_GAMES[w].some(g => g.final)))}`;
+    head.append(el("h2", null, lg.daily ? `${lg.code} season stats` : "Season stats"), spanToggle());
+    if (seasonSpan === "past") {
+      // The last five complete regular seasons, from this browser's own pull (espn.js pastSeasons): drawn once every season is kept, a progress line until then.
+      const past = pastSeasons(league), first = seasonName(league, past.years[0]), lastS = seasonName(league, past.years[past.years.length - 1]);
+      if (!past.ready) {
+        const where = league === "nfl" ? "nflverse's games table" : "ESPN's team schedules";
+        box.append(el("p", "pg-stub-t", past.problem ? `Couldn't read the last 5 seasons: ${past.problem}. Reload the page to try again.` : `Reading the ${first} to ${lastS} regular seasons from ${where}, once for this browser${past.of > 1 ? `: ${past.done} of ${past.of}` : "…"}`));
+        return;
+      }
+      results = past.years.flatMap(y => past.seasons[y]);
+      span = `${first} to ${lastS}`;
+      box.append(el("small", null, `The last 5 complete regular seasons, ${first} to ${lastS} · real results only, from ${league === "nfl" ? "nflverse's games table" : "ESPN's team schedules"} as this browser read them`));
+    } else box.append(el("small", null, lg.daily ? "2026–27 regular season · real results only, from ESPN's scores as this browser read them" : "2026 regular season · real results only (weeks 1–6 hardcoded, weeks 7 and 8 from the live slate as games finish)"));
     // Margins of victory: how many games ended with each margin, one-point buckets from 1 to K+ (the last bucket holds every bigger margin).
     // Each game is counted once; a tie has no margin and is only noted in the caption. An NHL game decided in overtime or a shootout counts at its final score.
     const counts = new Map(), K = S.margin;
@@ -141,7 +169,8 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw229vws";
       hadd("text", { x: XH(k), y: hBase - bh - 6, "text-anchor": "middle", class: "cnt" }, String(n));
     }
     const unit = league === "nhl" ? "goals" : "points";
-    box.append(cell(`Season results · ${results.length} games, ${span} · margin of victory, each game counted once · ${K}+ includes bigger margins${league === "nhl" ? " · overtime and shootout games at their final score" : ""}${ties ? ` · ${ties} tie${ties > 1 ? "s" : ""} not shown` : ""}`, hs, true));
+    const what = seasonSpan === "past" ? "Results" : "Season results", whatT = seasonSpan === "past" ? "Totals" : "Season totals";
+    box.append(cell(`${what} · ${results.length} games, ${span} · margin of victory, each game counted once · ${K}+ includes bigger margins${league === "nhl" ? " · overtime and shootout games at their final score" : ""}${ties ? ` · ${ties} tie${ties > 1 ? "s" : ""} not shown` : ""}`, hs, true));
     // This season's totals, the same way (the user, Nov 3 2026): how many games ended with each combined score, one-point buckets from LO and under to HI and over.
     const [LO, HI] = S.totals, tick = S.tick, tot = new Map();
     results.forEach(([a, h]) => { const k = Math.max(LO, Math.min(HI, a + h)); tot.set(k, (tot.get(k) || 0) + 1); });
@@ -160,7 +189,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw229vws";
       tadd("rect", { x: XT(k) - tbw / 2, y: hBase - bh, width: tbw, height: bh, class: "bar win" + (k === LO || k === HI ? " end" : "") });
       tadd("text", { x: XT(k), y: hBase - bh - 6, "text-anchor": "middle", class: "cnt" }, String(n));
     }
-    box.append(cell(`Season totals · ${results.length} games, ${span} · both teams' ${unit} together, each game counted once · ${LO}− and ${HI}+ include everything past them`, ts, true));
+    box.append(cell(`${whatT} · ${results.length} games, ${span} · both teams' ${unit} together, each game counted once · ${LO}− and ${HI}+ include everything past them`, ts, true));
   }
 
   // A team helmet drawn inside an svg (the Graphs badges): natural size is read from the PNG header of its data URI, and the empty left margin

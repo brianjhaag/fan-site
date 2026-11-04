@@ -1,8 +1,8 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { SHARED } from "./shared.js?v=mw229vws";
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw229vws";
+import { SHARED } from "./shared.js?v=mw22n4pc";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw22n4pc";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;
@@ -227,6 +227,55 @@ setInterval(() => {
   for (const l of scoresFor) if (l !== "nfl" && dailyGames(l).some(dailyOn)) refreshDaily(l).then(() => onRefresh(), () => {});
 }, 60e3);
 
+// Past seasons, for Season stats (the user, Nov 4 2026): the finals of the last five complete regular seasons, this browser's own pull, asked for once and kept, since a finished season doesn't change.
+// The NFL from nflverse's public games table, one file (the same table Playbook reads); the NBA and the NHL from ESPN's team schedules, one request a team a season, two at a time (gentle on a free address), each game kept once.
+// No bulk file for those two answers a browser: the NHL's own stats address refuses one, and the NBA has none.
+const PAST_N = 5, PAST = {}, pastPulls = {};
+let onPast = () => {};
+const setPastRefresh = fn => { onPast = fn; };
+// The seasons, by the year ESPN names them: the NFL's by its fall, the NBA's and the NHL's by the spring they end in (2025–26 is 2026), so the season under way is SHARED.season.year + 1.
+const pastYears = l => Array.from({ length: PAST_N }, (_, i) => SHARED.season.year - (l === "nfl" ? PAST_N : PAST_N - 1) + i);
+const seasonName = (l, y) => (l === "nfl" ? String(y) : `${y - 1}–${String(y).slice(2)}`);
+// { ready, years, seasons: { year: [[away, home], ...] }, done, of, problem }: what's kept, and while a pull runs how far it has got.
+function pastSeasons(l) {
+  const years = pastYears(l), have = PAST[l] || (PAST[l] = (keptPull("past-" + l) || {}).data || {});
+  if (years.every(y => have[y])) return { ready: true, years, seasons: have };
+  const p = pastPulls[l] || (pastPulls[l] = { done: 0, of: 0, problem: "" });
+  if (!p.running && !p.problem) { p.running = true; pullPast(l, years.filter(y => !have[y]), have, p).catch(e => { p.problem = pullFailed || e.message || "Couldn't reach ESPN"; }).finally(() => { p.running = false; onPast(); }); }
+  return { ready: false, years, seasons: have, done: p.done, of: p.of, problem: p.problem };
+}
+const keepPast = (l, have) => keepPull("past-" + l, have);
+async function pullPast(l, years, have, p) {
+  if (l === "nfl") {
+    p.of = 1;
+    const r = await fetch("https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv", { signal: AbortSignal.timeout(60000) });
+    if (!r.ok) throw new Error("nflverse answered " + r.status);
+    const text = await r.text();
+    const lines = text.trim().split("\n"), head = lines.shift().split(","), col = n => head.indexOf(n), [S, T, A, H] = ["season", "game_type", "away_score", "home_score"].map(col), got = {};
+    lines.forEach(line => { const c = line.split(","), y = Number(c[S]); if (years.includes(y) && c[T] === "REG" && c[A] !== "" && c[A] !== "NA" && c[H] !== "" && c[H] !== "NA") (got[y] = got[y] || []).push([Number(c[A]), Number(c[H])]); });
+    years.forEach(y => { if (got[y]) have[y] = got[y]; });
+    p.done = 1;
+    keepPast(l, have);
+    return;
+  }
+  const def = LEAGUE_DEFS[l], ids = (await getJson(`https://site.api.espn.com/apis/v2/sports/${def.espn}/standings`)).children.flatMap(conf => conf.standings.entries.map(row => row.team.id));
+  p.of = ids.length * years.length;
+  const score = x => Number(x.score && typeof x.score === "object" ? x.score.value : x.score);
+  for (const y of years) {
+    const games = new Map();
+    for (let k = 0; k < ids.length; k += 2) {
+      await Promise.all(ids.slice(k, k + 2).map(async id => {
+        let j;
+        try { j = await getJson(`${SITE}/${def.espn}/teams/${id}/schedule?season=${y}&seasontype=2`); } catch (e) { if (stopped) throw e; j = { events: [] }; }   // a team missing from a season (a new club): its games are on its opponents' schedules too
+        (j.events || []).forEach(e => { const c = e.competitions && e.competitions[0]; if (!c || !c.status || !c.status.type.completed || games.has(e.id)) return; const [A, H] = sides(c); if (A && H) games.set(e.id, [score(A), score(H)]); });
+        p.done++; onPast();
+      }));
+    }
+    have[y] = [...games.values()];
+    keepPast(l, have);
+  }
+}
+
 // NCAA FB's list: today's games involving a top 25 team, asked for when its page opens.
 async function pullNcaafb() {
   const day = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, "");
@@ -237,4 +286,4 @@ async function pullNcaafb() {
   }).filter(g => g.away.rank || g.home.rank).sort((a, b) => a.t.localeCompare(b.t));
   return { asOf: Date.now(), games };
 }
-export { DAILY_TEAMS, ensureDailyTeams, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };
+export { DAILY_TEAMS, ensureDailyTeams, pastSeasons, seasonName, setPastRefresh, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };
