@@ -1165,13 +1165,14 @@
   #handicap .hc-table .pb-l { border-left: 1px solid var(--paper-edge); }
   #handicap .hc-eq td { background: rgb(255 255 255 / .04); border-bottom: 1px solid var(--paper-edge); padding-block: 6px; }
   #handicap .hc-eq-h { font: 700 15px var(--font-label); text-align: left; }
-  #handicap .hc-eq td:nth-child(2) { text-align: left; white-space: nowrap; }
+  #handicap .hc-eq td:nth-child(2) { text-align: left; white-space: normal; }
+  #handicap .hc-term { display: inline-block; white-space: nowrap; margin-right: 4px; }   /* a term stays together; the equation's row wraps between terms */
   #handicap .hc-eq input { width: 62px; margin: 0 3px; }
   #handicap .hc-eq select { margin-left: 4px; }
   #handicap .hc-eq select.hc-var { width: 84px; }   /* a term's variable, by its short name: three or four terms fit on the row */
   #handicap .hc-op { color: var(--ink-dim); }
   #handicap .hc-guide-btn { display: block; margin-top: 4px; padding: 2px 12px; }   /* the guide's Fit, under "Your equation" */
-  #handicap tr.hc-guide td { background: rgb(255 255 255 / .02); font-size: 12px; padding-block: 3px; text-align: left; }
+  #handicap tr.hc-guide td { background: rgb(255 255 255 / .02); font-size: 12px; padding-block: 3px; text-align: left; white-space: normal; }
   #handicap tr.hc-guide td.hc-guide-h { color: var(--ink-dim); padding-left: 16px; }
   #handicap tr.hc-guide button { padding: 1px 10px; font-size: 12px; }
   #handicap .hc-src { margin-left: 8px; font-size: 11px; color: var(--ink-dim); }   /* where the DVOA term's numbers stand: FTN's week, or why there are none */

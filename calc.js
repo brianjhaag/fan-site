@@ -325,16 +325,17 @@ const Calc = (() => {
   /* ==== Handicap (the user, Nov 4 2026): the user's own theo for a game. The main calc is the projected game result, the home team's margin, from a linear
   // regression the user controls; the projected spread is that result, and the key number model turns it into a moneyline. Totals are a different calc, not here yet. ==== */
   // How each team stood before a game, from that season's earlier finals only, so a fit never sees the future: per game points for and against, net, win share
-  // (a tie a half), and rest days (days since its last game, 14 at most, 14 before its first). games: [{ season, ms, away, home, final: [a, h] | null }].
-  // Out: one row per game, sorted by kickoff, { g, a, h }, each side { gp, pf, pa, net, win, rest }; a game without a final is a row too, and changes nothing.
+  // (a tie a half), rest days (days since its last game, 14 at most, 14 before its first), and its last game's margin (prev, null before its first).
+  // games: [{ season, ms, away, home, final: [a, h] | null }]. Out: one row per game, sorted by kickoff, { g, a, h }, each side { gp, pf, pa, net, win, rest, prev };
+  // a game without a final is a row too, and changes nothing.
   function hcStates(games) {
     const seen = new Map(), out = [];
     const side = (season, team, ms) => {
       const k = season + "|" + team, s = seen.get(k);
-      if (!s || !s.g) return { gp: 0, pf: 0, pa: 0, net: 0, win: 0.5, rest: s ? Math.min(14, Math.round((ms - s.last) / 864e5)) : 14 };
-      return { gp: s.g, pf: s.pf / s.g, pa: s.pa / s.g, net: (s.pf - s.pa) / s.g, win: s.w / s.g, rest: Math.min(14, Math.round((ms - s.last) / 864e5)) };
+      if (!s || !s.g) return { gp: 0, pf: 0, pa: 0, net: 0, win: 0.5, rest: s ? Math.min(14, Math.round((ms - s.last) / 864e5)) : 14, prev: null };
+      return { gp: s.g, pf: s.pf / s.g, pa: s.pa / s.g, net: (s.pf - s.pa) / s.g, win: s.w / s.g, rest: Math.min(14, Math.round((ms - s.last) / 864e5)), prev: s.prev };
     };
-    const add = (season, team, ms, us, them) => { const k = season + "|" + team, s = seen.get(k) || { g: 0, pf: 0, pa: 0, w: 0, last: ms }; s.g++; s.pf += us; s.pa += them; s.w += us > them ? 1 : us === them ? 0.5 : 0; s.last = ms; seen.set(k, s); };
+    const add = (season, team, ms, us, them) => { const k = season + "|" + team, s = seen.get(k) || { g: 0, pf: 0, pa: 0, w: 0, last: ms }; s.g++; s.pf += us; s.pa += them; s.w += us > them ? 1 : us === them ? 0.5 : 0; s.last = ms; s.prev = us - them; seen.set(k, s); };
     games.slice().sort((p, q) => p.ms - q.ms).forEach(g => {
       out.push({ g, a: side(g.season, g.away, g.ms), h: side(g.season, g.home, g.ms) });
       if (g.final) { add(g.season, g.away, g.ms, g.final[0], g.final[1]); add(g.season, g.home, g.ms, g.final[1], g.final[0]); }
@@ -342,12 +343,17 @@ const Calc = (() => {
     return out;
   }
   // The variables the user's equation may use, the user's own (Nov 4 2026), each in the visitor's terms. k: its key; short: its name in the equation's narrow dropdown;
-  // h: its full name; start: the coefficient a new term starts at; fit: whether Fit can learn it (it needs the variable as it stood before every past game).
-  // f(h, a, x): its value from the two sides' standing before the game (hcStates) and x, what else the page has for the game ({ dvoa: [away, home] }); null when it has none.
+  // h: its full name; start: the coefficient a new term starts at; guide: how the Fit guide fits it, "market" (alone, against the week's lines) or "finals" (a flag,
+  // against finals over all the data, on what the strength terms leave over: hcResidFit). f(h, a, x): its value from the two sides' standing before the game (hcStates)
+  // and x, what else the page has for the game ({ dvoa: [away, home] }); null when it has none.
+  // The flags are the Trends table's situations (the user, Nov 4 2026), as visitor minus home: +1 when only the visitor has it, -1 when only the home team does, 0 otherwise.
+  const hcBye = s => (s.prev !== null && s.rest >= 13 ? 1 : 0), hcBlowout = s => (s.prev !== null && s.prev <= -17 ? 1 : 0);
   const HC_VARS = [
-    { k: "vmov", short: "V MOV", h: "The visitor's average margin of victory this season", start: 0.7, fit: true, f: (h, a) => a.net },
-    // FTN's total DVOA in percent, at its latest week: one number a team for the season so far, with no past weeks to fit on, so its coefficient is the user's to type
-    { k: "dvoa", short: "DVOA diff", h: "Total DVOA difference, visitor minus home (FTN, in percentage points)", start: 0, fit: false, f: (h, a, x) => (x && x.dvoa && Number.isFinite(x.dvoa[0]) && Number.isFinite(x.dvoa[1]) ? x.dvoa[0] - x.dvoa[1] : null) }
+    { k: "vmov", short: "V MOV", h: "The visitor's average margin of victory this season", start: 0.7, guide: "market", f: (h, a) => a.net },
+    // FTN's total DVOA in percent, at its latest week: one number a team for the season so far, with no past weeks, so it can only be fitted against this week's lines
+    { k: "dvoa", short: "DVOA diff", h: "Total DVOA difference, visitor minus home (FTN, in percentage points)", start: 0, guide: "market", f: (h, a, x) => (x && x.dvoa && Number.isFinite(x.dvoa[0]) && Number.isFinite(x.dvoa[1]) ? x.dvoa[0] - x.dvoa[1] : null) },
+    { k: "bye", short: "Off bye", h: "Off a bye (13+ days' rest after a game that season), visitor minus home: +1 the visitor only, −1 the home team only", start: 0, guide: "finals", f: (h, a) => hcBye(a) - hcBye(h) },
+    { k: "blow", short: "Blowout L", h: "After a blowout loss (its last game lost by 17 or more), visitor minus home: +1 the visitor only, −1 the home team only", start: 0, guide: "finals", f: (h, a) => hcBlowout(a) - hcBlowout(h) }
   ];
   // The visitor's margin from the user's equation: -HFA, then each term's coefficient times its variable. eq = { hfa, terms: [{ v, coef }] }; row = { h, a } from hcStates;
   // x as HC_VARS takes it. null when a term's variable has no value for this game (no DVOA for a team, say); a variable no longer offered counts for nothing.
@@ -374,6 +380,13 @@ const Calc = (() => {
     const res = y.map((v, i) => v - ybar - Xc[i].reduce((s, x, j) => s + x * b[j], 0)), sse = res.reduce((s, e) => s + e * e, 0), sst = y.reduce((s, v) => s + (v - ybar) ** 2, 0);
     const s2 = sse / (n - p - 1);
     return { b0: ybar, b, means, se: inv.map((r, j) => Math.sqrt(Math.max(0, s2 * r[j]))), r2: sst ? 1 - sse / sst : 0, rmse: Math.sqrt(sse / n), n };
+  }
+  // A flag beyond the strength terms (the user, Nov 4 2026): least squares of what the equation's other terms leave over (res, the visitor's margin minus their
+  // prediction) on the flag, with an intercept for whatever they miss on average. Out: { coef (points to the visitor per +1), se, n, on (games with the flag not 0) }.
+  function hcResidFit(xs, res) {
+    const f = olsFit(xs.map(x => [x]), res);
+    if (!f) return null;
+    return { coef: f.b[0], se: f.se[0], n: f.n, on: xs.filter(x => x !== 0).length };
   }
   // One variable as the only predictor (the user, Nov 4 2026: a guide to setting coefficients): least squares of the visitor's margin y on x alone, as the equation
   // writes it, visitor margin = -HFA + coef x x. Out: { hfa, coef, r2, rmse, n }, or null when it can't be fitted.
@@ -688,6 +701,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcAlone, olsFit, hcTheo };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcAlone, hcResidFit, olsFit, hcTheo };
 })();
 export { Calc };
