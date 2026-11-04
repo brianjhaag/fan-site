@@ -1,9 +1,9 @@
 // The page's core: state, formats, the game cards, tabs and menus.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw1d2yjh";
-import { BOOK_ICONS } from "./data/assets.js?v=mw1d2yjh";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw1d2yjh";
-import { Calc } from "./calc.js?v=mw1d2yjh";
-import { Fan } from "./hosts.js?v=mw1d2yjh";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw1dxidc";
+import { BOOK_ICONS } from "./data/assets.js?v=mw1dxidc";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw1dxidc";
+import { Calc } from "./calc.js?v=mw1dxidc";
+import { Fan } from "./hosts.js?v=mw1dxidc";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -87,7 +87,7 @@ import { Fan } from "./hosts.js?v=mw1d2yjh";
     const rows = slate.games.map(g => {
       const tr = el("tr"), started = g.state !== "pre", net = el("td", "cfb-net"), tvBtn = el("button");
       tvBtn.type = "button"; tvBtn.title = "Live telecast"; tvBtn.setAttribute("aria-label", "Live telecast"); tvBtn.innerHTML = CARD_ACTIONS.find(([name]) => name === "Live telecast")[1];
-      tvBtn.addEventListener("click", () => { watchGame(g); });   // always on here: a list read once can't say what's live now
+      tvBtn.addEventListener("click", () => { later.watchGame(g); });   // always on here: a list read once can't say what's live now
       net.append(g.tv, tvBtn);
       tr.append(el("td", null, timeZoned(new Date(g.t))), team(g.away), el("td", "cfb-num", started ? String(g.away.score) : ""), team(g.home), el("td", "cfb-num", started ? String(g.home.score) : ""), el("td", null, started ? g.detail : ""), net);
       return tr;
@@ -105,71 +105,6 @@ import { Fan } from "./hosts.js?v=mw1d2yjh";
     if (!s.stub) return false;
     $(v).replaceChildren(el("div", "pg-stub", s.h), el("p", "pg-stub-t", s.stub));
     return true;
-  }
-  // The networks the slates name, each with a link the user pastes in the settings window. Claude's default list. Kept per browser.
-  // Every network Claude knows of (the user's word, Nov 3 2026: "a link for every network you know of"): broadcast, national cable, streaming, then Colorado's own. allNetworks adds any other a game names, the regional ones mostly.
-  const NETWORKS = ["CBS", "Fox", "NBC", "ABC", "CW", "ION", "ESPN", "ESPN2", "ESPNU", "ESPNews", "ESPN+", "ESPN Deportes", "TNT", "truTV", "TBS", "USA Network", "FS1", "FS2", "NFL Network", "NBA TV", "NHL Network", "MLB Network", "CBS Sports Network", "SEC Network", "BTN", "ACC Network", "Golf Channel",
-    "Peacock", "Prime Video", "Paramount+", "Netflix", "Apple TV", "HBO Max", "Disney+", "Hulu", "YouTube", "NFL+", "DAZN", "Altitude Sports"];   // the NBA's and NHL's national networks and Colorado's own (Nov 3 2026)
-  let networkLinks = {};
-  try { const v = JSON.parse(localStorage.getItem("fan.networks")); if (v && typeof v === "object") networkLinks = v; } catch (e) {}
-  function setNetworkLink(n, url) {
-    if (url.trim()) networkLinks[n] = url.trim(); else delete networkLinks[n];
-    try { localStorage.setItem("fan.networks", JSON.stringify(networkLinks)); } catch (e) {}
-    sendManifest();
-    changed("cards");
-  }
-  // The wall's manifest (the user's, Nov 3 2026): the computer that runs the wall hands its connector its network links and leagues, and a remote uses them as its own,
-  // so nothing needs setting on a remote. A remote's links are the wall's, held in memory, never saved over its own.
-  function sendManifest() { if (Fan.wall && Fan.door && !Fan.door.here) Fan.wall.act({ op: "manifest", links: Object.fromEntries(Object.entries(networkLinks).filter(([n]) => liveSource(n) === "link")), leagues: [...leaguesOn] }).catch(() => {}); }   // the links in use only: a remote can't tune this computer's HDHomeRun
-  function useWallLinks(links) { if (links && typeof links === "object") { networkLinks = { ...links }; networkSource = Object.fromEntries(Object.keys(links).map(n => [n, "link"])); changed("cards"); } }   // a remote's sources are the wall's links, in memory too
-  // Which monitor and layout telecasts use, picked in the settings window. Null: Fan's suggestion. Kept per browser.
-  const TELECAST_LAYOUTS = [["1", 1, 1], ["2 stacked", 2, 1], ["3 stacked", 3, 1], ["2 across", 1, 2], ["2x2", 2, 2]];
-  let telecastPref = null;
-  try { const v = JSON.parse(localStorage.getItem("fan.telecast")); if (v && v.label) telecastPref = v; } catch (e) {}
-  function setTelecastPref(p) {
-    telecastPref = p;
-    try { if (p) localStorage.setItem("fan.telecast", JSON.stringify(p)); else localStorage.removeItem("fan.telecast"); } catch (e) {}
-  }
-  // Where each network comes from, by type (the user's, Nov 3 2026): "link", a link pasted from any streaming service (YouTube TV, Xfinity, Peacock); "hdhr", its channel on the HDHomeRun,
-  // a tuner on the home network, played in VLC (Nov 2 2026); or "none". Other tuners join as types of their own. Kept per browser. With none picked: the HDHomeRun's channel where this browser
-  // watched by HDHomeRun in the old Provider box (before 0.45.1), else a pasted link, else a channel.
-  const BROADCAST = ["CBS", "Fox", "NBC", "ABC", "CW"];   // the networks an antenna gets
-  let hdhr = { ip: "", channels: {} }, networkSource = {}, oldSetup = "";
-  try { oldSetup = localStorage.getItem("fan.watchSetup") || ""; const v = JSON.parse(localStorage.getItem("fan.hdhomerun")); if (v && typeof v === "object") hdhr = { ip: String(v.ip || ""), channels: v.channels && typeof v.channels === "object" ? v.channels : {} }; const s = JSON.parse(localStorage.getItem("fan.sources")); if (s && typeof s === "object") networkSource = s; } catch (e) {}
-  function setHdhr(patch) { hdhr = { ...hdhr, ...patch }; try { localStorage.setItem("fan.hdhomerun", JSON.stringify(hdhr)); } catch (e) {} changed("cards"); }
-  const sourceOf = n => networkSource[n] || (oldSetup === "hdhomerun" && hdhr.channels[n] ? "hdhr" : networkLinks[n] ? "link" : hdhr.channels[n] ? "hdhr" : "none");
-  function setNetworkSource(n, s) { networkSource = { ...networkSource, [n]: s }; try { localStorage.setItem("fan.sources", JSON.stringify(networkSource)); } catch (e) {} sendManifest(); changed("cards"); }
-  // A network's source when it's ready to play: its link, or its channel on an HDHomeRun with an address; else null.
-  const liveSource = n => { const s = sourceOf(n); return s === "link" && /^https:\/\//i.test(networkLinks[n] || "") ? "link" : s === "hdhr" && hdhr.ip && hdhr.channels[n] ? "hdhr" : null; };
-  // A game's networks: ESPN's list ("ESPN / ABC" is two), plus what ESPN's data leaves out, one rule a line: [when, has, add].
-  const isMonday = g => new Date(g.t).toLocaleDateString("en-US", { weekday: "short", timeZone: "America/New_York" }) === "Mon";
-  const NETWORK_RULES = [[isMonday, "ESPN", "ABC"]];   // ESPN's Monday night games are on ABC too [U, Nov 2 2026]
-  const gameNetworks = g => { const nets = String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean); NETWORK_RULES.forEach(([when, has, add]) => { if (nets.includes(has) && !nets.includes(add) && when(g)) nets.push(add); }); return nets; };
-  const allNetworks = () => { const seen = new Set(NETWORKS); ALL_GAMES.forEach(g => gameNetworks(g).forEach(n => seen.add(n))); return [...seen]; };
-  // What a game's Live telecast button does, so also whether it's lit: one decision for both. The first of its networks with a source ready to play, its HDHomeRun channel or its link; else null.
-  function telecastFor(g) {
-    const nets = gameNetworks(g), net = nets.find(liveSource);
-    if (!net) return null;
-    if (liveSource(net) === "hdhr") return { how: "hdhr", network: net, channel: hdhr.channels[net] };
-    const ln = net;
-    // ESPN+ (ESPN Select) opens the game's own page on espn.com, whose Watch button plays it for a subscriber signed in there (the user's, Nov 3 2026); its pasted link only says the user has it
-    return { how: "link", network: ln, url: ln === "ESPN+" && g.eid ? `https://www.espn.com/${leagueOf(g).code.toLowerCase()}/game/_/gameId/${g.eid}` : networkLinks[ln] };
-  }
-  // A word at the bottom of the screen for a few seconds, for what a press couldn't do.
-  function toast(text) { let t = document.querySelector(".fan-toast"); if (!t) { t = el("div", "fan-toast"); document.body.append(t); } t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 7000); }
-  // Pressed: the HDHomeRun channel, tuned in VLC when that's installed, or else which channel to pick in the HDHomeRun app (which has no documented way to be opened on a channel);
-  // or the network's link. NCAA FB's list, always on, opens YouTube TV's site when nothing is set.
-  function watchGame(g) {
-    const d = telecastFor(g);
-    if (d && d.how === "hdhr") {
-      const say = `${d.network} is ${d.channel} on your HDHomeRun: open it in the HDHomeRun app`;
-      if (!Fan.playHdhr) { toast(say); return; }
-      Fan.playHdhr(hdhr.ip, d.channel).then(r => { if (!r.ok) toast(/VLC isn't installed/.test(r.error) ? say : "HDHomeRun: " + r.error); }, () => toast(say));
-      return;
-    }
-    // with a connector that runs a wall, this computer's telecasts go through it, in the monitor and layout the wall keeps for this computer (wall.js)
-    if (d && Fan.wall) { Fan.wall.act({ op: "open", machine: "self", url: d.url }).then(r => { if (!r.ok) Fan.openTelecast(d.url, telecastPref); }, () => Fan.openTelecast(d.url, telecastPref)); return; }
-    Fan.openTelecast(d ? d.url : "https://tv.youtube.com/", telecastPref);
   }
   const LEAGUES = [];   // the league picker's leagues that are stubs: none now. NCAA FB's list (drawNcaafb) is off, on the user's word: adding "ncaafb" here and to leagues.js brings it back
   const leagueNames = () => Object.fromEntries(LEAGUE_ORDER.map(k => [k, LEAGUE_DEFS[k].name]));
@@ -221,7 +156,7 @@ import { Fan } from "./hosts.js?v=mw1d2yjh";
     return tag;
   }
 
-  const APP_VERSION = "0.46.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.46.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -388,11 +323,11 @@ import { Fan } from "./hosts.js?v=mw1d2yjh";
     box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
     const st = status(g)[1];
     CARD_ACTIONS.forEach(([name, icon]) => {
-      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!telecastFor(g) : name === "Tape" ? st === "final" && (!leagueOf(g).daily || !!g.eid) : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
+      const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!later.telecastFor(g) : name === "Tape" ? st === "final" && (!leagueOf(g).daily || !!g.eid) : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
       b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
       if (name === "Live telecast" && st === "live") b.classList.add("on-air");
       if (name === "Risk detail" && riskGame === g) { b.classList.add("active"); b.setAttribute("aria-pressed", "true"); }
-      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { watchGame(g); } : name === "Tape" ? () => { window.open(tapeLink(g), "_blank", "noopener"); } : name === "Box score" ? () => { window.open(`https://www.espn.com/${leagueOf(g).code.toLowerCase()}/boxscore/_/gameId/${g.eid}`, "_blank", "noopener"); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
+      if (live) b.addEventListener("click", name === "Game preview" ? () => { detailGame = g; showView("week"); } : name === "Live telecast" ? () => { later.watchGame(g); } : name === "Tape" ? () => { window.open(tapeLink(g), "_blank", "noopener"); } : name === "Box score" ? () => { window.open(`https://www.espn.com/${leagueOf(g).code.toLowerCase()}/boxscore/_/gameId/${g.eid}`, "_blank", "noopener"); } : () => { setRiskGame(riskGame === g ? null : g); if (riskGame) riskKey = gameKey(g); });
       box.append(b);
     });
     return box;
@@ -972,7 +907,7 @@ import { Fan } from "./hosts.js?v=mw1d2yjh";
     wantScores([...leaguesOn]);
     leaveOffLeague();
     syncLeaguePick();
-    sendManifest();
+    later.sendManifest();
     changed("leagues");
   }
   // THE KEYS. One layer in front of every key, on the user's word (Nov 2 2026): a key Fan hasn't chosen does nothing, so a stray one can't press a focused Place or scroll the page.
@@ -996,4 +931,4 @@ import { Fan } from "./hosts.js?v=mw1d2yjh";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { nflWeek, sendManifest, useWallLinks, allNetworks, ticketFromFill, weirdFills, setWeirdFills, programBehind, setAcc, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, telecastFor, BROADCAST, hdhr, setHdhr, sourceOf, setNetworkSource, liveSource, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, NETWORKS, RULES, TELECAST_LAYOUTS, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, networkLinks, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, setNetworkLink, setTelecastPref, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, telecastPref, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };
+export { nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, setAcc, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, renderSectionTabs, $, ALL_GAMES, APP_VERSION, BADGE_STYLES, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, badgeStyle, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, fitTicketColumn, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, renderByes, renderGames, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setBadgeStyle, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, updateGameArrows, view, vigOf, weekNow };

@@ -265,7 +265,6 @@
   .fan-list[hidden] { display: none; }
   .fan-telecasts { display: grid; gap: 12px; padding: 8px; }
   .fan-telecasts .fan-monbtn:disabled { opacity: .4; cursor: default; }
-  .fan-monrow { display: flex; align-items: center; gap: 4px; }
   .fan-remote { padding: 0 12px; }
   .fan-remote .fan-check { font-size: 18px; }
   .fan-remote-url { margin: 6px 0; font: 600 26px/1.2 var(--font-mono); color: var(--accent); user-select: all; }   /* typed into the iPad, so large */
@@ -314,23 +313,9 @@
   .wl-gname { font-size: 16px; }
   .wl-game > small { grid-column: 1; margin: 0 !important; }
   .wl-go { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-  .fan-monrow .fan-note { margin: 0; }
-  .fan-telecasts .fan-monbtn { justify-self: start; margin: 4px 12px; padding: 12px 28px; font-size: 20px; font-weight: 600; }   /* the monitor map is behind it */
+  .fan-telecasts .fan-monbtn { justify-self: start; margin: 4px 12px; padding: 12px 28px; font-size: 20px; font-weight: 600; }   /* Find walls */
   .fan-netcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; row-gap: 4px; }   /* the networks in two columns, with room */
   .fan-telecasts h3 { margin: 0; padding: 4px 12px 8px; font: 700 15px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
-  .fan-map { position: relative; margin: 4px 12px 12px; max-width: 100%; }
-  .fan-list .fan-map button { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-sizing: border-box; padding: 4px; overflow: hidden; background: rgb(0 0 0 / .25); border: 2px solid var(--card-rule); border-radius: 3px; font: 500 14px/1.1 var(--font-display); color: var(--ink-dim); text-align: center; }
-  .fan-list .fan-map button:hover { background: rgb(255 255 255 / .06); }
-  .fan-list .fan-map button.on { border-color: var(--accent); color: var(--ink); }
-  .fan-map small { font: 400 12px var(--font-mono); }
-  .fan-map span, .fan-map small { position: relative; z-index: 1; }
-  .fan-spots { position: absolute; inset: 3px; display: grid; gap: 3px; }
-  .fan-spots i { display: flex; align-items: flex-start; justify-content: flex-start; padding: 2px 5px; background: rgb(255 140 26 / .14); border: 1px solid rgb(255 140 26 / .45); font: 400 13px var(--font-mono); font-style: normal; color: var(--accent); }
-  .fan-lay { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 12px 8px; }
-  .fan-list .fan-lay button { padding: 6px 10px; border: 1px solid var(--card-rule); font-size: 15px; }
-  .fan-list .fan-lay button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-  .fan-list .fan-lay button:disabled, .fan-list .fan-show:disabled { color: var(--ink-dim); cursor: default; }
-  .fan-list .fan-show { margin: 0 12px 4px; border: 1px solid var(--accent); color: var(--accent); }
   .fan-records { display: flex; flex-direction: column; align-items: flex-start; }
   .fan-about { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(88px, .38fr) minmax(0, .95fr) minmax(88px, .38fr) minmax(0, .8fr);   /* the connector's column narrower, its links longer, so they stay attached */ gap: 8px 0; padding: 6px 12px; }   /* the page, a wire, the connector, a wire, the outside services */
   .fan-about > * { grid-row: var(--r); grid-column: var(--c); min-width: 0; }

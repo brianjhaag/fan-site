@@ -5,14 +5,14 @@ The page's files, in plain words. In the `fan` repo they're in `src/`; on `fan-s
 - **fan.html**: the frame of the page: the strips, the tabs and the empty boxes the code fills in.
 - **fan.css**: every color, size and position on the page.
 - **start.js**: runs last, opens the page on the current week and connects everything.
-- **base.js**: the core: the game cards, the tabs, the leagues, the telecast buttons, and the settings everything else reads.
+- **base.js**: the core: the game cards, the tabs, the leagues, and the settings everything else reads.
 - **calc.js**: the money math: wagers, risk, P/L, the models, Kalshi's fees. Every number you trade on comes from here, and each rule has a test.
 - **risk.js**: the risk detail and the totals card.
 - **panels.js**: Playbook, Season stats, Graphs and the game previews.
 - **tracker.js**: the wager ticket, saved tickets and Ledger.
 - **trade.js**: Place: sending an order to Kalshi through your connector.
 - **settings.js**: the settings window and its tabs: Application, Leagues, Telecasts, Sportsbooks, Look/feel.
-- **wall.js**: the wall at the top of the Telecasts tab: every computer's screens, the day's games, sound and Snap back.
+- **telecasts.js**: telecasts and the wall: where each network comes from, what a game's telecast button does, the wall (every computer's screens, the day's games, sound and Snap back) and the rest of the Telecasts tab.
 - **qr.js**: draws a QR code for the iPad to scan, made by the page itself.
 - **code.js**: the Code section: your algos, the editor and the console.
 - **hosts.js**: how the page talks to your connector (records, prices, orders, telecasts), or to the browser when there's no connector.
