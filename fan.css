@@ -1172,6 +1172,7 @@
   #handicap .hc-eq td:nth-child(2) { text-align: left; white-space: nowrap; }
   #handicap .hc-eq input { width: 80px; margin: 0 4px; }
   #handicap .hc-eq select { margin-left: 4px; }
+  #handicap .hc-eq select.hc-var { width: 96px; }   /* a term's variable, by its short name: three or four terms fit on the row */
   #handicap .hc-op { color: var(--ink-dim); }
   #handicap td.hc-eq-g { text-align: left; color: var(--ink-dim); white-space: nowrap; }
   #handicap td.hc-eqv { text-align: left; }

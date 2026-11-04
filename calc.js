@@ -341,16 +341,13 @@ const Calc = (() => {
     });
     return out;
   }
-  // The variables the regression may use, each the home team's standing minus the away team's.
-  const HC_VARS = {
-    spread: [
-      { k: "net", h: "Net points per game", f: (h, a) => h.net - a.net },
-      { k: "pf", h: "Points for per game", f: (h, a) => h.pf - a.pf },
-      { k: "pa", h: "Points against per game", f: (h, a) => h.pa - a.pa },
-      { k: "win", h: "Win share", f: (h, a) => h.win - a.win },
-      { k: "rest", h: "Rest days", f: (h, a) => h.rest - a.rest }
-    ]
-  };
+  // The variables the user's equation may use, the user's own (Nov 4 2026), each in the visitor's terms, from the two sides' standing before the game. k: its key;
+  // short: its name in the equation's narrow dropdown; h: its full name; start: the coefficient a new term starts at.
+  const HC_VARS = [
+    { k: "vmov", short: "V MOV", h: "The visitor's average margin of victory this season", start: 0.7, f: (h, a) => a.net }
+  ];
+  // The visitor's margin from the user's equation: -HFA, then each term's coefficient times its variable. eq = { hfa, terms: [{ v, coef }] }; row = { h, a } from hcStates.
+  const hcVisitorMargin = (eq, row) => eq.terms.reduce((s, t) => { const v = HC_VARS.find(x => x.k === t.v); return v ? s + t.coef * v.f(row.h, row.a) : s; }, -eq.hfa);
   // Least squares with an intercept, the variables centered on their means, so the intercept is the average result: the home team's average margin (home field
   // advantage). X: rows of numbers, y: results. Out: { b0, b, means, se, r2, rmse, n }, or null when it can't be solved.
   function olsFit(X, y) {
@@ -373,10 +370,6 @@ const Calc = (() => {
     const res = y.map((v, i) => v - ybar - Xc[i].reduce((s, x, j) => s + x * b[j], 0)), sse = res.reduce((s, e) => s + e * e, 0), sst = y.reduce((s, v) => s + (v - ybar) ** 2, 0);
     const s2 = sse / (n - p - 1);
     return { b0: ybar, b, means, se: inv.map((r, j) => Math.sqrt(Math.max(0, s2 * r[j]))), r2: sst ? 1 - sse / sst : 0, rmse: Math.sqrt(sse / n), n };
-  }
-  // A model's prediction for one game: model = { b0, vars: [{ k, b, mean }] }, the variables used; row = { h, a } from hcStates.
-  function hcPredict(kind, model, row) {
-    return model.vars.reduce((s, v) => { const def = HC_VARS[kind].find(x => x.k === v.k); return s + v.b * (def.f(row.h, row.a) - (v.mean || 0)); }, model.b0);
   }
   // The theo from the projected result, the home team's margin: its spread (the home line, minus when favored) and each side's moneyline, rounded the way a quote is,
   // from the key number model (winProb = marginModel(sigma)).
@@ -684,6 +677,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, olsFit, hcPredict, hcTheo };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, olsFit, hcTheo };
 })();
 export { Calc };
