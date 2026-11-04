@@ -1174,6 +1174,7 @@
   #handicap .hc-eq select { margin-left: 4px; }
   #handicap .hc-eq select.hc-var { width: 96px; }   /* a term's variable, by its short name: three or four terms fit on the row */
   #handicap .hc-op { color: var(--ink-dim); }
+  #handicap .hc-src { margin-left: 8px; font-size: 11px; color: var(--ink-dim); }   /* where the DVOA term's numbers stand: FTN's week, or why there are none */
   #handicap td.hc-eq-g { text-align: left; color: var(--ink-dim); white-space: nowrap; }
   #handicap td.hc-eqv { text-align: left; }
   #handicap td.hc-pred { font-weight: 700; font-size: 15px; color: var(--ink); }

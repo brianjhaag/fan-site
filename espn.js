@@ -1,8 +1,8 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { SHARED } from "./shared.js?v=mw25cg9d";
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw25cg9d";
+import { SHARED } from "./shared.js?v=mw265u9d";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw265u9d";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;
@@ -295,6 +295,27 @@ async function pullPast(l, years, have, p) {
   }
 }
 
+// FTN's total DVOA, for the Handicap's DVOA difference (the user, Nov 4 2026: "Total DVOA only"): this browser's own pull of the JSON behind FTN's free Team Total DVOA
+// page, which answers Fan's addresses. Only this season's total DVOA for each team, at FTN's latest week, is kept; nothing else in that file is kept, shown or used.
+// Asked for when the Handicap opens, at most every 6 hours; a 429 or 5xx, or any failure, stops it until the page is reloaded (CLAUDE.md rule 7).
+const DVOA = { have: null, pull: null, problem: "" };
+async function pullDvoa() {
+  const r = await fetch("https://fantasydata.ftnfantasy.com/api/ftn/dvoa/rankings", { credentials: "omit", signal: AbortSignal.timeout(30000) });
+  if (!r.ok) throw new Error("FTN answered " + r.status);
+  const season = (await r.json())[String(SHARED.season.year)], codes = SHARED.leagues.nfl.codes, teams = {};
+  if (!season) throw new Error(`FTN has no ${SHARED.season.year} yet`);
+  let week = 0;
+  Object.values(season).forEach(t => { const v = parseFloat(String(t.total_dvoa)); if (t.team && Number.isFinite(v)) { teams[codes[t.team] || t.team] = v; week = Math.max(week, Number(t.week) || 0); } });   // FTN's codes take shared.js's NFL fixes (WAS is Fan's WSH)
+  DVOA.have = { at: Date.now(), week, teams };
+  keepPull("dvoa", DVOA.have);
+}
+// { ready, week, teams: { code: total DVOA in percent }, at, problem }
+function dvoaNow() {
+  if (!DVOA.have) { const had = keptPull("dvoa"); if (had) DVOA.have = had.data; }
+  if ((!DVOA.have || Date.now() - DVOA.have.at > STALE_MS) && !DVOA.pull && !DVOA.problem) DVOA.pull = pullDvoa().catch(e => { DVOA.problem = e.message || "Couldn't reach FTN"; }).finally(() => { DVOA.pull = null; onPast(); });
+  return { ready: !!DVOA.have, ...(DVOA.have || {}), problem: DVOA.problem };
+}
+
 // NCAA FB's list: today's games involving a top 25 team, asked for when its page opens.
 async function pullNcaafb() {
   const day = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, "");
@@ -305,4 +326,4 @@ async function pullNcaafb() {
   }).filter(g => g.away.rank || g.home.rank).sort((a, b) => a.t.localeCompare(b.t));
   return { asOf: Date.now(), games };
 }
-export { DAILY_TEAMS, ensureDailyTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };
+export { DAILY_TEAMS, dvoaNow, ensureDailyTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };

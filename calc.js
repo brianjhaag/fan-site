@@ -341,13 +341,17 @@ const Calc = (() => {
     });
     return out;
   }
-  // The variables the user's equation may use, the user's own (Nov 4 2026), each in the visitor's terms, from the two sides' standing before the game. k: its key;
-  // short: its name in the equation's narrow dropdown; h: its full name; start: the coefficient a new term starts at.
+  // The variables the user's equation may use, the user's own (Nov 4 2026), each in the visitor's terms. k: its key; short: its name in the equation's narrow dropdown;
+  // h: its full name; start: the coefficient a new term starts at; fit: whether Fit can learn it (it needs the variable as it stood before every past game).
+  // f(h, a, x): its value from the two sides' standing before the game (hcStates) and x, what else the page has for the game ({ dvoa: [away, home] }); null when it has none.
   const HC_VARS = [
-    { k: "vmov", short: "V MOV", h: "The visitor's average margin of victory this season", start: 0.7, f: (h, a) => a.net }
+    { k: "vmov", short: "V MOV", h: "The visitor's average margin of victory this season", start: 0.7, fit: true, f: (h, a) => a.net },
+    // FTN's total DVOA in percent, at its latest week: one number a team for the season so far, with no past weeks to fit on, so its coefficient is the user's to type
+    { k: "dvoa", short: "DVOA diff", h: "Total DVOA difference, visitor minus home (FTN, in percentage points)", start: 0, fit: false, f: (h, a, x) => (x && x.dvoa && Number.isFinite(x.dvoa[0]) && Number.isFinite(x.dvoa[1]) ? x.dvoa[0] - x.dvoa[1] : null) }
   ];
-  // The visitor's margin from the user's equation: -HFA, then each term's coefficient times its variable. eq = { hfa, terms: [{ v, coef }] }; row = { h, a } from hcStates.
-  const hcVisitorMargin = (eq, row) => eq.terms.reduce((s, t) => { const v = HC_VARS.find(x => x.k === t.v); return v ? s + t.coef * v.f(row.h, row.a) : s; }, -eq.hfa);
+  // The visitor's margin from the user's equation: -HFA, then each term's coefficient times its variable. eq = { hfa, terms: [{ v, coef }] }; row = { h, a } from hcStates;
+  // x as HC_VARS takes it. null when a term's variable has no value for this game (no DVOA for a team, say); a variable no longer offered counts for nothing.
+  const hcVisitorMargin = (eq, row, x) => eq.terms.reduce((s, t) => { const v = HC_VARS.find(y => y.k === t.v); if (s === null || !v) return s; const val = v.f(row.h, row.a, x); return val === null ? null : s + t.coef * val; }, -eq.hfa);
   // Least squares with an intercept, the variables centered on their means, so the intercept is the average result: the home team's average margin (home field
   // advantage). X: rows of numbers, y: results. Out: { b0, b, means, se, r2, rmse, n }, or null when it can't be solved.
   function olsFit(X, y) {
