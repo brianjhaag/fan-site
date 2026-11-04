@@ -1150,9 +1150,6 @@
   #handicap .season-span span { padding: 5px 12px; }
   #handicap .season-fetch { font-size: 12px; color: var(--ink-dim); }
   #handicap .hc-pane { overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; margin-top: 6px; }   /* the window stays put; the models and games scroll here */
-  #handicap .hc-sigma { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-dim); }
-  #handicap .hc-sigma input { width: 80px; }
-  #handicap .hc-fit { padding: 5px 16px; }
   #handicap .hc-models { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
   #handicap .hc-model table { width: 100%; font-size: 13px; }
   #handicap .hc-model th, #handicap .hc-model td { padding: 3px 6px; text-align: left; }
@@ -1161,18 +1158,17 @@
   #handicap .hc-model tr.hc-int td { border-bottom: 1px solid var(--paper-edge); }
   #handicap .hc-week { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font: 700 16px var(--font-label); }
   #handicap .hc-week button { padding: 2px 10px; }
-  #handicap .hc-table { font-size: 13px; }
-  #handicap .hc-table th, #handicap .hc-table td { padding: 4px 8px; text-align: right; }
+  #handicap .hc-table { font-size: 12px; }   /* narrow: three or four terms and the prediction at the right fit the window; fitHcTable scales it down if not */
+  #handicap .hc-table th, #handicap .hc-table td { padding: 3px 6px; text-align: right; }
   #handicap .hc-table th:first-child, #handicap .hc-table td:first-child { text-align: left; }
   #handicap .hc-table .pb-g { text-align: center; border-left: 1px solid var(--paper-edge); }
   #handicap .hc-table .pb-l { border-left: 1px solid var(--paper-edge); }
-  #handicap .hc-table { width: 100%; }
   #handicap .hc-eq td { background: rgb(255 255 255 / .04); border-bottom: 1px solid var(--paper-edge); padding-block: 6px; }
   #handicap .hc-eq-h { font: 700 15px var(--font-label); text-align: left; }
   #handicap .hc-eq td:nth-child(2) { text-align: left; white-space: nowrap; }
-  #handicap .hc-eq input { width: 80px; margin: 0 4px; }
+  #handicap .hc-eq input { width: 62px; margin: 0 3px; }
   #handicap .hc-eq select { margin-left: 4px; }
-  #handicap .hc-eq select.hc-var { width: 96px; }   /* a term's variable, by its short name: three or four terms fit on the row */
+  #handicap .hc-eq select.hc-var { width: 84px; }   /* a term's variable, by its short name: three or four terms fit on the row */
   #handicap .hc-op { color: var(--ink-dim); }
   #handicap .hc-guide-btn { display: block; margin-top: 4px; padding: 2px 12px; }   /* the guide's Fit, under "Your equation" */
   #handicap tr.hc-guide td { background: rgb(255 255 255 / .02); font-size: 12px; padding-block: 3px; text-align: left; }
@@ -1182,7 +1178,9 @@
   #handicap td.hc-eq-g { text-align: left; color: var(--ink-dim); white-space: nowrap; }
   #handicap td.hc-eqv { text-align: left; }
   #handicap td.hc-pred { font-weight: 700; font-size: 15px; color: var(--ink); }
-  #handicap .hc-keys { margin-top: 12px; max-width: 560px; }
+  #handicap .hc-keys { margin-bottom: 12px; max-width: 560px; }
+  #handicap .hc-keys-btn { padding: 5px 14px; }
+  #handicap .hc-keys-btn[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); }
   #handicap .hc-keys table { width: 100%; font-size: 13px; }
   #handicap .hc-keys th, #handicap .hc-keys td { padding: 3px 8px; text-align: right; }
   #handicap .hc-keys th:first-child, #handicap .hc-keys td:first-child { text-align: left; }

@@ -1,10 +1,10 @@
 // The tabs that replace the game cards: Season stats (with Trends, the old Playbook, under its graphs), Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw26kmag";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, dvoaNow, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw26kmag";
-import { Fan } from "./hosts.js?v=mw26kmag";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw26kmag";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw26kmag";
-import { Calc } from "./calc.js?v=mw26kmag";
+import { riskGrid } from "./risk.js?v=mw26qy7g";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, dvoaNow, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw26qy7g";
+import { Fan } from "./hosts.js?v=mw26qy7g";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw26qy7g";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw26qy7g";
+import { Calc } from "./calc.js?v=mw26qy7g";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -820,11 +820,11 @@ import { Calc } from "./calc.js?v=mw26kmag";
   // ending in the predicted spread in its final form, visitor and line ("JAX −9.0"). The key number model turns the same result into a moneyline. Totals are a different calc. ==== */
   // The equation, in the visitor's terms: visitor margin = −HFA + each term's coefficient × its variable (calc.js's HC_VARS, the user's own, each in the visitor's terms,
   // and hcVisitorMargin). One term for now; it's built for three or four. HFA starts as the average home margin over all the data (this season and the last 5), and each
-  // term at its variable's starting coefficient; Fit is least squares with an intercept on the terms' variables.
+  // term at its variable's starting coefficient; the guide's Fit, under the equation, fits each variable alone to the week's market lines.
   // Kept per browser: the games to fit on, the equation, the margin spread (sigma) the key number model takes, and the week on screen.
   const HC_KEY = "fan.handicap.nfl";
   const hcTerm = k => { const v = Calc.HC_VARS.find(x => x.k === k) || Calc.HC_VARS[0]; return { v: v.k, coef: v.start }; };
-  const hcDefault = () => ({ sample: "past", sigma: RULES.leagues.nfl.sigma, minGames: 2, week: null, eq: { hfa: null, terms: [hcTerm("vmov"), hcTerm("dvoa")] }, fit: null });
+  const hcDefault = () => ({ sample: "past", showKeys: false, sigma: RULES.leagues.nfl.sigma, minGames: 2, week: null, eq: { hfa: null, terms: [hcTerm("vmov"), hcTerm("dvoa")] }, fit: null });
   const hc = (() => { const d = hcDefault(); try { const s = JSON.parse(localStorage.getItem(HC_KEY)); return s ? { ...d, ...s, eq: s.eq && Array.isArray(s.eq.terms) ? s.eq : d.eq, fit: s.eq && Array.isArray(s.eq.terms) ? s.fit : null } : d; } catch (e) { return d; } })();   // an equation from before terms (0.48.10) starts again
   ["spread", "total", "adj"].forEach(k => { delete hc[k]; });   // the earlier screens' (0.48.8, 0.48.9): a regression card, a total model, a points adjustment per game
   const hcSave = () => { try { localStorage.setItem(HC_KEY, JSON.stringify(hc)); } catch (e) {} };
@@ -849,19 +849,6 @@ import { Calc } from "./calc.js?v=mw26kmag";
     }
     return Calc.hcStates(games).filter(r => r.g.final && r.a.gp >= hc.minGames && r.h.gp >= hc.minGames);
   }
-  // Least squares of the result on the equation's variable: the intercept is home field advantage, as the equation writes it (not centered), and the slope its coefficient.
-  function hcFit() {
-    const rows = hcSample(), terms = hc.eq.terms.filter(t => hcVarOf(t) && hcVarOf(t).fit);
-    if (!rows) return "the five seasons aren't here yet";
-    const f = Calc.olsFit(rows.map(r => terms.map(t => hcVarOf(t).f(r.h, r.a))), rows.map(r => r.g.final[0] - r.g.final[1]));   // the visitor's margin
-    if (!f) return `it can't be fitted on ${rows.length} games`;
-    hc.eq.hfa = -(f.b0 - f.b.reduce((s, b, j) => s + b * f.means[j], 0));   // the intercept as the equation writes it, uncentered, is −HFA
-    terms.forEach((t, j) => { t.coef = f.b[j]; });
-    hc.fit = { key: terms.map(t => t.v).join(), r2: f.r2, rmse: f.rmse, n: f.n, se: f.se };
-    return "";
-  }
-  // The visitor's margin for one game, from hcStates' row: −HFA + coefficient × (visitor minus home).
-  let hcProblem = "";
   // The guide (the user, Nov 4 2026): each variable fitted as the only predictor against the market's lines for the week on screen, each game's visitor margin being
   // minus its visitor line; it says what HFA and coefficient that variable would take alone and how closely it follows the market. { week, n, res: { k: hcAlone } }.
   let hcGuide = null;
@@ -884,37 +871,26 @@ import { Calc } from "./calc.js?v=mw26kmag";
     const box = $("handicap"), head = el("div", "season-head hc-head");
     box.replaceChildren(head);
     head.append(el("h2", null, "NFL handicap"));
-    const seg = el("div", "seg season-span");
-    [["now", "Fit on this season"], ["past", "Fit on the last 5 seasons and this"]].forEach(([k, h]) => {
-      const lab = el("label"), r = el("input"); r.type = "radio"; r.name = "hcSample"; r.checked = hc.sample === k;
-      r.addEventListener("change", () => { hc.sample = k; hcSave(); hcProblem = ""; buildHandicap(); });
-      lab.append(r, el("span", null, h)); seg.append(lab);
-    });
-    head.append(seg);
-    const past = hc.sample === "past" ? pastNflGames() : null;
-    if (past && !past.ready) head.append(el("span", "season-fetch", "(data will be downloaded from the web)"));
-    const fitBtn = el("button", "hc-fit", "Fit to finals");   // the guide's Fit, under the equation, fits to the market
-    fitBtn.type = "button"; fitBtn.title = "Least squares of the game result on the equation's variables, over the games chosen: sets home field advantage and the coefficients";
-    fitBtn.addEventListener("click", () => { hcProblem = hcFit(); hcSave(); buildHandicap(); });
-    fitBtn.title += ". The DVOA difference has no past weeks to fit on, so Fit leaves it out and its coefficient is yours";
-    const sig = el("label", "hc-sigma"), si = el("input"); si.type = "number"; si.step = "0.25"; si.min = "1"; si.value = String(hc.sigma);
-    si.addEventListener("input", () => { const v = Number(si.value); if (v > 0) { hc.sigma = v; hcSave(); drawHcKeys(); drawHcRows(); } });
-    sig.title = "The key number model's spread of final margins around the predicted result, in points. The fit's RMSE is a guide.";
-    sig.append(el("span", null, "Margin σ"), si);
-    head.append(sig, fitBtn);
-    if (past && !past.ready) {
-      box.append(el("p", "pg-stub-t", past.problem ? `Couldn't read nflverse's games table: ${past.problem}. Reload the page to try again.` : "Reading the last 5 seasons from nflverse's games table, once for this browser…"));
-      return;
+    // the heading holds the title and the key number table's button alone (the user, Nov 4 2026: the fit-to-finals controls and Margin σ went)
+    const keysBtn = el("button", "hc-keys-btn", "Key numbers");
+    keysBtn.type = "button"; keysBtn.setAttribute("aria-pressed", String(!!hc.showKeys)); keysBtn.title = "Show or hide the key number model's table: how a predicted result becomes a moneyline";
+    keysBtn.addEventListener("click", () => { hc.showKeys = !hc.showKeys; hcSave(); keysBtn.setAttribute("aria-pressed", String(hc.showKeys)); const k = box.querySelector(".hc-keys"); if (k) k.hidden = !hc.showKeys; });
+    head.append(keysBtn);
+    // HFA starts as the average home margin over all the data, this season and the last 5, which takes nflverse's table once
+    if (hc.eq.hfa == null) {
+      const past = pastNflGames();
+      if (!past.ready) { box.append(el("p", "pg-stub-t", past.problem ? `Couldn't read nflverse's games table: ${past.problem}. Reload the page to try again.` : "Reading the last 5 seasons from nflverse's games table, once for this browser, to start home field advantage at their average…")); return; }
+      const sample = hcSample();
+      hc.eq.hfa = sample.length ? hcRound(sample.reduce((s, r) => s + r.g.final[1] - r.g.final[0], 0) / sample.length, 100) : 0;
+      hcSave();
     }
-    const sample = hcSample();
-    if (hc.eq.hfa == null) { hc.eq.hfa = sample.length ? hcRound(sample.reduce((s, r) => s + r.g.final[1] - r.g.final[0], 0) / sample.length, 100) : 0; hcSave(); }   // the average home margin, the terms left at their starting coefficients
-    const fit = hc.fit && hc.fit.key === hc.eq.terms.filter(t => hcVarOf(t) && hcVarOf(t).fit).map(t => t.v).join() ? hc.fit : null;
-    box.append(el("small", null, `Each team as it stood before each game, from that season's earlier games only · Fit uses ${sample.length} games where both teams had played ${hc.minGames} or more, ${hc.sample === "past" ? "this season and the last 5" : "this season"}${fit ? ` · last fit: R² ${fit.r2.toFixed(3)}, RMSE ${fit.rmse.toFixed(1)} points, coefficients' std. errors ${fit.se.map(s => hcRound(s, 1000)).join(", ")}` : ""}${hcProblem ? " · " + hcProblem : ""}`));
+    box.append(el("small", null, "Each team as it stood before each game, from that season's earlier games only"));
     const pane = el("div", "hc-pane"), games = el("div", "hc-games"), keys = el("div", "xycell hc-keys");
-    pane.append(games, keys);
+    keys.hidden = !hc.showKeys;
+    pane.append(keys, games);
     box.append(pane);
-    drawHcGames();
     drawHcKeys();
+    drawHcGames();
     pane.style.maxHeight = Math.max(200, Math.floor(document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - pane.getBoundingClientRect().top - 12)) + "px";
   }
   // The key number model, as a reference: a predicted result and the favorite's chance and fair moneyline it gives, at this σ. The jumps at 3 and 7 are the key numbers.
@@ -996,6 +972,15 @@ import { Calc } from "./calc.js?v=mw26kmag";
     wrap.replaceChildren(nav, tbl);
     drawHcRows();
   }
+  // The table scales down to the pane's width when it's wider, so its right edge, the prediction, always shows (the user, Nov 4 2026).
+  function fitHcTable() {
+    const wrap = document.querySelector("#handicap .hc-games"), tbl = wrap && wrap.querySelector(".hc-table");
+    if (!tbl) return;
+    const pane = wrap.closest(".hc-pane");   // and the pane's height, so a resized window still scrolls inside it
+    if (pane) pane.style.maxHeight = Math.max(200, Math.floor(document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - pane.getBoundingClientRect().top - 12)) + "px";
+    tbl.style.zoom = "";
+    if (tbl.offsetWidth > wrap.clientWidth) tbl.style.zoom = String(Math.floor(wrap.clientWidth / tbl.offsetWidth * 1000) / 1000);
+  }
   // One row a game: the equation with that game's numbers, the market, the moneylines, and at the far right the predicted spread in its final form.
   function drawHcRows() {
     const body = document.querySelector("#handicap .hc-rows"), wrap = document.querySelector("#handicap .hc-games");
@@ -1023,5 +1008,6 @@ import { Calc } from "./calc.js?v=mw26kmag";
     });
     if (!rows.length) { const tr = el("tr"), td = el("td", "dim", "No games this week."); td.colSpan = 8; tr.append(td); tb.append(tr); }
     body.replaceWith(tb);
+    fitHcTable();
   }
 export { renderGameDetail, renderHandicap, renderSeason, renderXY, setPlaybook };
