@@ -1148,6 +1148,7 @@
   #season .season-head h2 { margin-block: 0; }
   #season .season-span { flex: none; }
   #season .season-span span { padding: 5px 12px; }
+  #season .season-scroll { overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; }   /* the graphs scroll here, the window stays put (the user, Nov 4 2026) */
   #season .season-fetch { font-size: 12px; color: var(--ink-dim); }   /* beside the toggle until the five seasons are kept */
   .pb-trends table { max-width: none; font-size: 13px; }
   .pb-trends th, .pb-trends td { padding: 4px 8px; }

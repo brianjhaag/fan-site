@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Season stats (with Trends, the old Playbook, under its graphs), Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw23ew0f";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw23ew0f";
-import { Fan } from "./hosts.js?v=mw23ew0f";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw23ew0f";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw23ew0f";
+import { riskGrid } from "./risk.js?v=mw23msgx";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw23msgx";
+import { Fan } from "./hosts.js?v=mw23msgx";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw23msgx";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw23msgx";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -118,7 +118,9 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw23ew0f";
   function renderSeason() {
     if (drawStub("season")) return;
     const box = $("season"), pad = 22;   // pad: a cell's border and padding
-    const W = Math.max(560, box.clientWidth - 32), lg = LG(), S = lg.season;
+    const W = Math.max(560, box.clientWidth - 48), lg = LG(), S = lg.season;   // 48: the box's padding and the scroll pane's gutter
+    // The graphs (and the NFL's Trends) sit in a pane of their own that scrolls, so the window stays put (the user, Nov 4 2026); a redraw keeps its place.
+    const was = box.querySelector(".season-scroll"), keep = was ? was.scrollTop : 0, pane = el("div", "season-scroll");
     box.replaceChildren();
     const head = el("div", "season-head");
     box.append(head);
@@ -171,7 +173,8 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw23ew0f";
     }
     const unit = league === "nhl" ? "goals" : "points";
     const what = seasonSpan === "past" ? "Results" : "Season results", whatT = seasonSpan === "past" ? "Totals" : "Season totals";
-    box.append(cell(`${what} · ${results.length} games, ${span} · margin of victory, each game counted once · ${K}+ includes bigger margins${league === "nhl" ? " · overtime and shootout games at their final score" : ""}${ties ? ` · ${ties} tie${ties > 1 ? "s" : ""} not shown` : ""}`, hs, true));
+    box.append(pane);
+    pane.append(cell(`${what} · ${results.length} games, ${span} · margin of victory, each game counted once · ${K}+ includes bigger margins${league === "nhl" ? " · overtime and shootout games at their final score" : ""}${ties ? ` · ${ties} tie${ties > 1 ? "s" : ""} not shown` : ""}`, hs, true));
     // This season's totals, the same way (the user, Nov 3 2026): how many games ended with each combined score, one-point buckets from LO and under to HI and over.
     const [LO, HI] = S.totals, tick = S.tick, tot = new Map();
     results.forEach(([a, h]) => { const k = Math.max(LO, Math.min(HI, a + h)); tot.set(k, (tot.get(k) || 0) + 1); });
@@ -190,13 +193,15 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw23ew0f";
       tadd("rect", { x: XT(k) - tbw / 2, y: hBase - bh, width: tbw, height: bh, class: "bar win" + (k === LO || k === HI ? " end" : "") });
       tadd("text", { x: XT(k), y: hBase - bh - 6, "text-anchor": "middle", class: "cnt" }, String(n));
     }
-    box.append(cell(`${whatT} · ${results.length} games, ${span} · both teams' ${unit} together, each game counted once · ${LO}− and ${HI}+ include everything past them`, ts, true));
+    pane.append(cell(`${whatT} · ${results.length} games, ${span} · both teams' ${unit} together, each game counted once · ${LO}− and ${HI}+ include everything past them`, ts, true));
     if (lg.stats && !document.documentElement.classList.contains("prices-off")) {
       const trends = el("div", "xycell wide pb-trends"), inner = el("div");
       trends.append(el("div", "cap", "Trends"), inner);
-      box.append(trends);
+      pane.append(trends);
       drawTrends(inner);
     }
+    pane.style.maxHeight = Math.max(200, Math.floor(document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - pane.getBoundingClientRect().top - 12)) + "px";   // down to the info line
+    pane.scrollTop = keep;
   }
 
   // A team helmet drawn inside an svg (the Graphs badges): natural size is read from the PNG header of its data URI, and the empty left margin
