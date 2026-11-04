@@ -1,9 +1,9 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { Fan } from "./hosts.js?v=mw231hrw";
-import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw231hrw";
-import { setAcc } from "./layout.js?v=mw231hrw";
-import { TEAM, abbr } from "./leagues.js?v=mw231hrw";
-import { setPlaybook } from "./panels.js?v=mw231hrw";
+import { Fan } from "./hosts.js?v=mw23ew0f";
+import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw23ew0f";
+import { setAcc } from "./layout.js?v=mw23ew0f";
+import { TEAM, abbr } from "./leagues.js?v=mw23ew0f";
+import { setPlaybook } from "./panels.js?v=mw23ew0f";
   Object.assign(later, { syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, showSaved, weekChanged });
   const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))}${g.line.noSp ? "" : " " + pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };   // no spread market yet: no spread named
@@ -760,14 +760,14 @@ import { setPlaybook } from "./panels.js?v=mw231hrw";
     ["game", "book", "amount", "type", "pick", "parlayRow"].forEach(k => { $(k).classList.remove("invalid"); $(k + "Err").hidden = true; });
     renderLegs(); changed("tickets");
   }
-  // Prices follow Bet tracking and their own checkbox, and need a source. Off, the page holds no prices, and Graphs and Playbook, which are drawn from them, go.
+  // Prices follow Bet tracking and their own checkbox, and need a source. Off, the page holds no prices, and Graphs and Season stats' Trends, which are drawn from them, go.
   function syncPrices() {
     const on = pricesOn();
     document.documentElement.classList.toggle("prices-off", !on);
     Fan.setMarket(marketWanted());
     if (!on) { clearPrices(); setPlaybook(null); }
     if (Fan.lines) applySlate(); else changed("lines");
-    if (!on && (view === "xy" || view === "playbook")) switchWeek(weekNow());
+    if (!on && view === "xy") switchWeek(weekNow());
     drawNow();
     window.dispatchEvent(new Event("resize"));
   }

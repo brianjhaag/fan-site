@@ -1,9 +1,9 @@
-// The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw231hrw";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw231hrw";
-import { Fan } from "./hosts.js?v=mw231hrw";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw231hrw";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw231hrw";
+// The tabs that replace the game cards: Season stats (with Trends, the old Playbook, under its graphs), Graphs, and the per-game Game detail.
+import { riskGrid } from "./risk.js?v=mw23ew0f";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw23ew0f";
+import { Fan } from "./hosts.js?v=mw23ew0f";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw23ew0f";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw23ew0f";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -42,11 +42,11 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw231hrw";
     });
     return pbTeamGames = out;
   }
-  function renderPlaybook() {
-    if (drawStub("playbook")) return;
+  // Trends (was the Playbook section; under Season stats' graphs since Nov 4 2026, on the user's word), drawn into box.
+  function drawTrends(box) {
     if (!playbookWatched && Fan.store) { playbookWatched = true; Fan.store.watchDoc("playbook", "games", d => { if (d) { setPlaybook(d); changed("playbook"); } }, () => {}); }
-    if (!playbookDoc) { $("playbook").replaceChildren(el("div", "pg-stub", "Playbook"), el("p", "pg-stub-t", Fan.screens ? "Its history pulls to this computer with your lines, and shows here when it arrives." : "Its history pulls to your own computer, which takes the Fan connector.")); return; }
-    const box = $("playbook"), games = pbGames(), year = Math.max(...games.map(t => t.season)), lastWk = Math.max(...games.filter(t => t.season === year).map(t => t.week));
+    if (!playbookDoc) { box.replaceChildren(el("p", "pb-note", Fan.screens ? "Its history pulls to this computer with your lines, and shows here when it arrives." : "Its history pulls to your own computer, which takes the Fan connector.")); return; }
+    const games = pbGames(), year = Math.max(...games.map(t => t.season)), lastWk = Math.max(...games.filter(t => t.season === year).map(t => t.week));
     const roi = (p, n) => { const v = n ? p / n * 100 : null, td = el("td", v == null ? "dim" : Math.abs(v) < .05 ? "dim" : v > 0 ? "pos" : "neg", v == null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "%"); return td; };
     const rec = (a, b, c) => a + "–" + b + (c ? "–" + c : "");
     const cells = (s, game) => {
@@ -68,7 +68,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw231hrw";
       const z = el("td", null, p.game || !(past.aw + past.al) ? "—" : ((past.aw - past.al) / Math.sqrt(past.aw + past.al)).toFixed(1));
       tr.append(name, ...cells(cur, p.game), ...cells(past, p.game), z);
       tr.title = "Click for each season";
-      tr.addEventListener("click", () => { if (pbOpen.has(i)) pbOpen.delete(i); else pbOpen.add(i); renderPlaybook(); });
+      tr.addEventListener("click", () => { if (pbOpen.has(i)) pbOpen.delete(i); else pbOpen.add(i); changed("playbook"); });
       body.append(tr);
       if (pbOpen.has(i)) for (let y = year; y >= year - 5; y--) {
         const row = el("tr", "pb-y"), s = pbStats(all.filter(t => t.season === y)), lab = el("td", null, String(y)), gap = el("td", "pb-l");
@@ -191,6 +191,12 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw231hrw";
       tadd("text", { x: XT(k), y: hBase - bh - 6, "text-anchor": "middle", class: "cnt" }, String(n));
     }
     box.append(cell(`${whatT} · ${results.length} games, ${span} · both teams' ${unit} together, each game counted once · ${LO}− and ${HI}+ include everything past them`, ts, true));
+    if (lg.stats && !document.documentElement.classList.contains("prices-off")) {
+      const trends = el("div", "xycell wide pb-trends"), inner = el("div");
+      trends.append(el("div", "cap", "Trends"), inner);
+      box.append(trends);
+      drawTrends(inner);
+    }
   }
 
   // A team helmet drawn inside an svg (the Graphs badges): natural size is read from the PNG header of its data URI, and the empty left margin
@@ -803,4 +809,4 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw231hrw";
     const sp = [...box.querySelectorAll(".bd-script")], sh = Math.max(0, ...sp.map(e => e.offsetHeight));
     sp.forEach(e => { e.style.minHeight = sh + "px"; });
   }
-export { renderGameDetail, renderPlaybook, renderSeason, renderXY, setPlaybook };
+export { renderGameDetail, renderSeason, renderXY, setPlaybook };

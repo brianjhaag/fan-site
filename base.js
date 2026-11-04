@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw231hrw";
-import { BOOK_ICONS } from "./data/assets.js?v=mw231hrw";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw231hrw";
-import { Calc } from "./calc.js?v=mw231hrw";
-import { Fan } from "./hosts.js?v=mw231hrw";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw23ew0f";
+import { BOOK_ICONS } from "./data/assets.js?v=mw23ew0f";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw23ew0f";
+import { Calc } from "./calc.js?v=mw23ew0f";
+import { Fan } from "./hosts.js?v=mw23ew0f";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -62,7 +62,7 @@ import { Fan } from "./hosts.js?v=mw231hrw";
   let curWeek = 7, GAMES = WEEK_GAMES[7] || [], view = "week";   // view: "week" and "xy" (Graphs) belong to the selected week; a key of SECTIONS is one of the other top buttons
   // The top strip's tabs other than the weeks, and the bottom strip's buttons for each; an entry with `stub` is a placeholder saying what it will show. A section with one view has no bottom buttons. A new section or view is one entry here.
   const SECTIONS = {
-    playbook: [{ k: "main", h: "Trends" }],
+    handicap: [{ k: "main", h: "Handicap", stub: "Not built yet." }],   // every league (the user, Nov 4 2026); Playbook's Trends moved under Season stats' graphs
     code: [],   // the Code section (code.js): one page, no views
     ncaafb: [{ k: "main", h: "NCAA FB", stub: "Not built yet." }],
     season: [{ k: "margins", h: "Margins" },
@@ -73,7 +73,7 @@ import { Fan } from "./hosts.js?v=mw231hrw";
       { k: "open", h: "Open bets", stub: "Every bet still undecided, across all weeks and books." },
       { k: "check", h: "Kalshi check" }]
   };
-  const subView = { season: "margins", ledger: "balances", playbook: "main", ncaafb: "main" };
+  const subView = { season: "margins", ledger: "balances", handicap: "main", ncaafb: "main" };
   // NCAA FB isn't a full league yet: today's games involving a top 25 team, this browser's own read of ESPN, as a read-only list.
   async function drawNcaafb() {
     const box = $("ncaafb");
@@ -98,7 +98,7 @@ import { Fan } from "./hosts.js?v=mw231hrw";
   function drawStub(v) {
     if (v === "ncaafb") { drawNcaafb(); return true; }
     if (v === "season" && !LG().stats && LG().season) return false;   // a league with only Margins built (the NBA, the NHL) draws it, whatever view the NFL left picked
-    if (!LG().stats && (v === "season" || v === "playbook")) { $(v).replaceChildren(el("div", "pg-stub", `${LG().code} ${v === "season" ? "season stats" : "playbook"}`), el("p", "pg-stub-t", "Not built yet.")); return true; }
+    if (!LG().stats && v === "season") { $(v).replaceChildren(el("div", "pg-stub", `${LG().code} season stats`), el("p", "pg-stub-t", "Not built yet.")); return true; }
     const s = SECTIONS[v].find(x => x.k === subView[v]);
     if (!s.stub) return false;
     $(v).replaceChildren(el("div", "pg-stub", s.h), el("p", "pg-stub-t", s.stub));
@@ -154,7 +154,7 @@ import { Fan } from "./hosts.js?v=mw231hrw";
     return tag;
   }
 
-  const APP_VERSION = "0.48.5";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.48.6";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -363,17 +363,17 @@ import { Fan } from "./hosts.js?v=mw231hrw";
   const drawLeagueStub = () => { if (LEAGUES.includes(view)) drawStub(view); };
   function showView(v) {
     view = v;
-    $("ledger").hidden = v !== "ledger"; $("xy").hidden = v !== "xy"; $("season").hidden = v !== "season"; $("playbook").hidden = v !== "playbook"; $("code").hidden = v !== "code"; $("panel").hidden = v !== "week";
+    $("ledger").hidden = v !== "ledger"; $("xy").hidden = v !== "xy"; $("season").hidden = v !== "season"; $("handicap").hidden = v !== "handicap"; $("code").hidden = v !== "code"; $("panel").hidden = v !== "week";
     LEAGUES.forEach(k => { $(k).hidden = v !== k; });
-    ["ledger", "xy", "season", "playbook", "code"].forEach(k => $("tab-" + k).setAttribute("aria-selected", String(v === k)));
+    ["ledger", "xy", "season", "handicap", "code"].forEach(k => $("tab-" + k).setAttribute("aria-selected", String(v === k)));
     document.querySelectorAll(".weektabs [data-week]").forEach(b => { const w = Number(b.dataset.week); b.classList.toggle("now", w === weekNow()); b.setAttribute("aria-selected", String(!SECTIONS[v] && w === curWeek)); });   // Graphs belongs to the selected week; one top tab is active at a time
     syncDayArrows();
     changed("view", "view:" + v);
     syncLeaguePick();
   }
   $("tab-xy").addEventListener("click", () => { detailGame = null; if (view === "xy") { showView("week"); } else showView("xy"); });   // clicking Graphs again goes back to the cards
-  // Season stats, Playbook and Ledger: clicking the active one closes it, onto the current week's cards.
-  ["season", "playbook", "ledger", "code"].forEach(k => $("tab-" + k).addEventListener("click", () => { if (view === k) { detailGame = null; switchWeek(weekNow()); } else showView(k); }));
+  // Season stats, Handicap and Ledger: clicking the active one closes it, onto the current week's cards.
+  ["season", "handicap", "ledger", "code"].forEach(k => $("tab-" + k).addEventListener("click", () => { if (view === k) { detailGame = null; switchWeek(weekNow()); } else showView(k); }));
   // The week tabs follow the league: Weeks 1-17, or for a daily league (the NBA, the NHL) yesterday, for its results, then its days from today (leagues.js), the spare tabs hidden.
   // A daily league's arrows step the open day, one a press, through the season (the user's, Nov 3 2026): the dates slide under the highlight, which stays in its slot,
   // until the tabs reach the season's first day or the last day pulled (today + days), and then the highlight moves along them instead. dayShift: days later than the usual eight.
