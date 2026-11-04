@@ -245,6 +245,20 @@ const Calc = (() => {
     const f = d => detail(d).win;
     f.detail = detail;
     f.band = (d, a, b) => { const q = detail(d); let t = 0; for (let m = a; m <= b; m++) t += q.P(m); return t; };   // chance the team's margin lands from a to b
+    // mean(e): the same margins read from an expected margin e, a regression's output, rather than a line (the user, Nov 4 2026: "my way of coming up with the number
+    // 3.2 says a 3 point margin is much more likely than 4"): mu solved so the margins' average is e. { win, P } as detail gives them.
+    const meanMemo = new Map(), Wm = (m, mu) => (flat ? 1 : MARGIN_W(m)) * Math.exp(-0.5 * ((m - mu) / sigma) ** 2);
+    f.mean = e => {
+      if (meanMemo.has(e)) return meanMemo.get(e);
+      const avg = mu => { let s = 0, t = 0; for (let m = -MM; m <= MM; m++) { if (m === 0) continue; const x = Wm(m, mu); s += m * x; t += x; } return s / t; };
+      let lo = e - 25, hi = e + 25;
+      for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; if (avg(mid) < e) lo = mid; else hi = mid; }
+      const mu = (lo + hi) / 2; let win = 0, tot = 0;
+      for (let m = -MM; m <= MM; m++) { if (m === 0) continue; const x = Wm(m, mu); tot += x; if (m > 0) win += x; }
+      const q = { win: win / tot, P: m => (m === 0 || Math.abs(m) > MM ? 0 : Wm(m, mu) / tot) };
+      meanMemo.set(e, q);
+      return q;
+    };
     return f;
   }
   // A league whose margins don't bunch on key numbers gets a plain normal curve.
@@ -393,19 +407,19 @@ const Calc = (() => {
   }
   // A game's bye adjustment, in points to the visitor: 0 when neither team is off a bye, the visitor's effect when it is, the home team's when it is, both when both are.
   const hcByeAdjust = (eff, row) => (eff ? eff.v * hcBye(row.a) + eff.h * hcBye(row.h) : null);
-  // One variable as the only predictor (the user, Nov 4 2026: a guide to setting coefficients): least squares of the visitor's margin y on x alone, as the equation
-  // writes it, visitor margin = -HFA + coef x x. Out: { hfa, coef, r2, rmse, n }, or null when it can't be fitted.
-  function hcAlone(xs, ys) {
-    const f = olsFit(xs.map(x => [x]), ys);
-    if (!f) return null;
-    return { hfa: -(f.b0 - f.b[0] * f.means[0]), coef: f.b[0], r2: f.r2, rmse: f.rmse, n: f.n };
+  // One coefficient through zero (the user, Nov 4 2026: Fit sets DVOA diff's): the least squares slope of ys on xs with no intercept, sum(x y) / sum(x x), rounded by
+  // the caller. null without a point that moves.
+  function hcFitCoef(xs, ys) {
+    let sxy = 0, sxx = 0;
+    xs.forEach((x, i) => { if (Number.isFinite(x) && Number.isFinite(ys[i])) { sxy += x * ys[i]; sxx += x * x; } });
+    return sxx > 0 ? sxy / sxx : null;
   }
   // A game's market prices valued at your result (the user, Nov 4 2026: one band for moneylines and spreads alike): each side's expected return per $1, from the key
-  // number model's margins around your predicted home margin (winProb = marginModel(sigma)). Spread: the visitor covers when the home margin is under the market's line
+  // number model's margins around your predicted home margin read as an expected margin (winProb = marginModel(sigma), its mean). Spread: the visitor covers when the home margin is under the market's line
   // (sp, the visitor's points), pushes on it, priced at the spread's juice (spj, -110 without one). Moneyline: your win chance at each side's market price.
   // line: { sp, spj, ml } in the page's form, [visitor, home]. Out: { sp: { v, h } | null, ml: { v, h } | null }.
   function hcEv(winProb, homeMargin, line) {
-    const q = winProb.detail(homeMargin), out = { sp: null, ml: null };
+    const q = winProb.mean(homeMargin), out = { sp: null, ml: null };   // your margin is an expected margin (marginModel's mean)
     if (line && Number.isFinite(line.sp)) {
       const L = line.sp, MM = 70, j = line.spj || [], dv = decimalOf(Number.isFinite(j[0]) ? j[0] : D.spreadPrice), dh = decimalOf(Number.isFinite(j[1]) ? j[1] : D.spreadPrice);
       let pv = 0, ph = 0, push = 0;
@@ -724,6 +738,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcAlone, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcEv, hcDivCoef };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcEv, hcDivCoef };
 })();
 export { Calc };

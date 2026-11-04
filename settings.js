@@ -1,12 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw2nrhc5";
-import { Fan } from "./hosts.js?v=mw2nrhc5";
-import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw2nrhc5";
-import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw2nrhc5";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw2nrhc5";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw2nrhc5";
-import { demoAway, setBet } from "./trade.js?v=mw2nrhc5";
-import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw2nrhc5";
+import { espnState } from "./espn.js?v=mw2r5e2j";
+import { Fan } from "./hosts.js?v=mw2r5e2j";
+import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw2r5e2j";
+import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw2r5e2j";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw2r5e2j";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw2r5e2j";
+import { demoAway, setBet } from "./trade.js?v=mw2r5e2j";
+import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw2r5e2j";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -266,7 +266,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
       box.append(at(gearNote(), 7, 3));
       box.querySelector("[data-part=watch]").append(slot("Leagues"));
       drawStatus(box);
-      return [box, el("p", "fan-yours", "Fan does not track, keep, or use your data in any way, other than local storage of the things you want, which is only used internally. There is nothing to sign or agree on: your data is yours.")];
+      return [box, el("p", "fan-yours", "Fan sends your data nowhere. What you enter, and what your own accounts report, stays on this computer. Public information you look up is stored here too, for speed.")];
     };
     const SETTINGS_TABS = [
       ["about", "Application", aboutRows],
