@@ -1,8 +1,8 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { SHARED } from "./shared.js?v=mw23msgx";
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw23msgx";
+import { SHARED } from "./shared.js?v=mw240dec";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw240dec";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;
@@ -247,15 +247,32 @@ function pastSeasons(l) {
   return { ready: false, years, seasons: have, done: p.done, of: p.of, problem: p.problem };
 }
 const keepPast = (l, have) => keepPull("past-" + l, have);
+// nflverse's games table, one file: every finished regular-season game of the last five seasons as [kickoff ms, away, home, away score, home score], by season,
+// kept for the Handicap's fits (the games' own teams and dates) as well as Season stats' scores. Kickoffs are Eastern, taken at -5 hours all year: only rest days use them.
+const PAST_NFL_GAMES = { have: null, pull: null, problem: "" };
+async function pullNflverse() {
+  const r = await fetch("https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv", { signal: AbortSignal.timeout(60000) });
+  if (!r.ok) throw new Error("nflverse answered " + r.status);
+  const years = pastYears("nfl"), lines = (await r.text()).trim().split("\n"), head = lines.shift().split(","), col = n => head.indexOf(n);
+  const [S, T, A, H, D, K, AT, HT] = ["season", "game_type", "away_score", "home_score", "gameday", "gametime", "away_team", "home_team"].map(col), got = {}, ok = v => v !== "" && v !== "NA" && v !== undefined;
+  lines.forEach(line => { const c = line.split(","), y = Number(c[S]); if (years.includes(y) && c[T] === "REG" && ok(c[A]) && ok(c[H])) (got[y] = got[y] || []).push([Date.parse(`${c[D]}T${ok(c[K]) ? c[K] : "13:00"}:00-05:00`), c[AT], c[HT], Number(c[A]), Number(c[H])]); });
+  PAST_NFL_GAMES.have = got;
+  keepPull("pastgames-nfl", got);
+  return got;
+}
+// { ready, games: { season: [[ms, away, home, as, hs], ...] }, problem }: asks nflverse once, when first wanted, and keeps it.
+function pastNflGames() {
+  const P = PAST_NFL_GAMES, years = pastYears("nfl");
+  if (!P.have) { const had = keptPull("pastgames-nfl"); if (had) P.have = had.data; }
+  if (P.have && years.every(y => P.have[y])) return { ready: true, games: P.have, years };
+  if (!P.pull && !P.problem) P.pull = pullNflverse().catch(e => { P.problem = e.message || "Couldn't reach nflverse"; }).finally(() => { P.pull = null; onPast(); });
+  return { ready: false, years, problem: P.problem };
+}
 async function pullPast(l, years, have, p) {
   if (l === "nfl") {
     p.of = 1;
-    const r = await fetch("https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv", { signal: AbortSignal.timeout(60000) });
-    if (!r.ok) throw new Error("nflverse answered " + r.status);
-    const text = await r.text();
-    const lines = text.trim().split("\n"), head = lines.shift().split(","), col = n => head.indexOf(n), [S, T, A, H] = ["season", "game_type", "away_score", "home_score"].map(col), got = {};
-    lines.forEach(line => { const c = line.split(","), y = Number(c[S]); if (years.includes(y) && c[T] === "REG" && c[A] !== "" && c[A] !== "NA" && c[H] !== "" && c[H] !== "NA") (got[y] = got[y] || []).push([Number(c[A]), Number(c[H])]); });
-    years.forEach(y => { if (got[y]) have[y] = got[y]; });
+    const got = await pullNflverse();
+    years.forEach(y => { if (got[y]) have[y] = got[y].map(r => [r[3], r[4]]); });
     p.done = 1;
     keepPast(l, have);
     return;
@@ -288,4 +305,4 @@ async function pullNcaafb() {
   }).filter(g => g.away.rank || g.home.rank).sort((a, b) => a.t.localeCompare(b.t));
   return { asOf: Date.now(), games };
 }
-export { DAILY_TEAMS, ensureDailyTeams, pastKept, pastSeasons, seasonName, setPastRefresh, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };
+export { DAILY_TEAMS, ensureDailyTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };

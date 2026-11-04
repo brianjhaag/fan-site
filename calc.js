@@ -13,13 +13,13 @@ const Calc = (() => {
   // One entry per league: a new league is mostly a new entry. sigma and totalSd size the models (the NBA's are estimates, not fitted); keyNumbers: final margins bunch on key numbers;
   // maxMargin: the widest final margin to consider; ties: a game can end level; daily: a slate is one day, not a week; codeChips: team chips show the code, not the nickname;
   // graphMinMargin: the P/L graph's narrowest margin axis (0 = its default); byes, graphs, stats, gameDetails: what the league has built (stats: Playbook and Season stats' later views);
-  // season: Season stats' Margins buckets: margins from 1 to `margin`+, totals from totals[0]− to totals[1]+, a gridline every `tick`;
+  // handicap: the Handicap section's pricing screen is built (the NFL first, Nov 4 2026); season: Season stats' Margins buckets: margins from 1 to `margin`+, totals from totals[0]− to totals[1]+, a gridline every `tick`;
   // fullNames: its teams are keyed by full name, not nickname, because its nicknames meet another league's (the NHL's Panthers, Jets and Kings).
   RULES.leagues = {
-    nfl: { code: "NFL", sigma: 12.25, totalSd: 9, keyNumbers: true, maxMargin: 60, ties: true, liveHours: 3.5, daily: false, codeChips: false, graphMinMargin: 0, byes: true, graphs: true, stats: true, gameDetails: true, fullNames: false, season: { margin: 25, totals: [20, 70], tick: 5 } },
-    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: false, season: { margin: 30, totals: [180, 270], tick: 10 } },
+    nfl: { code: "NFL", sigma: 12.25, totalSd: 9, keyNumbers: true, maxMargin: 60, ties: true, liveHours: 3.5, daily: false, codeChips: false, graphMinMargin: 0, byes: true, graphs: true, stats: true, gameDetails: true, fullNames: false, season: { margin: 25, totals: [20, 70], tick: 5 }, handicap: true },
+    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: false, season: { margin: 30, totals: [180, 270], tick: 10 }, handicap: false },
     // The NHL's sigma and totalSd are Claude's estimates (goal margins and totals both run about 2.4 goals each way), not fitted; overtime decides every game, so no ties.
-    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: true, season: { margin: 6, totals: [1, 11], tick: 1 } }
+    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: true, season: { margin: 6, totals: [1, 11], tick: 1 }, handicap: false }
   };
   RULES.hedge = { LIFT: RULES.defaults.lift, CAPITAL: RULES.userSet.capital };
   const D = RULES.defaults;
@@ -322,6 +322,73 @@ const Calc = (() => {
     return s;
   }
 
+  /* ==== Handicap (the user, Nov 4 2026): the user's own theo for a game, from linear models they control ==== */
+  // How each team stood before a game, from that season's earlier finals only, so a fit never sees the future: per game points for and against, net, win share
+  // (a tie a half), and rest days (days since its last game, 14 at most, 14 before its first). games: [{ season, ms, away, home, final: [a, h] | null }].
+  // Out: one row per game, sorted by kickoff, { g, a, h }, each side { gp, pf, pa, net, win, rest }; a game without a final is a row too, and changes nothing.
+  function hcStates(games) {
+    const seen = new Map(), out = [];
+    const side = (season, team, ms) => {
+      const k = season + "|" + team, s = seen.get(k);
+      if (!s || !s.g) return { gp: 0, pf: 0, pa: 0, net: 0, win: 0.5, rest: s ? Math.min(14, Math.round((ms - s.last) / 864e5)) : 14 };
+      return { gp: s.g, pf: s.pf / s.g, pa: s.pa / s.g, net: (s.pf - s.pa) / s.g, win: s.w / s.g, rest: Math.min(14, Math.round((ms - s.last) / 864e5)) };
+    };
+    const add = (season, team, ms, us, them) => { const k = season + "|" + team, s = seen.get(k) || { g: 0, pf: 0, pa: 0, w: 0, last: ms }; s.g++; s.pf += us; s.pa += them; s.w += us > them ? 1 : us === them ? 0.5 : 0; s.last = ms; seen.set(k, s); };
+    games.slice().sort((p, q) => p.ms - q.ms).forEach(g => {
+      out.push({ g, a: side(g.season, g.away, g.ms), h: side(g.season, g.home, g.ms) });
+      if (g.final) { add(g.season, g.away, g.ms, g.final[0], g.final[1]); add(g.season, g.home, g.ms, g.final[1], g.final[0]); }
+    });
+    return out;
+  }
+  // The variables a model may use, each from the two sides' standing: the spread's are home minus away, the total's both together.
+  const HC_VARS = {
+    spread: [
+      { k: "net", h: "Net points per game", f: (h, a) => h.net - a.net },
+      { k: "pf", h: "Points for per game", f: (h, a) => h.pf - a.pf },
+      { k: "pa", h: "Points against per game", f: (h, a) => h.pa - a.pa },
+      { k: "win", h: "Win share", f: (h, a) => h.win - a.win },
+      { k: "rest", h: "Rest days", f: (h, a) => h.rest - a.rest }
+    ],
+    total: [
+      { k: "pf", h: "Points for per game", f: (h, a) => h.pf + a.pf },
+      { k: "pa", h: "Points against per game", f: (h, a) => h.pa + a.pa },
+      { k: "rest", h: "Rest days", f: (h, a) => h.rest + a.rest }
+    ]
+  };
+  // Least squares with an intercept, the variables centered on their means, so the intercept is the average result: the home team's average margin (home field
+  // advantage) for the spread, the average total for the total. X: rows of numbers, y: results. Out: { b0, b, means, se, r2, rmse, n }, or null when it can't be solved.
+  function olsFit(X, y) {
+    const n = y.length, p = n ? X[0].length : 0;
+    if (n < p + 2) return null;
+    const means = Array.from({ length: p }, (_, j) => X.reduce((s, r) => s + r[j], 0) / n), ybar = y.reduce((s, v) => s + v, 0) / n;
+    const Xc = X.map(r => r.map((v, j) => v - means[j])), A = Array.from({ length: p }, (_, i) => Array.from({ length: p }, (_, j) => Xc.reduce((s, r) => s + r[i] * r[j], 0)));
+    // A's inverse by Gauss-Jordan, with partial pivoting
+    const M = A.map((r, i) => [...r, ...Array.from({ length: p }, (_, j) => (i === j ? 1 : 0))]);
+    for (let c = 0; c < p; c++) {
+      let piv = c;
+      for (let r = c + 1; r < p; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+      if (Math.abs(M[piv][c]) < 1e-9) return null;   // a variable that's a copy of others, or never moves
+      [M[c], M[piv]] = [M[piv], M[c]];
+      const d = M[c][c]; M[c] = M[c].map(v => v / d);
+      for (let r = 0; r < p; r++) if (r !== c) { const f = M[r][c]; if (f) M[r] = M[r].map((v, j) => v - f * M[c][j]); }
+    }
+    const inv = M.map(r => r.slice(p)), xty = Array.from({ length: p }, (_, j) => Xc.reduce((s, r, i) => s + r[j] * (y[i] - ybar), 0));
+    const b = inv.map(r => r.reduce((s, v, j) => s + v * xty[j], 0));
+    const res = y.map((v, i) => v - ybar - Xc[i].reduce((s, x, j) => s + x * b[j], 0)), sse = res.reduce((s, e) => s + e * e, 0), sst = y.reduce((s, v) => s + (v - ybar) ** 2, 0);
+    const s2 = sse / (n - p - 1);
+    return { b0: ybar, b, means, se: inv.map((r, j) => Math.sqrt(Math.max(0, s2 * r[j]))), r2: sst ? 1 - sse / sst : 0, rmse: Math.sqrt(sse / n), n };
+  }
+  // A model's prediction for one game: model = { b0, vars: [{ k, b, mean }] }, the variables used; row = { h, a } from hcStates.
+  function hcPredict(kind, model, row) {
+    return model.vars.reduce((s, v) => { const def = HC_VARS[kind].find(x => x.k === v.k); return s + v.b * (def.f(row.h, row.a) - (v.mean || 0)); }, model.b0);
+  }
+  // The theo from a home margin and a total: the home team's spread (its line, minus when favored), each side's moneyline, rounded the way a quote is, from the league's
+  // margin model (winProb = marginModel(sigma)), and the total itself.
+  function hcTheo(margin, total, winProb) {
+    const pHome = margin === 0 ? 0.5 : margin > 0 ? winProb(margin) : 1 - winProb(-margin);
+    return { spread: -margin, pHome, ml: [quoteOf(1 - pHome), quoteOf(pHome)], total };
+  }
+
   // Is this a usable number for a bet? A moneyline is 100 or more either way; a total is above zero.
   function lineOk(type, n) {
     if (!Number.isFinite(n)) return false;
@@ -621,6 +688,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, olsFit, hcPredict, hcTheo };
 })();
 export { Calc };

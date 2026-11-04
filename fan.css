@@ -1142,6 +1142,31 @@
   .xypair .bd-badge { height: 30px; padding: 0 12px 0 0; font-size: 20px; border-radius: 4px; }
   .xypair .bd-bhelm { height: 44px; margin: -7px 4px -7px -10px; }
 
+  /* ===== Handicap (the NFL first, Nov 4 2026): the two models' cards side by side, then the week's games, in a pane that scrolls ===== */
+  #handicap .hc-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  #handicap .hc-head h2 { margin-block: 0; }
+  #handicap .season-span { flex: none; }
+  #handicap .season-span label { flex: none; }
+  #handicap .season-span span { padding: 5px 12px; }
+  #handicap .season-fetch { font-size: 12px; color: var(--ink-dim); }
+  #handicap .hc-pane { overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; margin-top: 6px; }   /* the window stays put; the models and games scroll here */
+  #handicap .hc-sigma { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-dim); }
+  #handicap .hc-sigma input { width: 80px; }
+  #handicap .hc-fit { padding: 5px 16px; }
+  #handicap .hc-models { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
+  #handicap .hc-model table { width: 100%; font-size: 13px; }
+  #handicap .hc-model th, #handicap .hc-model td { padding: 3px 6px; text-align: left; }
+  #handicap .hc-model input[type=number] { width: 90px; }
+  #handicap .hc-model tr.off td:not(:first-child) { opacity: .45; }
+  #handicap .hc-model tr.hc-int td { border-bottom: 1px solid var(--paper-edge); }
+  #handicap .hc-week { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font: 700 16px var(--font-label); }
+  #handicap .hc-week button { padding: 2px 10px; }
+  #handicap .hc-table { font-size: 13px; }
+  #handicap .hc-table th, #handicap .hc-table td { padding: 4px 8px; text-align: right; }
+  #handicap .hc-table th:first-child, #handicap .hc-table td:first-child { text-align: left; }
+  #handicap .hc-table .pb-g { text-align: center; border-left: 1px solid var(--paper-edge); }
+  #handicap .hc-table .pb-l { border-left: 1px solid var(--paper-edge); }
+  #handicap .hc-adj { width: 60px; }
   /* ===== Season stats and its Trends (the old Playbook) ===== */
   /* Season stats' heading: the title, and right of it the This season / Last 5 seasons toggle (the user, Nov 4 2026) */
   #season .season-head { display: flex; align-items: center; gap: 16px; }

@@ -1,11 +1,11 @@
 // The game cards (the refactor, Nov 3 2026, from base.js): each card's badges, lines and gutter, the strip of cards in kickoff windows, a finished week's grid, and the byes.
-import { Calc } from "./calc.js?v=mw23msgx";
-import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw23msgx";
-import { CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw23msgx";
-import { renderSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw23msgx";
-import { renderGameDetail } from "./panels.js?v=mw23msgx";
-import { fillMoneyline, fillSpread, fillTotal, showSaved } from "./tracker.js?v=mw23msgx";
-import { telecastFor, watchGame } from "./telecasts.js?v=mw23msgx";
+import { Calc } from "./calc.js?v=mw240dec";
+import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw240dec";
+import { CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw240dec";
+import { renderSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw240dec";
+import { renderGameDetail } from "./panels.js?v=mw240dec";
+import { fillMoneyline, fillSpread, fillTotal, showSaved } from "./tracker.js?v=mw240dec";
+import { telecastFor, watchGame } from "./telecasts.js?v=mw240dec";
 // base.js draws the byes as a league or week changes
 Object.assign(later, { renderByes });
 

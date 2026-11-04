@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw23msgx";
-import { BOOK_ICONS } from "./data/assets.js?v=mw23msgx";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw23msgx";
-import { Calc } from "./calc.js?v=mw23msgx";
-import { Fan } from "./hosts.js?v=mw23msgx";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw240dec";
+import { BOOK_ICONS } from "./data/assets.js?v=mw240dec";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw240dec";
+import { Calc } from "./calc.js?v=mw240dec";
+import { Fan } from "./hosts.js?v=mw240dec";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -62,7 +62,7 @@ import { Fan } from "./hosts.js?v=mw23msgx";
   let curWeek = 7, GAMES = WEEK_GAMES[7] || [], view = "week";   // view: "week" and "xy" (Graphs) belong to the selected week; a key of SECTIONS is one of the other top buttons
   // The top strip's tabs other than the weeks, and the bottom strip's buttons for each; an entry with `stub` is a placeholder saying what it will show. A section with one view has no bottom buttons. A new section or view is one entry here.
   const SECTIONS = {
-    handicap: [{ k: "main", h: "Handicap", stub: "Not built yet." }],   // every league (the user, Nov 4 2026); Playbook's Trends moved under Season stats' graphs
+    handicap: [{ k: "main", h: "Handicap" }],   // every league (the user, Nov 4 2026); Playbook's Trends moved under Season stats' graphs
     code: [],   // the Code section (code.js): one page, no views
     ncaafb: [{ k: "main", h: "NCAA FB", stub: "Not built yet." }],
     season: [{ k: "margins", h: "Margins" },
@@ -97,6 +97,7 @@ import { Fan } from "./hosts.js?v=mw23msgx";
   // A stub view draws itself and answers true; the section's first view answers false and draws as usual.
   function drawStub(v) {
     if (v === "ncaafb") { drawNcaafb(); return true; }
+    if (v === "handicap" && !LG().handicap) { $(v).replaceChildren(el("div", "pg-stub", `${LG().code} handicap`), el("p", "pg-stub-t", "Not built yet: the NFL first.")); return true; }
     if (v === "season" && !LG().stats && LG().season) return false;   // a league with only Margins built (the NBA, the NHL) draws it, whatever view the NFL left picked
     if (!LG().stats && v === "season") { $(v).replaceChildren(el("div", "pg-stub", `${LG().code} season stats`), el("p", "pg-stub-t", "Not built yet.")); return true; }
     const s = SECTIONS[v].find(x => x.k === subView[v]);
@@ -154,7 +155,7 @@ import { Fan } from "./hosts.js?v=mw23msgx";
     return tag;
   }
 
-  const APP_VERSION = "0.48.7";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.48.8";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
