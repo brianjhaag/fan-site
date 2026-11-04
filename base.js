@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw299q8b";
-import { BOOK_ICONS } from "./data/assets.js?v=mw299q8b";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw299q8b";
-import { Calc } from "./calc.js?v=mw299q8b";
-import { Fan } from "./hosts.js?v=mw299q8b";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw2cofk6";
+import { BOOK_ICONS } from "./data/assets.js?v=mw2cofk6";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw2cofk6";
+import { Calc } from "./calc.js?v=mw2cofk6";
+import { Fan } from "./hosts.js?v=mw2cofk6";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -155,17 +155,21 @@ import { Fan } from "./hosts.js?v=mw299q8b";
     return tag;
   }
 
-  const APP_VERSION = "0.50.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.51.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
   $("infoVer").textContent = APP_VERSION;   // and at the info line's far right
   // A connector whose program is a minor version behind this page (the Update button's rule).
-  const programBehind = v => { const minor = s => s.split(".").slice(0, 2).map(Number); if (!v) return true; const [a, b] = minor(v), [c, d] = minor(APP_VERSION); return a < c || (a === c && b < d); };
+  // An optional build (the Chromebook's, Nov 4 2026) is made only when asked, so its newest program can be older than this page: programs.json, beside the page, names it.
+  let PROGRAMS = {};
+  window.fetch?.("programs.json").then(r => (r.ok ? r.json() : {})).then(j => { PROGRAMS = j || {}; }, () => {});
+  const newestFor = os => (os === "linux" && PROGRAMS.chromebook) || APP_VERSION;
+  const programBehind = (v, os) => { const minor = s => s.split(".").slice(0, 2).map(Number); if (!v) return true; const [a, b] = minor(v), [c, d] = minor(newestFor(os)); return a < c || (a === c && b < d); };
   // The info line's version, highlighted with an upgrade mark while the connector's program is behind (the user's, Nov 2 2026); a press opens the settings window, where Update is.
   // DEV beside it while the connector serves the working copy (dev mode, its page-dev.txt; the user, Nov 4 2026), so a dev page is never taken for a release.
-  function showVersion(v, dev) {
-    const ver = $("infoVer"), behind = !!v && programBehind(v), devOn = !!dev;
+  function showVersion(v, dev, os) {
+    const ver = $("infoVer"), behind = !!v && programBehind(v, os), devOn = !!dev;
     if (behind === ver.classList.contains("behind") && devOn === ver.classList.contains("dev")) return;
     ver.classList.toggle("behind", behind);
     ver.classList.toggle("dev", devOn);
@@ -224,7 +228,7 @@ import { Fan } from "./hosts.js?v=mw299q8b";
   // A problem at the connector takes the note's place until it clears: a stopped line refresh, or no answer at all.
   let noteText = "", hostProblem = "";
   function slateNote(text) { noteText = text; if (pullStatus()) text = pullStatus(); if (hostProblem) text = hostProblem; $("slateNote").textContent = text; $("slateNote").classList.toggle("problem", !!hostProblem); fitSlateLine(); }
-  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version, hi.pageDev); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
+  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version, hi.pageDev, hi.os); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
   setTimeout(askHost, 3000); setInterval(askHost, 30000);
   // the update text turns amber when the lines are more than an hour old (checked every minute)
   let slateAt = 0, linesAt = 0;   // the slate on screen's lines, and the newest refresh of any league's, for the Prices row (the user, Nov 3 2026)
@@ -501,4 +505,4 @@ import { Fan } from "./hosts.js?v=mw299q8b";
     applySlate(); showView("week");
   }
   document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, $, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, view, vigOf, weekNow, setRiskKey, CARD_ACTIONS, teamChip, hasArt, brighterOf, fitSlateLine, graphsOK, SECTIONS, isPhone, mq };
+export { nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, newestFor, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, $, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, view, vigOf, weekNow, setRiskKey, CARD_ACTIONS, teamChip, hasArt, brighterOf, fitSlateLine, graphsOK, SECTIONS, isPhone, mq };

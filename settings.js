@@ -1,12 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw299q8b";
-import { Fan } from "./hosts.js?v=mw299q8b";
-import { weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw299q8b";
-import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw299q8b";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw299q8b";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw299q8b";
-import { demoAway, setBet } from "./trade.js?v=mw299q8b";
-import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw299q8b";
+import { espnState } from "./espn.js?v=mw2cofk6";
+import { Fan } from "./hosts.js?v=mw2cofk6";
+import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw2cofk6";
+import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw2cofk6";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw2cofk6";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw2cofk6";
+import { demoAway, setBet } from "./trade.js?v=mw2cofk6";
+import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw2cofk6";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -67,11 +67,22 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     // What a first-time user does, on a page with no connector.
     const connectorRows = () => {
       const box = el("div", "fan-connector"), steps = el("ol"), step = (...parts) => { const li = el("li"); li.append(...parts); steps.append(li); };
-      const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, get = el("a", "fan-start", (mac ? "Download for Mac " : "Download for Windows ") + APP_VERSION);
+      const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, cros = /CrOS/.test(navigator.userAgent), get = el("a", "fan-start", (mac ? "Download for Mac " : "Download for Windows ") + APP_VERSION);
       get.href = mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe"; get.setAttribute("download", mac ? `fan-connector-mac-${APP_VERSION}.zip` : `fan-connector-setup-${APP_VERSION}.exe`);   // one number for Fan. The Windows file still starts fan-connector-setup, which is how it knows to install itself
       get.addEventListener("click", knowConnector);
       box.append(el("h3", null, "Why it's needed"), el("p", null, "Watch and Track work right here. Price and Bet need the Fan connector: a small program on your computer that pulls prices over your own connection and holds your own Kalshi key. Nothing about your bets or your key leaves your computer for this site."));
-      if (!windows && !mac) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector runs on a Windows or Mac computer.")); return [box]; }
+      // A Chromebook (Nov 4 2026): the connector runs in ChromeOS's Linux, whose localhost ports reach Chrome, so the page finds it like anywhere else. One line in its Terminal installs it.
+      if (cros) {
+        const line = "curl -fLo fan-connector-setup " + new URL("fan-connector-chromebook", location.href).href + " && chmod +x fan-connector-setup && ./fan-connector-setup";
+        const code = el("code", "fan-cmd", line), copy = el("button", "fan-start", "Copy");
+        copy.type = "button"; copy.addEventListener("click", () => { navigator.clipboard?.writeText(line).then(() => { copy.textContent = "Copied"; }, () => {}); knowConnector(); });
+        step(el("b", null, "Turn on Linux. "), "Once: Settings, About ChromeOS, Developers, Linux development environment, Set up. It takes a few minutes.");
+        step(el("b", null, "Run one line. "), "Open the Terminal app, paste this and press Enter. Linux doesn't ask about unsigned programs. ", copy, el("div", null, code));
+        step(el("b", null, "You're moved. "), "It installs, starts with Linux from then on, and opens Fan from the Chromebook, at localhost:5180. That's the copy with prices. Settings and telecast links set up on this site stay with this site, so set those up once there.");
+        box.append(el("h3", null, "Getting it"), steps, el("h3", null, "After that"), el("p", null, "Always start from this page. When the connector is running, this page finds it and moves you to it. It runs whenever Linux is running: opening the Terminal starts Linux if it isn't. To update, press Update on the Application tab."));
+        return [box];
+      }
+      if (!windows && !mac) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector runs on a Windows or Mac computer, or a Chromebook.")); return [box]; }
       step(el("b", null, "Download it. "), get, el("small", null, "It's new and isn't signed yet, so your browser may call it suspicious. To keep it, open the browser's downloads list and choose Keep."));
       if (mac) {
         const set = el("a", "fan-start", "Open Settings");
@@ -114,10 +125,10 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     };
     // A new connector program is a new minor version, so the page's own major.minor says what's newest. A program too old to say its version is behind.
     // A program is shown as its major.minor, "0.36", on the user's word (Nov 2 2026): a page release changes only the patch.
-    const programName = v => v.split(".").slice(0, 2).join("."), newestProgram = () => programName(APP_VERSION);
+    const programName = v => v.split(".").slice(0, 2).join("."), newestProgram = os => programName(newestFor(os));
     // The Update button: the connector replaces itself, and this page reloads when the new one answers. A failure says why, and it can be pressed again.
-    const updateItem = from => {
-      const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Update to " + newestProgram());
+    const updateItem = (from, os) => {
+      const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Update to " + newestProgram(os));
       b.type = "button";
       b.addEventListener("click", () => {
         b.hidden = true;
@@ -143,7 +154,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
       else if (Fan.hostHello) { try { hi = await Fan.hostHello(); } catch (e) { away = true; } }
       const espn = espnState(), feed = $("feedNote"), book = hi && hi.book, rec = hi && Fan.lines === Fan.store && hi.records, kal = hi && Fan.lines === Fan.store && hi.env === "prod" && hi.reconcile && !hi.reconcile.skipped ? hi.reconcile : null, kalOk = !!(kal && !kal.error && kal.bad === 0), linked = allNetworks().filter(n => liveSource(n) === "link").length, tuned = allNetworks().filter(n => liveSource(n) === "hdhr").length, usesHdhr = allNetworks().some(n => sourceOf(n) === "hdhr"), time = at => timeZoned(new Date(at));
       return { hi, away, rows: [
-        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? programBehind(hi.version) ? ["warn", hi.update ? programName(hi.version) : `${hi.version ? programName(hi.version) + ", u" : "U"}pdate to ${newestProgram()}`] : ["ok", "Running " + programName(hi.version), true] : ["off", "Not on this page"]],
+        ["Connector", away ? (stopPressed ? ["off", "Stopped"] : ["bad", "Not answering"]) : hi ? programBehind(hi.version, hi.os) ? ["warn", hi.update ? programName(hi.version) : `${hi.version ? programName(hi.version) + ", u" : "U"}pdate to ${newestProgram(hi.os)}`] : ["ok", "Running " + programName(hi.version), true] : ["off", "Not on this page"]],
         ["ESPN", espn.problem ? ["bad", espn.problem] : espn.at ? ["ok", "Last read " + time(espn.at), true] : ["ok", "Using this browser's saved copy"]],
         ["Records", !trackingOn ? ["off", "Track is off"] : !Fan.store ? ["bad", "Nowhere to keep them"] : away && Fan.lines === Fan.store ? ["off", "Kept by the connector, which isn't running"] : rec && !rec.ok ? ["bad", "Failed the integrity check: " + rec.error] : weirdFills.length ? ["warn", `Fills Fan can't place in a game: ${weirdFills.join(", ")}`] : kal && kal.error ? ["warn", "Couldn't check against Kalshi: " + kal.error] : kal && kal.bad ? ["warn", "Kalshi disagrees: " + disagree(kal)] : ["ok", `${allTickets.length} wagers, kept ${Fan.lines === Fan.store ? "by the connector" : "in this browser"}${rec && rec.backup ? ", checked, backed up today" : ""}${kalOk ? ", matching Kalshi at " + time(kal.at) : ""}`, !!(rec && rec.ok && rec.backup) && (hi.env !== "prod" || kalOk)]],
         ["Prices", !Fan.lines ? ["off", "Needs the connector"] : !pricesWanted ? ["off", "Price is off"] : away ? ["off", "Not updating: the connector isn't running"] : hi && hi.refresh ? ["bad", hi.refresh] : !linesAt ? ["off", "No lines yet"] : Date.now() - linesAt > 3600000 ? ["warn", "Lines from " + time(linesAt) + ", over an hour old"] : book && book.note ? ["warn", book.note[0].toUpperCase() + book.note.slice(1)] : [book && book.live && book.games ? "live" : "ok", "Lines from " + time(slateAt) + (book && book.live && book.games ? `, live on ${book.games} game${book.games === 1 ? "" : "s"}` : ""), true]],
@@ -160,10 +171,10 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
       if (away !== connectorAway) { connectorAway = away; demoAway(away); fill(); return; }   // the diagram above changes too, and this list is drawn again with it
       rows.forEach(([name, [state, text, checked]]) => { const at = box.querySelector(`[data-st="${name}"]`), r = el("div", "fan-st " + state + (checked ? " checked" : "")); r.append(el("i")); if (!at.dataset.plain) r.append(el("b", null, name)); r.append(el("span", null, text)); at.replaceChildren(r); });
       showStates(box, new Map(rows.map(([name, [state, , checked]]) => [name, [state, checked]])));
-      box.classList.toggle("healthy", !!hi && !away && rows.every(([name, [state]]) => state === "ok" || state === "live" || state === "off" || (name === "Connector" && programBehind(hi.version))));   // a part turned off isn't a problem; amber, red or waiting is, but not an older program: it runs fine as it is, and updating is the user's choice (Nov 2 2026)
+      box.classList.toggle("healthy", !!hi && !away && rows.every(([name, [state]]) => state === "ok" || state === "live" || state === "off" || (name === "Connector" && programBehind(hi.version, hi.os))));   // a part turned off isn't a problem; amber, red or waiting is, but not an older program: it runs fine as it is, and updating is the user's choice (Nov 2 2026)
       ctl.replaceChildren();
       if (away && Fan.startLink) ctl.append(startItem());
-      if (hi && hi.update && programBehind(hi.version)) ctl.append(updateItem(hi.version));   // in Stop's place: there's room on the line for one
+      if (hi && hi.update && programBehind(hi.version, hi.os)) ctl.append(updateItem(hi.version, hi.os));   // in Stop's place: there's room on the line for one
       else if (hi && hi.stop) ctl.append(stopItem(box));
       if (hi && hi.login != null) {   // an installed connector's own checkbox
         const lab = el("label", "fan-check"), c = el("input");

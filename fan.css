@@ -422,6 +422,7 @@
   .fan-connector { display: grid; gap: 6px; padding: 4px 12px; max-width: 760px; font: 400 16px/1.35 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
   .fan-connector h3 { margin: 2px 0 0; font: 500 18px/1.15 var(--font-display); color: var(--accent); }
   .fan-connector p { margin: 0; }
+  .fan-connector .fan-cmd { display: block; margin-top: 4px; padding: 6px 8px; font: 400 13px/1.3 ui-monospace, Consolas, monospace; background: var(--panel, rgba(127,127,127,0.12)); border-radius: 4px; overflow-wrap: anywhere; user-select: all; }   /* the Chromebook's one Terminal line */
   .fan-connector ol { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
   .fan-connector li b { font-weight: 600; }
   .fan-connector small { display: block; margin-top: 4px; color: var(--ink-dim); }
