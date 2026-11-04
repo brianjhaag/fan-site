@@ -1,8 +1,8 @@
 // The Code section (TRADING.md, Nov 3 2026): the algo grid, the code editor and the console with its prompt, in one page opened by the Code button, as Ledger is.
 // With a connector of 0.38 or later, the algos are the connector's algoRuntime's: kept in its records, checked, run and armed there, with or without a page open; the grid and the console show what it
 // reports, and the prompt runs there. With none, an algo is a draft kept in this browser, every one not approved, and the prompt answers from the page itself, saying so.
-import { Fan } from "./hosts.js?v=mw1f3bad";
-import { $, el } from "./base.js?v=mw1f3bad";
+import { Fan } from "./hosts.js?v=mw1fhxhc";
+import { $, el } from "./base.js?v=mw1fhxhc";
 
 const KEPT = "fan.algos";   // the drafts, per browser, when there's no algoRuntime; draftsMoved into the connector the first time one is found
 const STATES = ["not approved", "off", "running", "armed"];   // TRADING.md: an algo's states, in order

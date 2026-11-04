@@ -1,9 +1,9 @@
 // Telecasts and the wall, in one module (the refactor, Nov 3 2026): the networks and where each comes from, what a game's Live telecast does, the wall, and the rest of the
 // settings window's Telecasts tab. base.js's cards call telecastFor and watchGame, and its league switch sendManifest, through later.
-import { Fan } from "./hosts.js?v=mw1f3bad";
-import { qrSvg } from "./qr.js?v=mw1f3bad";
-import { slateOfDay, abbr } from "./leagues.js?v=mw1f3bad";
-import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw1f3bad";
+import { Fan } from "./hosts.js?v=mw1fhxhc";
+import { qrSvg } from "./qr.js?v=mw1fhxhc";
+import { slateOfDay, abbr } from "./leagues.js?v=mw1fhxhc";
+import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw1fhxhc";
 Object.assign(later, { telecastFor, watchGame, sendManifest });
 
 // ---- The networks and their sources
@@ -218,9 +218,9 @@ const wallSetup = parts => {
 };
 // The wall's two switches, on the computer that runs it: other computers may join as screens, and tablets or phones may control it. Each has its own code and address.
 const doorRows = () => {
-  const box = el("div", "fan-remote");
+  const box = el("div", "fan-door");
   if (!Fan.door) return box;
-  if (Fan.door.here) { box.append(el("p", "fan-remote-here", "This is a remote for the wall: telecasts you start here open on its computers.")); return box; }
+  if (Fan.door.here) { box.append(el("p", "fan-door-here", "This is a remote for the wall: telecasts you start here open on its computers.")); return box; }
   const draw = (note = "") => {
     const d = Fan.door.info, row = (kind, label, on, url, ipUrl, how, qr) => {
       const lab = el("label", "fan-check"), c = el("input");
@@ -231,7 +231,7 @@ const doorRows = () => {
       if (on && url) {
         out.push(el("p", "fan-note", how));
         if (qr) { const q = el("div", "fan-qr"); q.innerHTML = qrSvg(url) || ""; q.title = "Point the tablet or phone's camera here"; out.push(q); }
-        out.push(el("div", "fan-remote-url", url));
+        out.push(el("div", "fan-door-url", url));
         if (ipUrl) out.push(el("p", "fan-note", "By its number, if that name doesn't work on your network: " + ipUrl));
       }
       else if (on) out.push(el("p", "fan-note", "On, but this computer's address on the network couldn't be found."));
@@ -248,7 +248,7 @@ const doorRows = () => {
 };
 // This computer as a screen on another computer's wall: join with the screens address that one's Telecasts tab shows, or leave. Not while this computer's own wall takes screens.
 const screenRows = () => {
-  const box = el("div", "fan-remote");
+  const box = el("div", "fan-door");
   if (!Fan.screen || (Fan.door && Fan.door.info.screens.on)) return box;
   const draw = () => {
     const j = Fan.screen.of;
@@ -256,7 +256,7 @@ const screenRows = () => {
       const leave = el("button", "fan-start", "Leave"); leave.type = "button";
       leave.addEventListener("click", () => { leave.disabled = true; Fan.screen.set({ op: "leave" }).then(() => redrawTab(), e => { box.append(el("p", "fan-note", "Couldn't: " + e.message)); leave.disabled = false; }); });
       const SAY = { waiting: `Waiting to be allowed: on that computer, Settings, Telecasts, Wall setup, Allow ${j.name}.`, refused: "That wall refused or removed this computer. Leave, then join again.", unreachable: "That wall isn't answering: its computer may be asleep or off." };
-      box.replaceChildren(el("p", "fan-remote-here", `This computer is a screen on the wall at ${j.wall}, as ${j.name}.${j.state === "on" ? " That wall puts telecasts here." : ""}`), ...(SAY[j.state] ? [el("p", "fan-note", SAY[j.state])] : []), leave);
+      box.replaceChildren(el("p", "fan-door-here", `This computer is a screen on the wall at ${j.wall}, as ${j.name}.${j.state === "on" ? " That wall puts telecasts here." : ""}`), ...(SAY[j.state] ? [el("p", "fan-note", SAY[j.state])] : []), leave);
       if (j.state !== "on") setTimeout(() => { if (!box.isConnected || !Fan.hostHello) return; Fan.hostHello().then(h => { const was = JSON.stringify(Fan.screen.of); Fan.screen.of = h.screenOf || null; if (JSON.stringify(Fan.screen.of) !== was) redrawTab(); else draw(); }, () => {}); }, 3000);   // waiting: watch for the wall's answer
       return;
     }

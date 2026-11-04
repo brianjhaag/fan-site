@@ -186,7 +186,7 @@ Fan.connectStore = async () => {
       Fan.playHdhr = (ip, channel) => send("/connector/hdhomerun/play", { ip, channel });
     }
     Fan.captureTelecast = () => window.fetch("/connector/telecast/capture", { method: "POST" }).then(r => r.json());   // the telecast router's probe: what Fan's TV window shows, saved by the connector
-    if (hi.screens) Fan.screens = { list: () => window.fetch("/connector/screens").then(r => r.json()), show: pref => send("/connector/spots", { pref }) };
+    if (hi.screens) Fan.screens = { list: () => window.fetch("/connector/screens").then(r => r.json()) };
   }
   else if (window.indexedDB) {   // no lines here: this browser holds only the person's own records
     Fan.store = browserStore(window.indexedDB);
