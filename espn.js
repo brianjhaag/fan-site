@@ -1,8 +1,8 @@
 // Layer 1's data: the games, scores, venues, forecasts and team stats, pulled by this browser from ESPN's public addresses. Nothing like it ships with the page: the user sees their own data (CLAUDE.md).
 // It runs before the rest of the page. Each browser keeps what it pulled in localStorage, so a finished week is asked for once, and a problem falls back on the last copy.
 // A 429 or 5xx stops further pulls until the page is reloaded: never a retry loop (CLAUDE.md rule 7).
-import { SHARED } from "./shared.js?v=mw22n4pc";
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw22n4pc";
+import { SHARED } from "./shared.js?v=mw231hrw";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw231hrw";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   // what a game holds before the user's own prices: never shown
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;
@@ -236,6 +236,8 @@ const setPastRefresh = fn => { onPast = fn; };
 // The seasons, by the year ESPN names them: the NFL's by its fall, the NBA's and the NHL's by the spring they end in (2025–26 is 2026), so the season under way is SHARED.season.year + 1.
 const pastYears = l => Array.from({ length: PAST_N }, (_, i) => SHARED.season.year - (l === "nfl" ? PAST_N : PAST_N - 1) + i);
 const seasonName = (l, y) => (l === "nfl" ? String(y) : `${y - 1}–${String(y).slice(2)}`);
+// Whether this browser already keeps every one of the five seasons, without asking for any.
+const pastKept = l => { const have = PAST[l] || (PAST[l] = (keptPull("past-" + l) || {}).data || {}); return pastYears(l).every(y => have[y]); };
 // { ready, years, seasons: { year: [[away, home], ...] }, done, of, problem }: what's kept, and while a pull runs how far it has got.
 function pastSeasons(l) {
   const years = pastYears(l), have = PAST[l] || (PAST[l] = (keptPull("past-" + l) || {}).data || {});
@@ -286,4 +288,4 @@ async function pullNcaafb() {
   }).filter(g => g.away.rank || g.home.rank).sort((a, b) => a.t.localeCompare(b.t));
   return { asOf: Date.now(), games };
 }
-export { DAILY_TEAMS, ensureDailyTeams, pastSeasons, seasonName, setPastRefresh, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };
+export { DAILY_TEAMS, ensureDailyTeams, pastKept, pastSeasons, seasonName, setPastRefresh, espnState, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureTeams, etIso, nflRow, gameOfRow, pullDaily, pullNcaafb, pullStatus, setRefresh, teamSchedule, wantScores };

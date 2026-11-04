@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw22n4pc";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw22n4pc";
-import { Fan } from "./hosts.js?v=mw22n4pc";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw22n4pc";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw22n4pc";
+import { riskGrid } from "./risk.js?v=mw231hrw";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw231hrw";
+import { Fan } from "./hosts.js?v=mw231hrw";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw231hrw";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw231hrw";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -129,6 +129,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw22n4pc";
     const dayOf = g => new Date(g.t.slice(0, 10) + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
     let span = lg.daily ? (finals.length ? `${dayOf(finals[0])}–${dayOf(finals[finals.length - 1])}` : "none final yet") : `weeks 1–${Math.max(0, ...nflWeeks.filter(w => WEEK_GAMES[w].some(g => g.final)))}`;
     head.append(el("h2", null, lg.daily ? `${lg.code} season stats` : "Season stats"), spanToggle());
+    if (!pastKept(league)) head.append(el("span", "season-fetch", "(data will be downloaded from the web)"));   // the user, Nov 4 2026: until this browser keeps the five seasons
     if (seasonSpan === "past") {
       // The last five complete regular seasons, from this browser's own pull (espn.js pastSeasons): drawn once every season is kept, a progress line until then.
       const past = pastSeasons(league), first = seasonName(league, past.years[0]), lastS = seasonName(league, past.years[past.years.length - 1]);

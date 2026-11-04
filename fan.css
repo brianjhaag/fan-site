@@ -1148,6 +1148,7 @@
   #season .season-head h2 { margin-block: 0; }
   #season .season-span { flex: none; }
   #season .season-span span { padding: 5px 12px; }
+  #season .season-fetch { font-size: 12px; color: var(--ink-dim); }   /* beside the toggle until the five seasons are kept */
   #playbook table { max-width: none; font-size: 13px; }
   #playbook th, #playbook td { padding: 4px 8px; }
   #playbook .pb-g { text-align: center; border-left: 1px solid var(--paper-edge); color: var(--ink); }
