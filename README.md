@@ -6,6 +6,7 @@ The page's files, in plain words. In the `fan` repo they're in `src/`; on `fan-s
 - **fan.css**: every color, size and position on the page.
 - **start.js**: runs last, opens the page on the current week and connects everything.
 - **base.js**: the core: the tabs, the leagues, and the settings everything else reads.
+- **layout.js**: the strips of tabs and fitting the page to the window.
 - **cards.js**: the game cards: each team's badge, the lines, the buttons down the side, and the cards in kickoff windows.
 - **calc.js**: the money math: wagers, risk, P/L, the models, Kalshi's fees. Every number you trade on comes from here, and each rule has a test.
 - **risk.js**: the risk detail and the totals card.

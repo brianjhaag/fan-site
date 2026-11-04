@@ -1,12 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw1enwee";
-import { Fan } from "./hosts.js?v=mw1enwee";
-import { weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw1enwee";
-import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw1enwee";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw1enwee";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw1enwee";
-import { demoAway, setBet } from "./trade.js?v=mw1enwee";
-import { allNetworks, hdhr, liveSource, networkPick, telecastTab } from "./telecasts.js?v=mw1enwee";
+import { espnState } from "./espn.js?v=mw1f3bad";
+import { Fan } from "./hosts.js?v=mw1f3bad";
+import { weirdFills, programBehind, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw1f3bad";
+import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw1f3bad";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw1f3bad";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw1f3bad";
+import { demoAway, setBet } from "./trade.js?v=mw1f3bad";
+import { allNetworks, hdhr, liveSource, networkPick, telecastTab } from "./telecasts.js?v=mw1f3bad";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -27,7 +27,7 @@ import { allNetworks, hdhr, liveSource, networkPick, telecastTab } from "./telec
       if (p.querySelector(".fan-telecasts")) return;   // the Telecasts tab keeps its large type and scrolls (the user's, Nov 3 2026)
       for (let z = 1; z > .6 && overflows(); ) { z = Math.round((z - .05) * 100) / 100; p.style.zoom = String(z); }
     };
-    // Fitted again when the window changes size (it follows the strips, base.js fitBand), when its text changes (the statuses update in place) and when fonts arrive. Its own zoom is a style change, which neither watcher hears.
+    // Fitted again when the window changes size (it follows the strips, layout.js fitBand), when its text changes (the statuses update in place) and when fonts arrive. Its own zoom is a style change, which neither watcher hears.
     const listWatch = new ResizeObserver(() => fitList()), textWatch = new MutationObserver(() => fitList());   // held here, so they keep watching
     listWatch.observe(list); textWatch.observe(list, { childList: true, characterData: true, subtree: true });
     if (document.fonts) document.fonts.addEventListener("loadingdone", () => fitList());

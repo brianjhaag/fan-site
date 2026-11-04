@@ -3,7 +3,7 @@
 // the connector's lines.rs and ingest.rs, and checked against them on the same real answers before they were retired (tools/dev/compare-lines.js).
 // It reaches the network only through fan.fetch, which keeps to the connector's list of hosts, and saves nothing: the connector saves what it returns and keeps the timer. A feed problem
 // comes back as an error for the connector to act on. No retries here, on purpose: the feeds are free (CLAUDE.md rule 7). The page never loads it.
-import { SHARED } from "./shared.js?v=mw1enwee";
+import { SHARED } from "./shared.js?v=mw1f3bad";
 
 const Lines = (() => {
   const MAX_GAP = 0.08;   // a wider book says nothing about the price
