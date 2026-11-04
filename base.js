@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw27e8uo";
-import { BOOK_ICONS } from "./data/assets.js?v=mw27e8uo";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw27e8uo";
-import { Calc } from "./calc.js?v=mw27e8uo";
-import { Fan } from "./hosts.js?v=mw27e8uo";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw27zi7t";
+import { BOOK_ICONS } from "./data/assets.js?v=mw27zi7t";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw27zi7t";
+import { Calc } from "./calc.js?v=mw27zi7t";
+import { Fan } from "./hosts.js?v=mw27zi7t";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -155,7 +155,7 @@ import { Fan } from "./hosts.js?v=mw27e8uo";
     return tag;
   }
 
-  const APP_VERSION = "0.48.16";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.49.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -163,12 +163,15 @@ import { Fan } from "./hosts.js?v=mw27e8uo";
   // A connector whose program is a minor version behind this page (the Update button's rule).
   const programBehind = v => { const minor = s => s.split(".").slice(0, 2).map(Number); if (!v) return true; const [a, b] = minor(v), [c, d] = minor(APP_VERSION); return a < c || (a === c && b < d); };
   // The info line's version, highlighted with an upgrade mark while the connector's program is behind (the user's, Nov 2 2026); a press opens the settings window, where Update is.
-  function showVersion(v) {
-    const ver = $("infoVer"), behind = !!v && programBehind(v);
-    if (behind === ver.classList.contains("behind")) return;
+  // DEV beside it while the connector serves the working copy (dev mode, its page-dev.txt; the user, Nov 4 2026), so a dev page is never taken for a release.
+  function showVersion(v, dev) {
+    const ver = $("infoVer"), behind = !!v && programBehind(v), devOn = !!dev;
+    if (behind === ver.classList.contains("behind") && devOn === ver.classList.contains("dev")) return;
     ver.classList.toggle("behind", behind);
-    ver.title = behind ? `The Fan connector is ${v}: update it on the Application tab` : "";
+    ver.classList.toggle("dev", devOn);
+    ver.title = behind ? `The Fan connector is ${v}: update it on the Application tab` : devOn ? `Dev mode: the connector serves the working copy in ${dev}, not the site's page. The next release turns it off.` : "";
     ver.replaceChildren(APP_VERSION);
+    if (devOn) ver.append(el("span", "dev-mark", "DEV"));
     if (behind) { const up = el("span", "up-mark"); up.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 17V7M7.5 11.5 12 7l4.5 4.5"/></svg>'; ver.append(up); }
     fitSlateLine();
   }
@@ -221,7 +224,7 @@ import { Fan } from "./hosts.js?v=mw27e8uo";
   // A problem at the connector takes the note's place until it clears: a stopped line refresh, or no answer at all.
   let noteText = "", hostProblem = "";
   function slateNote(text) { noteText = text; if (pullStatus()) text = pullStatus(); if (hostProblem) text = hostProblem; $("slateNote").textContent = text; $("slateNote").classList.toggle("problem", !!hostProblem); fitSlateLine(); }
-  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
+  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version, hi.pageDev); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
   setTimeout(askHost, 3000); setInterval(askHost, 30000);
   // the update text turns amber when the lines are more than an hour old (checked every minute)
   let slateAt = 0, linesAt = 0;   // the slate on screen's lines, and the newest refresh of any league's, for the Prices row (the user, Nov 3 2026)

@@ -188,6 +188,7 @@
   .one-line #slateNote { order: 2; text-align: right; align-self: flex-end; padding-bottom: 2px; flex: none; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; }   /* 2x (was 11px): the week update text on its own line, the byes under it */
   .one-line #slateHead { display: none; }
   .one-line #infoVer.behind { display: inline-flex; align-items: center; gap: 5px; color: #ffb52e; cursor: pointer; }   /* the connector's program is behind: amber, with an upgrade mark */
+  .one-line #infoVer .dev-mark { margin-left: 6px; padding: 0 5px; border-radius: 3px; background: #c026d3; color: #fff; font-size: .8em; letter-spacing: .1em; }   /* dev mode: the connector serves the working copy */
   .one-line #infoVer .up-mark svg { display: block; width: 1.05em; height: 1.05em; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   .one-line #infoVer { order: 4; margin-left: 14px; align-self: flex-end; padding-bottom: 2px; flex: none; font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; font-size: var(--slate-fs, 16px); line-height: 26px; white-space: nowrap; color: var(--ink-dim); }   /* Fan's version, at the far right */
   .bye-box { order: 1; margin: 0 auto 5px 14px; align-self: flex-end; flex: none; display: flex; align-items: baseline; gap: .6em; font-size: var(--slate-fs, 16px); line-height: 26px; }   /* up to 2x (was 11px); fitSlateLine shrinks both to fit the width */
