@@ -375,6 +375,13 @@ const Calc = (() => {
     const s2 = sse / (n - p - 1);
     return { b0: ybar, b, means, se: inv.map((r, j) => Math.sqrt(Math.max(0, s2 * r[j]))), r2: sst ? 1 - sse / sst : 0, rmse: Math.sqrt(sse / n), n };
   }
+  // One variable as the only predictor (the user, Nov 4 2026: a guide to setting coefficients): least squares of the visitor's margin y on x alone, as the equation
+  // writes it, visitor margin = -HFA + coef x x. Out: { hfa, coef, r2, rmse, n }, or null when it can't be fitted.
+  function hcAlone(xs, ys) {
+    const f = olsFit(xs.map(x => [x]), ys);
+    if (!f) return null;
+    return { hfa: -(f.b0 - f.b[0] * f.means[0]), coef: f.b[0], r2: f.r2, rmse: f.rmse, n: f.n };
+  }
   // The theo from the projected result, the home team's margin: its spread (the home line, minus when favored) and each side's moneyline, rounded the way a quote is,
   // from the key number model (winProb = marginModel(sigma)).
   function hcTheo(margin, winProb) {
@@ -681,6 +688,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, olsFit, hcTheo };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcAlone, olsFit, hcTheo };
 })();
 export { Calc };
