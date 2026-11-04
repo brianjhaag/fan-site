@@ -1,9 +1,9 @@
 // The tabs that replace the game cards: Playbook, Season stats, Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw1haiyc";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams } from "./espn.js?v=mw1haiyc";
-import { Fan } from "./hosts.js?v=mw1haiyc";
-import { ALL_GAMES, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw1haiyc";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw1haiyc";
+import { riskGrid } from "./risk.js?v=mw229vws";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams } from "./espn.js?v=mw229vws";
+import { Fan } from "./hosts.js?v=mw229vws";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw229vws";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw229vws";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -101,17 +101,21 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw1haiyc";
     return c;
   };
 
-  // Season stats panel: so far the histogram of this season's real results.
+  // Season stats panel: this season's real results as two histograms, margins of victory and totals, in the league's own buckets (RULES.leagues' season).
   function renderSeason() {
     if (drawStub("season")) return;
     const box = $("season"), pad = 22;   // pad: a cell's border and padding
-    const W = Math.max(560, box.clientWidth - 32);
+    const W = Math.max(560, box.clientWidth - 32), lg = LG(), S = lg.season;
     box.replaceChildren();
-    box.append(el("h2", null, "Season stats"), el("small", null, "2026 regular season · real results only (weeks 1–6 hardcoded, weeks 7 and 8 from the live slate as games finish)"));
-    // Histogram of this season real results: how many games ended with each margin of victory, one-point buckets from 1 to 25+ (the last
-    // bucket holds every bigger margin). Each game is counted once; a tie has no margin and is only noted in the caption.
-    const nflWeeks = Object.keys(WEEK_GAMES).map(Number).filter(w => w <= 18), results = nflWeeks.flatMap(w => WEEK_GAMES[w].filter(g => g.final).map(g => g.final)), lastPlayed = Math.max(0, ...nflWeeks.filter(w => WEEK_GAMES[w].some(g => g.final)));
-    const counts = new Map(), K = 25;
+    // The NFL's weeks (1–6 hardcoded, later ones from the live slate), or a daily league's season from this browser's own ESPN pull (the user, Nov 4 2026).
+    const nflWeeks = Object.keys(WEEK_GAMES).map(Number).filter(w => w <= 18);
+    const finals = lg.daily ? ALL_GAMES.filter(g => g.league === league && g.final).sort((p, q) => p.t.localeCompare(q.t)) : nflWeeks.flatMap(w => WEEK_GAMES[w].filter(g => g.final));
+    const results = finals.map(g => g.final), dayOf = g => new Date(g.t.slice(0, 10) + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const span = lg.daily ? (finals.length ? `${dayOf(finals[0])}–${dayOf(finals[finals.length - 1])}` : "none final yet") : `weeks 1–${Math.max(0, ...nflWeeks.filter(w => WEEK_GAMES[w].some(g => g.final)))}`;
+    box.append(el("h2", null, lg.daily ? `${lg.code} season stats` : "Season stats"), el("small", null, lg.daily ? "2026–27 regular season · real results only, from ESPN's scores as this browser read them" : "2026 regular season · real results only (weeks 1–6 hardcoded, weeks 7 and 8 from the live slate as games finish)"));
+    // Margins of victory: how many games ended with each margin, one-point buckets from 1 to K+ (the last bucket holds every bigger margin).
+    // Each game is counted once; a tie has no margin and is only noted in the caption. An NHL game decided in overtime or a shootout counts at its final score.
+    const counts = new Map(), K = S.margin;
     let ties = 0;
     results.forEach(([a, h]) => {
       const margin = Math.abs(a - h);
@@ -121,9 +125,9 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw1haiyc";
     });
     const room = document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - box.getBoundingClientRect().top - 220;   // above the info line, less the heading, the two captions and the cells' frames
     const Wh = W - pad, Hh = Math.max(220, Math.min(340, Math.floor(room / 2))), mh = { l: 84, r: 80, t: 30, b: 40 };   // two histograms share the page's height
-    const { svg: hs, add: hadd } = mkSvg(Wh, Hh, "Histogram of 2026 game margins of victory");
+    const { svg: hs, add: hadd } = mkSvg(Wh, Hh, `Histogram of ${lg.code} game margins of victory`);
     const bwid = (Wh - mh.l - mh.r) / K, XH = k => mh.l + (k - 0.5) * bwid;   // bucket k is centered at XH(k)
-    const hTop = mh.t + 10, hBase = Hh - mh.b, hMax = Math.max(...counts.values()), bw = bwid - 8;
+    const hTop = mh.t + 10, hBase = Hh - mh.b, hMax = Math.max(1, ...counts.values()), bw = Math.max(2, Math.min(bwid - 8, 60));
     for (let k = 1; k <= K; k++) {
       hadd("line", { x1: XH(k), x2: XH(k), y1: mh.t - 10, y2: hBase, class: "grid" });
       hadd("text", { x: XH(k), y: hBase + 18, "text-anchor": "middle" }, k === K ? K + "+" : String(k));
@@ -136,15 +140,16 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw1haiyc";
       hadd("rect", { x: XH(k) - bw / 2, y: hBase - bh, width: bw, height: bh, class: "bar win" + (k === K ? " end" : "") });
       hadd("text", { x: XH(k), y: hBase - bh - 6, "text-anchor": "middle", class: "cnt" }, String(n));
     }
-    box.append(cell(`Season results · ${results.length} games, weeks 1–${lastPlayed} · margin of victory, each game counted once · 25+ includes bigger margins${ties ? ` · ${ties} tie${ties > 1 ? "s" : ""} not shown` : ""}`, hs, true));
+    const unit = league === "nhl" ? "goals" : "points";
+    box.append(cell(`Season results · ${results.length} games, ${span} · margin of victory, each game counted once · ${K}+ includes bigger margins${league === "nhl" ? " · overtime and shootout games at their final score" : ""}${ties ? ` · ${ties} tie${ties > 1 ? "s" : ""} not shown` : ""}`, hs, true));
     // This season's totals, the same way (the user, Nov 3 2026): how many games ended with each combined score, one-point buckets from LO and under to HI and over.
-    const LO = 20, HI = 70, tot = new Map();
+    const [LO, HI] = S.totals, tick = S.tick, tot = new Map();
     results.forEach(([a, h]) => { const k = Math.max(LO, Math.min(HI, a + h)); tot.set(k, (tot.get(k) || 0) + 1); });
-    const { svg: ts, add: tadd } = mkSvg(Wh, Hh, "Histogram of 2026 game totals");
-    const nT = HI - LO + 1, twid = (Wh - mh.l - mh.r) / nT, XT = k => mh.l + (k - LO + 0.5) * twid, tMax = Math.max(1, ...tot.values()), tbw = Math.max(2, twid - 4);
+    const { svg: ts, add: tadd } = mkSvg(Wh, Hh, `Histogram of ${lg.code} game totals`);
+    const nT = HI - LO + 1, twid = (Wh - mh.l - mh.r) / nT, XT = k => mh.l + (k - LO + 0.5) * twid, tMax = Math.max(1, ...tot.values()), tbw = Math.max(2, Math.min(twid - 4, 60));
     for (let k = LO; k <= HI; k++) {
-      const lab = k === LO ? LO + "−" : k === HI ? HI + "+" : k % 5 === 0 ? String(k) : "";
-      if (lab || k % 5 === 0) tadd("line", { x1: XT(k), x2: XT(k), y1: mh.t - 10, y2: hBase, class: "grid" });
+      const lab = k === LO ? LO + "−" : k === HI ? HI + "+" : k % tick === 0 ? String(k) : "";
+      if (lab || k % tick === 0) tadd("line", { x1: XT(k), x2: XT(k), y1: mh.t - 10, y2: hBase, class: "grid" });
       if (lab) tadd("text", { x: XT(k), y: hBase + 18, "text-anchor": "middle" }, lab);
     }
     tadd("line", { x1: mh.l, x2: Wh - mh.r, y1: hBase, y2: hBase, class: "base" });
@@ -155,7 +160,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw1haiyc";
       tadd("rect", { x: XT(k) - tbw / 2, y: hBase - bh, width: tbw, height: bh, class: "bar win" + (k === LO || k === HI ? " end" : "") });
       tadd("text", { x: XT(k), y: hBase - bh - 6, "text-anchor": "middle", class: "cnt" }, String(n));
     }
-    box.append(cell(`Season totals · ${results.length} games, weeks 1–${lastPlayed} · both teams' points together, each game counted once · ${LO}− and ${HI}+ include everything past them`, ts, true));
+    box.append(cell(`Season totals · ${results.length} games, ${span} · both teams' ${unit} together, each game counted once · ${LO}− and ${HI}+ include everything past them`, ts, true));
   }
 
   // A team helmet drawn inside an svg (the Graphs badges): natural size is read from the PNG header of its data URI, and the empty left margin

@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw1haiyc";
-import { BOOK_ICONS } from "./data/assets.js?v=mw1haiyc";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw1haiyc";
-import { Calc } from "./calc.js?v=mw1haiyc";
-import { Fan } from "./hosts.js?v=mw1haiyc";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw229vws";
+import { BOOK_ICONS } from "./data/assets.js?v=mw229vws";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw229vws";
+import { Calc } from "./calc.js?v=mw229vws";
+import { Fan } from "./hosts.js?v=mw229vws";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -97,6 +97,7 @@ import { Fan } from "./hosts.js?v=mw1haiyc";
   // A stub view draws itself and answers true; the section's first view answers false and draws as usual.
   function drawStub(v) {
     if (v === "ncaafb") { drawNcaafb(); return true; }
+    if (v === "season" && !LG().stats && LG().season) return false;   // a league with only Margins built (the NBA, the NHL) draws it, whatever view the NFL left picked
     if (!LG().stats && (v === "season" || v === "playbook")) { $(v).replaceChildren(el("div", "pg-stub", `${LG().code} ${v === "season" ? "season stats" : "playbook"}`), el("p", "pg-stub-t", "Not built yet.")); return true; }
     const s = SECTIONS[v].find(x => x.k === subView[v]);
     if (!s.stub) return false;
@@ -153,7 +154,7 @@ import { Fan } from "./hosts.js?v=mw1haiyc";
     return tag;
   }
 
-  const APP_VERSION = "0.48.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.48.3";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on

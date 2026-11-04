@@ -12,13 +12,14 @@ const Calc = (() => {
   };
   // One entry per league: a new league is mostly a new entry. sigma and totalSd size the models (the NBA's are estimates, not fitted); keyNumbers: final margins bunch on key numbers;
   // maxMargin: the widest final margin to consider; ties: a game can end level; daily: a slate is one day, not a week; codeChips: team chips show the code, not the nickname;
-  // graphMinMargin: the P/L graph's narrowest margin axis (0 = its default); byes, graphs, stats, gameDetails: what the league has built;
+  // graphMinMargin: the P/L graph's narrowest margin axis (0 = its default); byes, graphs, stats, gameDetails: what the league has built (stats: Playbook and Season stats' later views);
+  // season: Season stats' Margins buckets: margins from 1 to `margin`+, totals from totals[0]− to totals[1]+, a gridline every `tick`;
   // fullNames: its teams are keyed by full name, not nickname, because its nicknames meet another league's (the NHL's Panthers, Jets and Kings).
   RULES.leagues = {
-    nfl: { code: "NFL", sigma: 12.25, totalSd: 9, keyNumbers: true, maxMargin: 60, ties: true, liveHours: 3.5, daily: false, codeChips: false, graphMinMargin: 0, byes: true, graphs: true, stats: true, gameDetails: true, fullNames: false },
-    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: false },
+    nfl: { code: "NFL", sigma: 12.25, totalSd: 9, keyNumbers: true, maxMargin: 60, ties: true, liveHours: 3.5, daily: false, codeChips: false, graphMinMargin: 0, byes: true, graphs: true, stats: true, gameDetails: true, fullNames: false, season: { margin: 25, totals: [20, 70], tick: 5 } },
+    nba: { code: "NBA", sigma: 12, totalSd: 18, keyNumbers: false, maxMargin: 75, ties: false, liveHours: 3.5, daily: true, codeChips: true, graphMinMargin: 20, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: false, season: { margin: 30, totals: [180, 270], tick: 10 } },
     // The NHL's sigma and totalSd are Claude's estimates (goal margins and totals both run about 2.4 goals each way), not fitted; overtime decides every game, so no ties.
-    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: true }
+    nhl: { code: "NHL", sigma: 2.4, totalSd: 2.4, keyNumbers: false, maxMargin: 12, ties: false, liveHours: 3, daily: true, codeChips: true, graphMinMargin: 0, byes: false, graphs: false, stats: false, gameDetails: true, fullNames: true, season: { margin: 6, totals: [1, 11], tick: 1 } }
   };
   RULES.hedge = { LIFT: RULES.defaults.lift, CAPITAL: RULES.userSet.capital };
   const D = RULES.defaults;
