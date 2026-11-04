@@ -1,10 +1,10 @@
 // The tabs that replace the game cards: Season stats (with Trends, the old Playbook, under its graphs), Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw24jv94";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw24jv94";
-import { Fan } from "./hosts.js?v=mw24jv94";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw24jv94";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw24jv94";
-import { Calc } from "./calc.js?v=mw24jv94";
+import { riskGrid } from "./risk.js?v=mw251xwh";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw251xwh";
+import { Fan } from "./hosts.js?v=mw251xwh";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw251xwh";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw251xwh";
+import { Calc } from "./calc.js?v=mw251xwh";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -816,23 +816,25 @@ import { Calc } from "./calc.js?v=mw24jv94";
     sp.forEach(e => { e.style.minHeight = sh + "px"; });
   }
 
-  /* ==== Handicap (the NFL first; the user, Nov 4 2026): the main calc is the projected game result, the home team's margin, from a regression the user controls;
-  // the projected spread is that result, and the key number model turns it into a moneyline. Totals are a different calc, not here yet. ==== */
-  // Kept per browser: the games to fit on, the model (the intercept, and for each variable whether it's used, its coefficient and its center), the margin spread (sigma)
-  // the key number model takes, a points adjustment per game, and the week on screen. The math is calc.js's (hcStates, olsFit, hcPredict, hcTheo).
+  /* ==== Handicap (the NFL first; the user, Nov 4 2026): the user builds one equation for the visitor's margin, and each game's row shows it with that game's numbers,
+  // ending in the predicted spread in its final form, visitor and line ("JAX −9.0"). The key number model turns the same result into a moneyline. Totals are a different calc. ==== */
+  // The equation, in the visitor's terms: visitor margin = −HFA + coefficient × variable (visitor minus home). One term for now (the user). It's the same as the home team's
+  // margin = HFA + coefficient × (home minus away), so calc.js's hcStates, HC_VARS and hcTheo serve it, and Fit is least squares with an intercept on that one variable.
+  // Kept per browser: the games to fit on, the equation, the margin spread (sigma) the key number model takes, and the week on screen.
   const HC_KEY = "fan.handicap.nfl";
-  const hcDefault = () => ({ sample: "now", sigma: RULES.leagues.nfl.sigma, minGames: 2, week: null, adj: {}, spread: { b0: 0, on: { net: true }, b: {}, mean: {}, fit: null } });
-  const hc = (() => { const d = hcDefault(); try { const s = JSON.parse(localStorage.getItem(HC_KEY)); return s ? { ...d, ...s, spread: { ...d.spread, ...s.spread } } : d; } catch (e) { return d; } })();
-  delete hc.total;   // a total model was here for a release (0.48.8); totals are a different calc
+  const hcDefault = () => ({ sample: "now", sigma: RULES.leagues.nfl.sigma, minGames: 2, week: null, eq: { hfa: null, coef: 0, v: "net" }, fit: null });
+  const hc = (() => { const d = hcDefault(); try { const s = JSON.parse(localStorage.getItem(HC_KEY)); return s ? { ...d, ...s, eq: { ...d.eq, ...s.eq } } : d; } catch (e) { return d; } })();
+  ["spread", "total", "adj"].forEach(k => { delete hc[k]; });   // the earlier screens' (0.48.8, 0.48.9): a regression card, a total model, a points adjustment per game
   const hcSave = () => { try { localStorage.setItem(HC_KEY, JSON.stringify(hc)); } catch (e) {} };
   let hcWinFor = null, hcWinFn = null;
   const hcWinProb = () => { if (hcWinFor !== hc.sigma) { hcWinFor = hc.sigma; hcWinFn = marginModel(hc.sigma); } return hcWinFn; };
   const hcRound = (v, k = 10) => Math.round(v * k) / k;
-  const hcNum = v => { const r = hcRound(v); return r === 0 ? "0" : String(r).replace("-", "−"); };
-  const hcSigned = v => { const r = hcRound(v); return r === 0 ? "0" : (r > 0 ? "+" : "−") + Math.abs(r); };
+  const hcSigned = (v, d = 1) => { const r = hcRound(v, 10 ** d); return r === 0 ? (0).toFixed(d) : (r > 0 ? "+" : "−") + Math.abs(r).toFixed(d); };
+  const hcLine = v => (Math.abs(v) < 0.05 ? "PK" : hcSigned(v));   // a spread: its sign, one decimal, pick'em at zero
+  const hcVar = () => Calc.HC_VARS.spread.find(v => v.k === hc.eq.v) || Calc.HC_VARS.spread[0];
   // This season's NFL games, finals and games to come, as hcStates takes them.
   const hcThisSeason = () => Object.keys(WEEK_GAMES).map(Number).filter(w => w <= 18).flatMap(w => WEEK_GAMES[w].map(g => ({ season: "now", ms: Date.parse(g.t), away: g.away, home: g.home, final: g.final || null, game: g, week: w })));
-  // The games the regression learns from: finals where both teams had played at least minGames that season. null while the five seasons are still on their way.
+  // The games Fit learns from: finals where both teams had played at least minGames that season. null while the five seasons are still on their way.
   function hcSample() {
     const games = hcThisSeason();
     if (hc.sample === "past") {
@@ -842,19 +844,18 @@ import { Calc } from "./calc.js?v=mw24jv94";
     }
     return Calc.hcStates(games).filter(r => r.g.final && r.a.gp >= hc.minGames && r.h.gp >= hc.minGames);
   }
-  const hcModel = () => { const m = hc.spread; return { b0: m.b0, vars: Calc.HC_VARS.spread.filter(v => m.on[v.k]).map(v => ({ k: v.k, b: m.b[v.k] || 0, mean: m.mean[v.k] || 0 })) }; };
-  // Least squares of the game result (home score minus away score) on the variables in use: fills the intercept, the coefficients, their centers and the fit's figures.
-  // Answers a problem, or "".
+  // Least squares of the result on the equation's variable: the intercept is home field advantage, as the equation writes it (not centered), and the slope its coefficient.
   function hcFit() {
-    const rows = hcSample(), m = hc.spread, vars = Calc.HC_VARS.spread.filter(v => m.on[v.k]);
+    const rows = hcSample(), v = hcVar();
     if (!rows) return "the five seasons aren't here yet";
-    const f = Calc.olsFit(rows.map(r => vars.map(v => v.f(r.h, r.a))), rows.map(r => r.g.final[1] - r.g.final[0]));
-    if (!f) return `it can't be fitted with these variables on ${rows.length} games`;
-    m.b0 = f.b0;
-    vars.forEach((v, j) => { m.b[v.k] = f.b[j]; m.mean[v.k] = f.means[j]; });
-    m.fit = { r2: f.r2, rmse: f.rmse, n: f.n, se: Object.fromEntries(vars.map((v, j) => [v.k, f.se[j]])), on: vars.map(v => v.k) };
+    const f = Calc.olsFit(rows.map(r => [v.f(r.h, r.a)]), rows.map(r => r.g.final[1] - r.g.final[0]));
+    if (!f) return `it can't be fitted on ${rows.length} games`;
+    hc.eq.hfa = f.b0 - f.b[0] * f.means[0]; hc.eq.coef = f.b[0];
+    hc.fit = { v: v.k, r2: f.r2, rmse: f.rmse, n: f.n, se: f.se[0] };
     return "";
   }
+  // The visitor's margin for one game, from hcStates' row: −HFA + coefficient × (visitor minus home).
+  const hcVisitor = r => -hc.eq.hfa - hc.eq.coef * hcVar().f(r.h, r.a);
   let hcProblem = "";
   function renderHandicap() {
     if (drawStub("handicap")) return;
@@ -876,104 +877,99 @@ import { Calc } from "./calc.js?v=mw24jv94";
     const past = hc.sample === "past" ? pastNflGames() : null;
     if (past && !past.ready) head.append(el("span", "season-fetch", "(data will be downloaded from the web)"));
     const fitBtn = el("button", "hc-fit", "Fit");
-    fitBtn.type = "button"; fitBtn.title = "Least squares of the game result on the games chosen, for the variables in use: sets the intercept, the coefficients and their centers";
+    fitBtn.type = "button"; fitBtn.title = "Least squares of the game result on the equation's variable, over the games chosen: sets home field advantage and the coefficient";
     fitBtn.addEventListener("click", () => { hcProblem = hcFit(); hcSave(); buildHandicap(); });
     const sig = el("label", "hc-sigma"), si = el("input"); si.type = "number"; si.step = "0.25"; si.min = "1"; si.value = String(hc.sigma);
-    si.addEventListener("input", () => { const v = Number(si.value); if (v > 0) { hc.sigma = v; hcSave(); drawHcKeys(); drawHcGames(); } });
-    sig.title = "The key number model's spread of final margins around the projected result, in points. The fit's RMSE is a guide.";
+    si.addEventListener("input", () => { const v = Number(si.value); if (v > 0) { hc.sigma = v; hcSave(); drawHcKeys(); drawHcRows(); } });
+    sig.title = "The key number model's spread of final margins around the predicted result, in points. The fit's RMSE is a guide.";
     sig.append(el("span", null, "Margin σ"), si);
     head.append(sig, fitBtn);
     if (past && !past.ready) {
       box.append(el("p", "pg-stub-t", past.problem ? `Couldn't read nflverse's games table: ${past.problem}. Reload the page to try again.` : "Reading the last 5 seasons from nflverse's games table, once for this browser…"));
       return;
     }
-    if (!hc.spread.fit && !hcProblem) { hcProblem = hcFit(); hcSave(); }   // the first visit fits, so the screen opens on numbers
-    const sample = hcSample();
-    box.append(el("small", null, `Each team as it stood before each game, from that season's earlier games only · ${sample.length} games where both teams had played ${hc.minGames} or more, ${hc.sample === "past" ? "this season and the last 5" : "this season"}${hcProblem ? " · " + hcProblem : ""}`));
-    const models = el("div", "hc-models"), keys = el("div", "xycell hc-keys");
-    models.append(hcModelCard(), keys);
-    const pane = el("div", "hc-pane"), games = el("div", "hc-games");
-    pane.append(models, games);
+    if (hc.eq.hfa == null && !hcProblem) { hcProblem = hcFit(); hcSave(); }   // the first visit fits, so the screen opens on numbers
+    if (hc.eq.hfa == null) hc.eq.hfa = 0;
+    const sample = hcSample(), fit = hc.fit && hc.fit.v === hc.eq.v ? hc.fit : null;
+    box.append(el("small", null, `Each team as it stood before each game, from that season's earlier games only · Fit uses ${sample.length} games where both teams had played ${hc.minGames} or more, ${hc.sample === "past" ? "this season and the last 5" : "this season"}${fit ? ` · last fit: R² ${fit.r2.toFixed(3)}, RMSE ${fit.rmse.toFixed(1)} points, coefficient's std. error ${hcRound(fit.se, 1000)}` : ""}${hcProblem ? " · " + hcProblem : ""}`));
+    const pane = el("div", "hc-pane"), games = el("div", "hc-games"), keys = el("div", "xycell hc-keys");
+    pane.append(games, keys);
     box.append(pane);
-    drawHcKeys();
     drawHcGames();
+    drawHcKeys();
     pane.style.maxHeight = Math.max(200, Math.floor(document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - pane.getBoundingClientRect().top - 12)) + "px";
   }
-  // The regression as a card: the intercept, then each variable with its switch, coefficient, standard error and center, and the fit's figures under them.
-  function hcModelCard() {
-    const m = hc.spread, c = el("div", "xycell hc-model"), t = el("table"), hd = el("tr");
-    c.append(el("div", "cap", "Projected game result · the home team's margin"));
-    ["", "Variable, home minus away", "Coefficient", "Std. error", "Center"].forEach(h => hd.append(el("th", null, h)));
-    const thead = el("thead"), tb = el("tbody"); thead.append(hd);
-    const num = (val, step, set) => { const i = el("input"); i.type = "number"; i.step = step; i.value = String(hcRound(val, 1000)); i.addEventListener("input", () => { const v = Number(i.value); if (Number.isFinite(v) && i.value !== "") { set(v); hcSave(); drawHcGames(); } }); return i; };
-    const r0 = el("tr", "hc-int"), c0 = el("td");
-    c0.append(num(m.b0, "0.1", v => { m.b0 = v; }));
-    r0.append(el("td"), el("td", null, "Home field advantage (the intercept: the average result)"), c0, el("td"), el("td"));
-    tb.append(r0);
-    Calc.HC_VARS.spread.forEach(v => {
-      const r = el("tr"), on = el("input"), cb = el("td"), cc = el("td");
-      on.type = "checkbox"; on.checked = !!m.on[v.k]; on.title = "Use it: press Fit to fit it, or set its coefficient by hand";
-      on.addEventListener("change", () => { m.on[v.k] = on.checked; r.classList.toggle("off", !on.checked); hcSave(); drawHcGames(); });
-      cb.append(on); cc.append(num(m.b[v.k] || 0, "0.01", x => { m.b[v.k] = x; }));
-      const se = m.fit && m.fit.se[v.k] != null && m.fit.on.includes(v.k) ? hcRound(m.fit.se[v.k], 1000) : null;
-      r.append(cb, el("td", null, v.h), cc, el("td", "dim", se == null ? "—" : String(se)), el("td", "dim", m.mean[v.k] == null ? "—" : hcNum(m.mean[v.k])));
-      if (!on.checked) r.classList.add("off");
-      tb.append(r);
-    });
-    t.append(thead, tb);
-    c.append(t, el("p", "pb-note", m.fit ? `Fit: R² ${m.fit.r2.toFixed(3)} · RMSE ${m.fit.rmse.toFixed(1)} points · ${m.fit.n} games. Each variable is measured from its center, so the intercept is the average result.` : "Not fitted yet: press Fit, or set the numbers by hand."));
-    return c;
-  }
-  // The key number model, as a reference: a projected result and the home team's chance and fair moneyline it gives, at this σ. The jumps at 3 and 7 are the key numbers.
+  // The key number model, as a reference: a predicted result and the favorite's chance and fair moneyline it gives, at this σ. The jumps at 3 and 7 are the key numbers.
   function drawHcKeys() {
     const c = document.querySelector("#handicap .hc-keys");
     if (!c) return;
-    const win = hcWinProb(), t = el("table"), hd = el("tr"), tb = el("tbody"), thead = el("thead");
-    ["Projected result", "Spread", "Home %", "Moneyline, away / home"].forEach(h => hd.append(el("th", null, h)));
+    const win = hcWinProb(), tbl = el("table"), hd = el("tr"), tb = el("tbody"), thead = el("thead");
+    ["Favorite by", "Its chance", "Fair moneyline, favorite / underdog"].forEach(h => hd.append(el("th", null, h)));
     thead.append(hd);
     [1, 2, 2.5, 3, 3.5, 4, 6, 7, 7.5, 10, 14].forEach(m => {
       const th = Calc.hcTheo(m, win), r = el("tr", m === 3 || m === 7 ? "hc-key" : null);
-      r.append(el("td", null, "Home by " + m), el("td", null, pts(-m)), el("td", null, (th.pHome * 100).toFixed(1) + "%"), el("td", null, `${odds(th.ml[0])} / ${odds(th.ml[1])}`));
+      r.append(el("td", null, String(m)), el("td", null, (th.pHome * 100).toFixed(1) + "%"), el("td", null, `${odds(th.ml[1])} / ${odds(th.ml[0])}`));
       tb.append(r);
     });
-    t.append(thead, tb);
-    c.replaceChildren(el("div", "cap", "Key number model · result to moneyline"), t, el("p", "pb-note", `Final margins spread around the projected result at σ ${hc.sigma}, bunched on the NFL's key numbers; a home underdog's figures are these the other way round.`));
+    tbl.append(thead, tb);
+    c.replaceChildren(el("div", "cap", "Key number model · result to moneyline"), tbl, el("p", "pb-note", `Final margins spread around the predicted result at σ ${hc.sigma}, bunched on the NFL's key numbers.`));
   }
-  // The week's games: the projected result, the spread it makes and the moneyline the key number model gives, beside the market. Redrawn on every change.
+  // The table: the equation's row first, where the user builds it (home field advantage, then a coefficient and a variable), then one row a game: the equation with that
+  // game's numbers, the market, the moneylines, and at the far right the predicted spread in its final form.
+  // Prices, finals and σ redraw only the games' rows, so the equation's fields are never rebuilt under the user; the week and the variable build it all again.
   function drawHcGames() {
     const wrap = document.querySelector("#handicap .hc-games");
-    if (!wrap || (wrap.contains(document.activeElement) && document.activeElement.tagName === "INPUT")) return;
-    const wk = Math.min(18, Math.max(1, hc.week || weekNow())), rows = Calc.hcStates(hcThisSeason()).filter(r => r.g.week === wk), model = hcModel(), win = hcWinProb();
+    if (!wrap) return;
+    const wk = Math.min(18, Math.max(1, hc.week || weekNow()));
+    if (wrap.dataset.week === String(wk) && wrap.querySelector(".hc-eq")) { drawHcRows(); return; }
+    wrap.dataset.week = String(wk);
+    const v = hcVar();
     const nav = el("div", "hc-week"), step = d => { hc.week = Math.min(18, Math.max(1, wk + d)); hcSave(); drawHcGames(); };
     const prev = el("button", null, "‹"), next = el("button", null, "›");
     [prev, next].forEach((b, i) => { b.type = "button"; b.disabled = i ? wk >= 18 : wk <= 1; b.addEventListener("click", () => step(i ? 1 : -1)); });
     nav.append(prev, el("span", null, `Week ${wk}`), next);
-    const t = el("table", "hc-table"), h1 = el("tr"), h2 = el("tr");
-    const grp = (text, n) => { const th = el("th", "pb-g", text); th.colSpan = n; return th; };
-    h1.append(el("th"), el("th"), el("th", "pb-g", "Result"), grp("Spread, the home line", 3), grp("Moneyline, away / home", 4), el("th"));
-    ["Game", "Adj", "Projected", "Theo", "Market", "Diff", "Theo", "Market", "Home %", "Market %", "Final"].forEach((x, i) => h2.append(el("th", [2, 3, 6].includes(i) ? "pb-l" : null, x)));
-    h2.children[1].title = "Your points to the home team for this game alone (an injury, the weather), on top of the regression";
-    h2.children[2].title = "The regression's projected game result: the home team's margin, with your Adj";
-    h2.children[5].title = "Theo minus market, in points of the home line";
-    h2.children[10].title = "The game's final score and its result, the home team's margin";
-    const thead = el("thead"), tb = el("tbody"); thead.append(h1, h2);
+    const tbl = el("table", "hc-table"), thead = el("thead"), tb = el("tbody"), hd = el("tr");
+    ["Game", "Equation: the visitor's margin", "", "Market", "Diff", "Moneyline, theo", "Market", "Prediction"].forEach((x, i) => hd.append(el("th", i === 3 || i === 5 || i === 7 ? "pb-l" : null, x)));
+    hd.children[4].title = "The prediction's line minus the market's, in points of the visitor's line";
+    hd.children[7].title = "The predicted spread in its final form: the visitor and its line";
+    // the equation's row: −HFA + coefficient × variable, the user's to build
+    const eqRow = el("tr", "hc-eq"), eqTd = el("td"), num = (val, step, set) => { const i = el("input"); i.type = "number"; i.step = step; i.value = String(hcRound(val, 1000)); i.addEventListener("input", () => { const x = Number(i.value); if (Number.isFinite(x) && i.value !== "") { set(x); hcSave(); drawHcRows(); } }); return i; };
+    const pick = el("select");
+    Calc.HC_VARS.spread.forEach(x => { const o = el("option", null, x.h + ", visitor minus home"); o.value = x.k; o.selected = x.k === v.k; pick.append(o); });
+    pick.addEventListener("change", () => { hc.eq.v = pick.value; hcSave(); pick.blur(); buildHandicap(); });
+    const hfaIn = num(hc.eq.hfa, "0.1", x => { hc.eq.hfa = x; }), coefIn = num(hc.eq.coef, "0.01", x => { hc.eq.coef = x; });
+    hfaIn.title = "Home field advantage: the visitor gives it up, so it enters as a minus"; coefIn.title = "The coefficient on the variable";
+    eqTd.colSpan = 2;
+    eqTd.append(el("span", "hc-op", "− HFA"), hfaIn, el("span", "hc-op", "+"), coefIn, el("span", "hc-op", "×"), pick);
+    eqRow.append(el("td", "hc-eq-h", "Your equation"), eqTd, el("td", "pb-l"), el("td"), el("td", "pb-l"), el("td"), el("td", "pb-l"));
+    thead.append(hd);
+    tb.append(eqRow);
+    const body = el("tbody", "hc-rows");
+    tbl.append(thead, tb, body);
+    wrap.replaceChildren(nav, tbl);
+    drawHcRows();
+  }
+  // One row a game: the equation with that game's numbers, the market, the moneylines, and at the far right the predicted spread in its final form.
+  function drawHcRows() {
+    const body = document.querySelector("#handicap .hc-rows"), wrap = document.querySelector("#handicap .hc-games");
+    if (!body) return;
+    const wk = Number(wrap.dataset.week), rows = Calc.hcStates(hcThisSeason()).filter(r => r.g.week === wk), win = hcWinProb(), v = hcVar(), tb = el("tbody", "hc-rows");
     rows.forEach(r => {
-      const g = r.g.game, key = gameKey(g), tr = el("tr"), ln = g.line, priced = ln && !g.noLine, short = r.a.gp < hc.minGames || r.h.gp < hc.minGames;
-      const adj = el("input"); adj.type = "number"; adj.step = "0.5"; adj.className = "hc-adj"; adj.value = hc.adj[key] ? String(hc.adj[key]) : "";
-      adj.addEventListener("change", () => { const v = Number(adj.value); if (adj.value === "" || !v) delete hc.adj[key]; else hc.adj[key] = v; hcSave(); adj.blur(); drawHcGames(); });
-      const adjTd = el("td"); adjTd.append(adj);
-      const game = el("td", null, `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), fin = el("td", "dim", g.final ? `${g.final.join("–")} (${hcSigned(g.final[1] - g.final[0])})` : "");
-      if (short) { game.title = `Too few games for a projection: a team has played under ${hc.minGames}`; tr.append(game, adjTd, ...Array.from({ length: 8 }, (_, i) => el("td", [0, 1, 4].includes(i) ? "pb-l dim" : "dim", "—")), fin); tb.append(tr); return; }
-      const margin = Calc.hcPredict("spread", model, r) + (hc.adj[key] || 0), theo = Calc.hcTheo(margin, win);
-      const mSp = priced && !ln.noSp ? -ln.sp : null, mMl = priced ? ln.ml : null;
-      tr.append(game, adjTd,
-        el("td", "pb-l", hcSigned(margin)),
-        el("td", "pb-l", hcSigned(theo.spread)), el("td", null, mSp == null ? "—" : pts(mSp)), mSp == null ? el("td", "dim", "—") : el("td", Math.abs(theo.spread - mSp) < 0.05 ? "dim" : null, hcSigned(theo.spread - mSp)),
-        el("td", "pb-l", `${odds(theo.ml[0])} / ${odds(theo.ml[1])}`), el("td", null, mMl ? `${odds(mMl[0])} / ${odds(mMl[1])}` : "—"), el("td", null, Math.round(theo.pHome * 100) + "%"), el("td", null, mMl ? Math.round(Calc.noVigHome(mMl)) + "%" : "—"),
-        fin);
+      const g = r.g.game, tr = el("tr"), ln = g.line, priced = ln && !g.noLine, short = r.a.gp < hc.minGames || r.h.gp < hc.minGames, va = abbr(nick(g, "away"));
+      const game = el("td", null, `${va} @ ${abbr(nick(g, "home"))}`);
+      if (g.final) game.title = `Final ${g.final.join("–")}`;
+      const mSp = priced && !ln.noSp ? ln.sp : null, mMl = priced ? ln.ml : null;
+      if (short) { game.title = `Too few games for a prediction: a team has played under ${hc.minGames}`; tr.append(game, el("td", "dim", "—"), el("td", "dim"), el("td", "pb-l", mSp == null ? "—" : `${va} ${hcLine(mSp)}`), el("td", "dim", "—"), el("td", "pb-l dim", "—"), el("td", null, mMl ? `${odds(mMl[0])} / ${odds(mMl[1])}` : "—"), el("td", "pb-l dim", "—")); tb.append(tr); return; }
+      const x = -v.f(r.h, r.a), margin = hcVisitor(r), line = -margin, theo = Calc.hcTheo(-margin, win);   // x: the variable, visitor minus home; theo takes the home team's margin
+      const eq = el("td", "hc-eq-g", `−${hcRound(hc.eq.hfa, 100).toFixed(2)} + ${hcRound(hc.eq.coef, 1000)} × ${hcSigned(x)}`), eqv = el("td", "hc-eqv", `= ${hcSigned(margin)}`);
+      eq.title = `${v.h}, visitor minus home: ${hcSigned(x, 2)}`;
+      tr.append(game, eq, eqv,
+        el("td", "pb-l", mSp == null ? "—" : `${va} ${hcLine(mSp)}`), mSp == null ? el("td", "dim", "—") : el("td", Math.abs(line - mSp) < 0.05 ? "dim" : null, hcSigned(line - mSp)),
+        el("td", "pb-l", `${odds(theo.ml[0])} / ${odds(theo.ml[1])}`), el("td", null, mMl ? `${odds(mMl[0])} / ${odds(mMl[1])}` : "—"),
+        el("td", "pb-l hc-pred", `${va} ${hcLine(line)}`));
       tb.append(tr);
     });
-    t.append(thead, tb);
-    wrap.replaceChildren(nav, rows.length ? t : el("p", "pg-stub-t", "No games this week."));
+    if (!rows.length) { const tr = el("tr"), td = el("td", "dim", "No games this week."); td.colSpan = 8; tr.append(td); tb.append(tr); }
+    body.replaceWith(tb);
   }
 export { renderGameDetail, renderHandicap, renderSeason, renderXY, setPlaybook };

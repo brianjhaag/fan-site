@@ -1,6 +1,6 @@
 // The page's strips and fitting (the refactor, Nov 3 2026, from base.js): the bottom strip's tabs and its rows, the section tabs, the page fitted to the window, the ticket column,
 // the band, the left column's two folding cards, and the game strip's arrows.
-import { $, LG, el, last, later, league, trackingOn, showView, subView, tickets, view, graphsOK, SECTIONS, isPhone, mq } from "./base.js?v=mw24jv94";
+import { $, LG, el, last, later, league, trackingOn, showView, subView, tickets, view, graphsOK, SECTIONS, isPhone, mq } from "./base.js?v=mw251xwh";
 
 // The bottom strip: a tab for every game of the selected week (kickoff order), first half in the top row, the rest under it. A click opens the game detail tab.
 // The bottom strip belongs to the button highlighted on top. A week: its games, plus Graphs when the slate has lines. Another section: that section's own buttons.

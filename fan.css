@@ -1166,7 +1166,17 @@
   #handicap .hc-table th:first-child, #handicap .hc-table td:first-child { text-align: left; }
   #handicap .hc-table .pb-g { text-align: center; border-left: 1px solid var(--paper-edge); }
   #handicap .hc-table .pb-l { border-left: 1px solid var(--paper-edge); }
-  #handicap .hc-adj { width: 60px; }
+  #handicap .hc-table { width: 100%; }
+  #handicap .hc-eq td { background: rgb(255 255 255 / .04); border-bottom: 1px solid var(--paper-edge); padding-block: 6px; }
+  #handicap .hc-eq-h { font: 700 15px var(--font-label); text-align: left; }
+  #handicap .hc-eq td:nth-child(2) { text-align: left; white-space: nowrap; }
+  #handicap .hc-eq input { width: 80px; margin: 0 4px; }
+  #handicap .hc-eq select { margin-left: 4px; }
+  #handicap .hc-op { color: var(--ink-dim); }
+  #handicap td.hc-eq-g { text-align: left; color: var(--ink-dim); white-space: nowrap; }
+  #handicap td.hc-eqv { text-align: left; }
+  #handicap td.hc-pred { font-weight: 700; font-size: 15px; color: var(--ink); }
+  #handicap .hc-keys { margin-top: 12px; max-width: 560px; }
   #handicap .hc-keys table { width: 100%; font-size: 13px; }
   #handicap .hc-keys th, #handicap .hc-keys td { padding: 3px 8px; text-align: right; }
   #handicap .hc-keys th:first-child, #handicap .hc-keys td:first-child { text-align: left; }
