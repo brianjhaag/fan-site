@@ -1196,9 +1196,6 @@
   #handicap .hc-rows .hc-op + input, #handicap .hc-rows .hc-op + .hc-val, #handicap tr.hc-starts .hc-op + .hc-sv { text-align: left; padding-left: 6px; }
   #handicap .hc-rows td:nth-child(3) input, #handicap tr.hc-starts th:nth-child(3) .hc-sv { text-align: center; padding: 0 2px; }   /* HFA, alone in its column: centered */
   #handicap .hc-games .hc-table thead th:nth-child(n+3) { text-align: center; }
-  #handicap .hc-side { white-space: nowrap; }   /* a flag on one team: its code, coefficient × value; both teams, one over the other */
-  #handicap .hc-side + .hc-side { margin-top: 2px; }
-  #handicap .hc-side-t { display: inline-block; width: 30px; text-align: left; font-size: 11px; color: var(--ink-dim); }
   #handicap .hc-guide-tbl { margin-bottom: 8px; }
   #handicap td.hc-div { text-align: center; }   /* the Divisional box */
   #handicap td.hc-div input { width: 22px; height: 22px; margin: 0; vertical-align: middle; accent-color: var(--accent); cursor: pointer; }

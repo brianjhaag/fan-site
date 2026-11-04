@@ -344,19 +344,16 @@ const Calc = (() => {
     });
     return out;
   }
-  // The variables the user's equation may use, the user's own (Nov 4 2026), each in the visitor's terms. k: its key; short: its name in the equation's narrow dropdown;
-  // h: its full name; start: the coefficient a new term starts at; guide: how the Fit guide fits it, "market" (alone, against the week's lines) or "finals" (a flag,
-  // against finals over all the data, on what the strength terms leave over: hcResidFit). f(h, a, x): its value from the two sides' standing before the game (hcStates)
-  // and x, what else the page has for the game ({ dvoa: [away, home] }); null when it has none.
-  // The flags are the Trends table's situations (the user, Nov 4 2026), as visitor minus home: +1 when only the visitor has it, -1 when only the home team does, 0 otherwise.
-  // side(s): whether one team has it (1 or 0), from its standing (hcStates' a or h), for the Handicap's rows, which show a flag only on the team that has it.
-  const hcBye = s => (s.prev !== null && s.rest >= 13 ? 1 : 0), hcBlowout = s => (s.prev !== null && s.prev <= -17 ? 1 : 0);
+  // The variables a game's margin may use, the user's own (Nov 4 2026), each in the visitor's terms. k: its key; short: its column's name; h: its full name; start: the
+  // coefficient a new term starts at; guide: "market" for one Fit fits alone against the week's lines, "adjust" for Off bye, a measured adjustment (hcByeEffect).
+  // f(h, a, x): its value from the two sides' standing before the game (hcStates) and x, what else the page has for the game ({ dvoa: [away, home] }); null when it has none.
+  // Off bye is visitor minus home: +1 when only the visitor has it, -1 when only the home team does, 0 otherwise; side(s), whether one team is off a bye (1 or 0).
+  const hcBye = s => (s.prev !== null && s.rest >= 13 ? 1 : 0);
   const HC_VARS = [
     { k: "vmov", short: "V MOV", h: "The visitor's average margin of victory this season", start: 0.7, guide: "market", f: (h, a) => a.net },
     // FTN's total DVOA in percent, at its latest week: one number a team for the season so far, with no past weeks, so it can only be fitted against this week's lines
     { k: "dvoa", short: "DVOA diff", h: "Total DVOA difference, visitor minus home (FTN, in percentage points)", start: 0, guide: "market", f: (h, a, x) => (x && x.dvoa && Number.isFinite(x.dvoa[0]) && Number.isFinite(x.dvoa[1]) ? x.dvoa[0] - x.dvoa[1] : null) },
-    { k: "bye", short: "Off bye", h: "Off a bye (13+ days' rest after a game that season), visitor minus home: +1 the visitor only, −1 the home team only", start: 0, guide: "finals", side: hcBye, f: (h, a) => hcBye(a) - hcBye(h) },
-    { k: "blow", short: "Blowout L", h: "After a blowout loss (its last game lost by 17 or more), visitor minus home: +1 the visitor only, −1 the home team only", start: 0, guide: "finals", side: hcBlowout, f: (h, a) => hcBlowout(a) - hcBlowout(h) }
+    { k: "bye", short: "Off bye", h: "Off a bye (13+ days' rest after a game that season), visitor minus home: +1 the visitor only, −1 the home team only", start: 0, guide: "adjust", side: hcBye, f: (h, a) => hcBye(a) - hcBye(h) }
   ];
   // The visitor's margin from the user's equation: -HFA, then each term's coefficient times its variable. eq = { hfa, terms: [{ v, coef }] }; row = { h, a } from hcStates;
   // x as HC_VARS takes it. null when a term's variable has no value for this game (no DVOA for a team, say); a variable no longer offered counts for nothing.
@@ -385,13 +382,6 @@ const Calc = (() => {
     const s2 = sse / (n - p - 1);
     return { b0: ybar, b, means, se: inv.map((r, j) => Math.sqrt(Math.max(0, s2 * r[j]))), r2: sst ? 1 - sse / sst : 0, rmse: Math.sqrt(sse / n), n };
   }
-  // A flag beyond the strength terms (the user, Nov 4 2026): least squares of what the equation's other terms leave over (res, the visitor's margin minus their
-  // prediction) on the flag, with an intercept for whatever they miss on average. Out: { coef (points to the visitor per +1), se, n, on (games with the flag not 0) }.
-  function hcResidFit(xs, res) {
-    const f = olsFit(xs.map(x => [x]), res);
-    if (!f) return null;
-    return { coef: f.b[0], se: f.se[0], n: f.n, on: xs.filter(x => x !== 0).length };
-  }
   // The bye effect (the user, Nov 4 2026: "apply the bye effect as measured over the past seasons to both visitor and home separately"): least squares, over finals, of
   // the visitor's margin beyond -HFA on two flags, the visitor off a bye and the home team off a bye (hcBye), so each side's effect is measured on its own. rows: hcStates
   // rows with finals. Out: { v (points to the visitor when it's off a bye), h (points to the visitor when the home team is, so a home team's gain is negative), seV, seH,
@@ -410,17 +400,6 @@ const Calc = (() => {
     if (!f) return null;
     return { hfa: -(f.b0 - f.b[0] * f.means[0]), coef: f.b[0], r2: f.r2, rmse: f.rmse, n: f.n };
   }
-  // The market's visitor spread against yours (the user, Nov 4 2026: "getting 7.5 and i think 6.7 is enough"): the points the market gives the visitor beyond your line,
-  // both lines in the visitor's terms (+7.5: the visitor gets 7.5; -3: it gives 3). Positive means the visitor's spread is worth taking at your line; rounded to the
-  // tenth your line shows, so a market equal to it on screen is 0. null without both.
-  function hcEdge(mine, market) {
-    if (!Number.isFinite(mine) || !Number.isFinite(market)) return null;
-    const r = v => Math.sign(v) * Math.round(Math.abs(v) * 10) / 10;
-    return Math.round((market - r(mine)) * 10) / 10;
-  }
-  // A market moneyline against yours (the user, Nov 4 2026: "market opportunity highlighted"): true when the market pays more than your price for that side, its
-  // decimal odds above yours, so the side is cheap at your curve. false without both.
-  const hcMlValue = (mine, market) => Number.isFinite(mine) && Number.isFinite(market) && decimalOf(market) > decimalOf(mine) + 1e-9;
   // A game's market prices valued at your result (the user, Nov 4 2026: one band for moneylines and spreads alike): each side's expected return per $1, from the key
   // number model's margins around your predicted home margin (winProb = marginModel(sigma)). Spread: the visitor covers when the home margin is under the market's line
   // (sp, the visitor's points), pushes on it, priced at the spread's juice (spj, -110 without one). Moneyline: your win chance at each side's market price.
@@ -745,6 +724,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcAlone, hcResidFit, olsFit, hcTheo, hcEdge, hcByeEffect, hcByeAdjust, hcMlValue, hcEv, hcDivCoef };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcAlone, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcEv, hcDivCoef };
 })();
 export { Calc };
