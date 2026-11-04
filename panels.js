@@ -1,10 +1,10 @@
 // The tabs that replace the game cards: Season stats (with Trends, the old Playbook, under its graphs), Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw2iwmva";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, dvoaNow, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw2iwmva";
-import { Fan } from "./hosts.js?v=mw2iwmva";
-import { ALL_GAMES, LG, helmImg, hasArt, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw2iwmva";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2iwmva";
-import { Calc } from "./calc.js?v=mw2iwmva";
+import { riskGrid } from "./risk.js?v=mw2j5yb6";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, dvoaNow, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw2j5yb6";
+import { Fan } from "./hosts.js?v=mw2j5yb6";
+import { ALL_GAMES, LG, helmImg, hasArt, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw2j5yb6";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2j5yb6";
+import { Calc } from "./calc.js?v=mw2j5yb6";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -888,7 +888,7 @@ import { Calc } from "./calc.js?v=mw2iwmva";
     // the heading holds the title and the key number table's button alone (the user, Nov 4 2026: the fit-to-finals controls and Margin σ went)
     const keysBtn = el("button", "hc-keys-btn", "Key numbers");
     keysBtn.type = "button"; keysBtn.setAttribute("aria-pressed", String(!!hc.showKeys)); keysBtn.title = "Show or hide the key number model's table: how a predicted result becomes a moneyline";
-    keysBtn.addEventListener("click", () => { hc.showKeys = !hc.showKeys; hcSave(); keysBtn.setAttribute("aria-pressed", String(hc.showKeys)); const k = box.querySelector(".hc-keys"); if (k) k.hidden = !hc.showKeys; });
+    keysBtn.addEventListener("click", () => { hc.showKeys = !hc.showKeys; hcSave(); keysBtn.setAttribute("aria-pressed", String(hc.showKeys)); const k = box.querySelector(".hc-keys"); if (k) k.hidden = !hc.showKeys; fitHcTable(); });
     head.append(keysBtn);
     // HFA starts as the average home margin over all the data, this season and the last 5, which takes nflverse's table once
     if (hc.eq.hfa == null) {
@@ -905,7 +905,6 @@ import { Calc } from "./calc.js?v=mw2iwmva";
     box.append(pane);
     drawHcKeys();
     drawHcGames();
-    pane.style.maxHeight = Math.max(200, Math.floor(document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - pane.getBoundingClientRect().top - 12)) + "px";
   }
   // The key number model, as a reference: a predicted result and the favorite's chance and fair moneyline it gives, at this σ. The jumps at 3 and 7 are the key numbers.
   function drawHcKeys() {
@@ -1004,10 +1003,20 @@ import { Calc } from "./calc.js?v=mw2iwmva";
   function fitHcTable() {
     const wrap = document.querySelector("#handicap .hc-games"), tbl = wrap && wrap.querySelector(".hc-table");
     if (!tbl) return;
-    const pane = wrap.closest(".hc-pane");   // and the pane's height, so a resized window still scrolls inside it
-    if (pane) pane.style.maxHeight = Math.max(200, Math.floor(document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - pane.getBoundingClientRect().top - 12)) + "px";
     tbl.style.zoom = "";
+    const rows = [...tbl.querySelectorAll(".hc-rows tr")];
+    rows.forEach(r => { r.style.height = ""; });
     if (tbl.offsetWidth > wrap.clientWidth) tbl.style.zoom = String(Math.floor(wrap.clientWidth / tbl.offsetWidth * 1000) / 1000);
+    // the pane reaches down to just above the info line, and the games' rows share out what's left of it, up to twice their own height (the user, Nov 4 2026: "measure
+    // to bottom of the area (just above info line) and space out vertically"); past that it scrolls
+    const pane = wrap.closest(".hc-pane"), info = document.querySelector(".sec-title.one-line"), box = $("handicap");
+    if (!pane || !info) return;
+    const pad = parseFloat(getComputedStyle(box).paddingBottom) || 0, avail = Math.max(200, Math.floor(info.getBoundingClientRect().top - 6 - pad - pane.getBoundingClientRect().top));
+    pane.style.height = ""; pane.style.maxHeight = "none";
+    const spare = avail - pane.scrollHeight;
+    pane.style.maxHeight = pane.style.height = avail + "px";
+    const z = Number(tbl.style.zoom) || 1;
+    if (spare > 0 && rows.length > 1) { const each = rows[0].getBoundingClientRect().height / z, add = Math.min(each, spare / z / rows.length); rows.forEach(r => { r.style.height = Math.floor(each + add) + "px"; }); }
   }
   // A game as the byes show teams, small: each team's badge in its colors with the helmet over its left edge, visitor @ home (the user, Nov 4 2026).
   const hcChip = t => {

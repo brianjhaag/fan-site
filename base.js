@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw2iwmva";
-import { BOOK_ICONS } from "./data/assets.js?v=mw2iwmva";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw2iwmva";
-import { Calc } from "./calc.js?v=mw2iwmva";
-import { Fan } from "./hosts.js?v=mw2iwmva";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw2j5yb6";
+import { BOOK_ICONS } from "./data/assets.js?v=mw2j5yb6";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw2j5yb6";
+import { Calc } from "./calc.js?v=mw2j5yb6";
+import { Fan } from "./hosts.js?v=mw2j5yb6";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -155,7 +155,7 @@ import { Fan } from "./hosts.js?v=mw2iwmva";
     return tag;
   }
 
-  const APP_VERSION = "0.52.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.52.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -228,8 +228,13 @@ import { Fan } from "./hosts.js?v=mw2iwmva";
   // A problem at the connector takes the note's place until it clears: a stopped line refresh, or no answer at all.
   let noteText = "", hostProblem = "";
   function slateNote(text) { noteText = text; if (pullStatus()) text = pullStatus(); if (hostProblem) text = hostProblem; $("slateNote").textContent = text; $("slateNote").classList.toggle("problem", !!hostProblem); fitSlateLine(); }
-  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version, hi.pageDev, hi.os); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
-  setTimeout(askHost, 3000); setInterval(askHost, 30000);
+  // Dev mode turned on or off while this page is open (the user, Nov 4 2026: DEV showed with no hot reload): the page in the window is still the one served before, so on the
+  // user's own connector (localhost:5180) it reloads itself once to get the other one. Served in dev mode means the connector added its reload script. Once per change, so
+  // nothing can loop.
+  const servedDev = [...document.scripts].some(s => s.textContent.includes("/connector/saves"));
+  const devFollow = dev => { if (location.origin + "/" !== Fan.localFan || !!dev === servedDev) return; let last = null; try { last = sessionStorage.getItem("fan.devReload"); sessionStorage.setItem("fan.devReload", String(!!dev)); } catch (e) {} if (last !== String(!!dev)) location.reload(); };
+  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version, hi.pageDev, hi.os); devFollow(hi.pageDev); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
+  setTimeout(askHost, 3000); setInterval(askHost, 10000);
   // the update text turns amber when the lines are more than an hour old (checked every minute)
   let slateAt = 0, linesAt = 0;   // the slate on screen's lines, and the newest refresh of any league's, for the Prices row (the user, Nov 3 2026)
   const staleCheck = () => $("slateNote").classList.toggle("stale", slateAt > 0 && Date.now() - slateAt > 3600000);
