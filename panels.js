@@ -1,10 +1,10 @@
 // The tabs that replace the game cards: Season stats (with Trends, the old Playbook, under its graphs), Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw2czbex";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, dvoaNow, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw2czbex";
-import { Fan } from "./hosts.js?v=mw2czbex";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw2czbex";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2czbex";
-import { Calc } from "./calc.js?v=mw2czbex";
+import { riskGrid } from "./risk.js?v=mw2enc6f";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, dvoaNow, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw2enc6f";
+import { Fan } from "./hosts.js?v=mw2enc6f";
+import { ALL_GAMES, LG, helmImg, hasArt, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw2enc6f";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2enc6f";
+import { Calc } from "./calc.js?v=mw2enc6f";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -1013,6 +1013,16 @@ import { Calc } from "./calc.js?v=mw2czbex";
     tbl.style.zoom = "";
     if (tbl.offsetWidth > wrap.clientWidth) tbl.style.zoom = String(Math.floor(wrap.clientWidth / tbl.offsetWidth * 1000) / 1000);
   }
+  // A game as the byes show teams, small: each team's badge in its colors with the helmet over its left edge, visitor @ home (the user, Nov 4 2026).
+  const hcChip = t => {
+    const c = el("span", "bye-chip hc-chip"), look = TEAM[t];
+    if (look) { c.style.background = look.bg; c.style.color = look.fg; }
+    c.title = t;
+    if (hasArt(t)) c.append(helmImg(t, "bye-helm"));
+    c.append(el("span", null, abbr(t)));
+    return c;
+  };
+  const hcGameCell = g => { const td = el("td", "hc-game"); td.append(hcChip(nick(g, "away")), el("span", "hc-at", "@"), hcChip(nick(g, "home"))); return td; };
   // One row a game: the equation with that game's numbers, the market, the moneylines, and at the far right the predicted spread in its final form.
   function drawHcRows() {
     const body = document.querySelector("#handicap .hc-rows"), wrap = document.querySelector("#handicap .hc-games");
@@ -1022,7 +1032,7 @@ import { Calc } from "./calc.js?v=mw2czbex";
     if (src) src.textContent = d.problem ? `FTN: ${d.problem}` : d.ready ? `FTN through week ${d.week}` : "reading FTN…";
     rows.forEach(r => {
       const g = r.g.game, tr = el("tr"), ln = g.line, priced = ln && !g.noLine, short = r.a.gp < hc.minGames || r.h.gp < hc.minGames, va = abbr(nick(g, "away"));
-      const game = el("td", null, `${va} @ ${abbr(nick(g, "home"))}`);
+      const game = hcGameCell(g);
       if (g.final) game.title = `Final ${g.final.join("–")}`;
       const mSp = priced && !ln.noSp ? ln.sp : null, mMl = priced ? ln.ml : null;
       if (short) { game.title = `Too few games for a prediction: a team has played under ${hc.minGames}`; tr.append(game, el("td", "dim", "—"), el("td", "dim"), el("td", "pb-l", mSp == null ? "—" : `${va} ${hcLine(mSp)}`), el("td", "dim", "—"), el("td", "pb-l dim", "—"), el("td", null, mMl ? `${odds(mMl[0])} / ${odds(mMl[1])}` : "—"), el("td", "pb-l dim", "—")); tb.append(tr); return; }
@@ -1030,6 +1040,7 @@ import { Calc } from "./calc.js?v=mw2czbex";
       const eqText = `−${hcRound(hc.eq.hfa, 100).toFixed(2)}` + terms.map((t, i) => (t.coef ? ` ${t.coef < 0 ? "−" : "+"} ${Math.abs(hcRound(t.coef, 1000))} × ${vals[i] === null ? "?" : hcSigned(vals[i])}` : "")).join(""), tip = terms.map((t, i) => `${hcVarOf(t).h}: ${vals[i] === null ? "none" : hcSigned(vals[i], 2)}`).join("\n");
       if (margin === null) { const eq = el("td", "hc-eq-g", eqText); eq.title = tip; tr.append(game, eq, el("td", "hc-eqv dim", d.ready ? "no DVOA" : ""), el("td", "pb-l", mSp == null ? "—" : `${va} ${hcLine(mSp)}`), el("td", "dim", "—"), el("td", "pb-l dim", "—"), el("td", null, mMl ? `${odds(mMl[0])} / ${odds(mMl[1])}` : "—"), el("td", "pb-l dim", "—")); tb.append(tr); return; }
       const line = -margin, theo = Calc.hcTheo(-margin, win);   // theo takes the home team's margin
+      game.firstChild.after(el("span", "hc-theo", hcLine(line)));   // your spread after the visitor, as the prediction reads (the user, Nov 4 2026)
       const eq = el("td", "hc-eq-g", eqText), eqv = el("td", "hc-eqv", `= ${hcSigned(margin)}`);
       eq.title = tip;
       tr.append(game, eq, eqv,

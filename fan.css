@@ -1181,6 +1181,14 @@
   #handicap td.hc-eq-g { text-align: left; color: var(--ink-dim); white-space: nowrap; }
   #handicap td.hc-eqv { text-align: left; }
   #handicap td.hc-pred { font-weight: 700; font-size: 15px; color: var(--ink); }
+  /* each game as the byes show teams, small: the badge in team colors, its helmet over the left edge; your spread after the visitor */
+  #handicap td.hc-game { white-space: nowrap; padding-left: 14px; }
+  #handicap .hc-chip { height: 18px; padding: 0 6px 0 21px; margin-left: 0; font-size: 12px; letter-spacing: .04em; vertical-align: middle; }
+  #handicap .hc-chip .bye-helm { left: -10px; height: 24px; }
+  #handicap .hc-theo { margin: 0 2px 0 6px; font-weight: 700; color: var(--ink); vertical-align: middle; }
+  #handicap .hc-at { margin: 0 6px 0 5px; color: var(--ink-dim); vertical-align: middle; }
+  #handicap .hc-chip + .hc-at { margin-left: 6px; }
+  #handicap .hc-at + .hc-chip { margin-left: 10px; }
   #handicap .hc-keys { margin-bottom: 12px; max-width: 560px; }
   #handicap .hc-keys-btn { padding: 5px 14px; }
   #handicap .hc-keys-btn[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); }
