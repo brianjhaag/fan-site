@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw1gcb62";
-import { BOOK_ICONS } from "./data/assets.js?v=mw1gcb62";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw1gcb62";
-import { Calc } from "./calc.js?v=mw1gcb62";
-import { Fan } from "./hosts.js?v=mw1gcb62";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw1haiyc";
+import { BOOK_ICONS } from "./data/assets.js?v=mw1haiyc";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw1haiyc";
+import { Calc } from "./calc.js?v=mw1haiyc";
+import { Fan } from "./hosts.js?v=mw1haiyc";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -25,8 +25,6 @@ import { Fan } from "./hosts.js?v=mw1gcb62";
     return g;
   };
   Object.entries(WEEK_GAMES).forEach(([w, list]) => list.forEach(g => { g.week = Number(w); }));
-  // The page was called Bet until Oct 31 2026: a browser's settings under the old name carry over once.
-  try { for (const k of ["tracking", "leagues", "badges", "tickets", "game"]) { const v = localStorage.getItem("bet." + k); if (v != null && localStorage.getItem("fan." + k) == null) localStorage.setItem("fan." + k, v); } } catch (e) {}
   let league = "nfl";   // the league on screen, chosen with the league picker
   document.documentElement.dataset.league = league;   // fan.css dresses a league's page by it (the NHL's rink and boards)
   // The layout (Look/feel's Layout, on the user's word, Nov 2 2026): Auto follows the window as before, or the user picks Landscape or Portrait. Phone isn't a choice: a phone is too tight to be of use, so only Auto reaches the phone rules, kept as they are. It's classes on the page that
@@ -155,7 +153,7 @@ import { Fan } from "./hosts.js?v=mw1gcb62";
     return tag;
   }
 
-  const APP_VERSION = "0.48.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.48.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
