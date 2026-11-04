@@ -1,10 +1,10 @@
 // The tabs that replace the game cards: Season stats (with Trends, the old Playbook, under its graphs), Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw2731q9";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, dvoaNow, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw2731q9";
-import { Fan } from "./hosts.js?v=mw2731q9";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw2731q9";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2731q9";
-import { Calc } from "./calc.js?v=mw2731q9";
+import { riskGrid } from "./risk.js?v=mw27e8uo";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, dvoaNow, ensureDailyTeams, ensureTeams, pastKept, pastNflGames, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw27e8uo";
+import { Fan } from "./hosts.js?v=mw27e8uo";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, marketWanted, pricesOn, trackingOn, view, weekNow } from "./base.js?v=mw27e8uo";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw27e8uo";
+import { Calc } from "./calc.js?v=mw27e8uo";
   Object.assign(later, { renderGameDetail });
   // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
@@ -838,14 +838,16 @@ import { Calc } from "./calc.js?v=mw2731q9";
   // What else a game's terms take beyond hcStates: each team's FTN total DVOA, by Fan's codes.
   const hcExtra = g => { const d = dvoaNow(); return { dvoa: d.ready ? [d.teams[abbr(nick(g, "away"))], d.teams[abbr(nick(g, "home"))]] : null }; };
   // This season's NFL games, finals and games to come, as hcStates takes them.
-  const hcThisSeason = () => Object.keys(WEEK_GAMES).map(Number).filter(w => w <= 18).flatMap(w => WEEK_GAMES[w].map(g => ({ season: "now", ms: Date.parse(g.t), away: g.away, home: g.home, final: g.final || null, game: g, week: w })));
+  // close: the game's line, the points the home team is favored by (nflverse's sense), from the page's own saved lines for this season; null without one.
+  const hcClose = g => (g.line && !g.noLine && !g.line.noSp ? g.line.sp : null);   // the away side's line, +3.5 when the home team gives 3.5
+  const hcThisSeason = () => Object.keys(WEEK_GAMES).map(Number).filter(w => w <= 18).flatMap(w => WEEK_GAMES[w].map(g => ({ season: "now", ms: Date.parse(g.t), away: g.away, home: g.home, final: g.final || null, game: g, week: w, close: hcClose(g) })));
   // The games Fit learns from: finals where both teams had played at least minGames that season. null while the five seasons are still on their way.
   function hcSample() {
     const games = hcThisSeason();
     if (hc.sample === "past") {
       const past = pastNflGames();
       if (!past.ready) return null;
-      past.years.forEach(y => past.games[y].forEach(([ms, away, home, as, hs]) => games.push({ season: y, ms, away, home, final: [as, hs] })));
+      past.years.forEach(y => past.games[y].forEach(([ms, away, home, as, hs, close]) => games.push({ season: y, ms, away, home, final: [as, hs], close: close ?? null })));
     }
     return Calc.hcStates(games).filter(r => r.g.final && r.a.gp >= hc.minGames && r.h.gp >= hc.minGames);
   }
@@ -866,6 +868,9 @@ import { Calc } from "./calc.js?v=mw2731q9";
       if (!past) { res[v.k] = null; return; }
       const pred = r => base.reduce((s, t) => s + t.coef * hcVarOf(t).f(r.h, r.a, null), -hc.eq.hfa);
       res[v.k] = Calc.hcResidFit(past.map(r => v.f(r.h, r.a)), past.map(r => r.g.final[0] - r.g.final[1] - pred(r)));
+      // and beyond the closing line: the visitor's margin minus the market's (minus the home team's favoritism), so the coefficient is what the line hadn't priced
+      const lined = past.filter(r => r.g.close !== null && r.g.close !== undefined);
+      res[v.k + ":line"] = Calc.hcResidFit(lined.map(r => v.f(r.h, r.a)), lined.map(r => r.g.final[0] - r.g.final[1] + r.g.close));
     });
     hcGuide = { week: wk, n: rows.length, res, base: base.map(t => `${hcVarOf(t).short} at ${hcRound(t.coef, 1000)}`), games: past ? past.length : 0 };
   }
@@ -974,7 +979,9 @@ import { Calc } from "./calc.js?v=mw2731q9";
           const useTd = el("td", "pb-l"); useTd.append(use);
           const se = el("td", null, `± ${f.se.toFixed(2)}`);
           se.title = "The coefficient's standard error: a coefficient within about two of these of zero could well be noise";
-          tr.append(el("td", "hc-guide-h", v.short), formula, el("td", "pb-l", "vs finals"), se, el("td", "pb-l", `on in ${f.on} of ${f.n}`), el("td"), useTd);
+          const fl = hcGuide.res[v.k + ":line"], vsLine = el("td", fl && Math.abs(fl.coef) < 2 * fl.se ? "dim" : null, fl ? `vs closing lines ${fl.coef < 0 ? "−" : "+"}${Math.abs(fl.coef).toFixed(2)} ± ${fl.se.toFixed(2)} (on in ${fl.on})` : "no closing lines");
+          vsLine.title = "The flag beyond the closing line: the final margin minus the market's, fitted on the flag, over the games with a closing line. Near zero means the market already priced it.";
+          tr.append(el("td", "hc-guide-h", v.short), formula, el("td", "pb-l", "vs finals"), se, el("td", "pb-l", `on in ${f.on} of ${f.n}`), vsLine, useTd);
           tb.append(tr);
           return;
         }
@@ -989,7 +996,7 @@ import { Calc } from "./calc.js?v=mw2731q9";
         tb.append(tr);
       });
       const note = el("tr", "hc-guide"), td = el("td", "dim");
-      td.colSpan = 8; td.textContent = `V MOV and DVOA diff alone against week ${wk}'s market lines (${hcGuide.n} games with a line and both teams on 2 or more games): R² is how much of the market's spreads it explains, RMSE how far off it runs, in points. The flags against ${hcGuide.games} finals, this season and the last 5: the points each is worth to the visitor beyond the strength terms, ± its standard error, and how many games had it.`;
+      td.colSpan = 8; td.textContent = `V MOV and DVOA diff alone against week ${wk}'s market lines (${hcGuide.n} games with a line and both teams on 2 or more games): R² is how much of the market's spreads it explains, RMSE how far off it runs, in points. The flags against ${hcGuide.games} finals, this season and the last 5: the points each is worth to the visitor beyond the strength terms, ± its standard error, and how many games had it; then beyond the closing line, which says whether the market had already priced it. Dimmed: within two standard errors of zero.`;
       note.append(td); tb.append(note);
     }
     const body = el("tbody", "hc-rows");
