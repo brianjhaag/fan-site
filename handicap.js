@@ -1,17 +1,17 @@
 // The Handicap section (the NFL first; the user, Nov 4 2026): each game's own numbers to the user's spread and moneylines, against the market's. Moved out of panels.js.
-import { divideX } from "./layout.js?v=mw2r5e2j";
-import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw2r5e2j";
-import { Fan } from "./hosts.js?v=mw2r5e2j";
-import { CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw2r5e2j";
-import { TEAM, abbr } from "./leagues.js?v=mw2r5e2j";
-import { Calc } from "./calc.js?v=mw2r5e2j";
-import { divOf } from "./panels.js?v=mw2r5e2j";
+import { divideX } from "./layout.js?v=mw2s9s1f";
+import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw2s9s1f";
+import { Fan } from "./hosts.js?v=mw2s9s1f";
+import { CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw2s9s1f";
+import { TEAM, abbr } from "./leagues.js?v=mw2s9s1f";
+import { Calc } from "./calc.js?v=mw2s9s1f";
+import { divOf } from "./panels.js?v=mw2s9s1f";
 
   /* ==== Handicap (the NFL first; the user, Nov 4 2026): your spread for each game, from numbers you set game by game, against the market's. ==== */
   // A game's visitor margin = −HFA + each term's coefficient × its value (calc.js HC_VARS and hcVisitorMargin): DVOA diff (FTN's, shown, its coefficient yours; times
   // 0.67 in a divisional game) and Off bye (the bye effect measured over 5 seasons and this one, shown, its coefficient yours). Your line is minus the margin, and the
   // key number model turns it into moneylines. Each game starts at hc.eq's numbers (HFA the average home margin over all the data) and keeps what's typed for it alone.
-  // Kept in this browser and in the person's own records: the numbers, the EV hurdle, the margin spread (sigma) the key number model takes, and the week on screen.
+  // Kept in this browser and in the person's own records: the numbers, the hurdle, the margin spread (sigma) the key number model takes, and the week on screen.
   const HC_KEY = "fan.handicap.nfl";
   const hcTerm = k => { const v = Calc.HC_VARS.find(x => x.k === k) || Calc.HC_VARS[0]; return { v: v.k, coef: v.start }; };
   const hcDefault = () => ({ hurdle: RULES.userSet.hcHurdle * 100, sample: "past", showHow: false, sigma: RULES.leagues.nfl.sigma, minGames: 2, week: null, per: {}, eq: { hfa: null, terms: [hcTerm("dvoa"), hcTerm("bye")] }, fit: null });
@@ -122,9 +122,9 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
       p("Your number", "The visitor's margin = − HFA + DVOA diff × its coefficient + Off bye × its coefficient. Your spread is minus that margin. It's read as an expected margin, an average, so the decimal matters: a visitor at −3.4 covers −3.5 less often than one at −3.9."),
       p("The columns", "HFA: home field advantage, which the visitor gives up; it starts at the average home margin over the last 5 seasons. DVOA diff: FTN's total DVOA, visitor minus home, shown under the coefficient you type. Off bye: the bye effect measured over the last 5 seasons and this one, for a visitor or a home team coming off a bye, shown under its coefficient; 1 takes it as measured. Div. game: a divisional game's box, on by default, counts the DVOA difference at 0.67, since the teams know each other well."),
       p("Typing", "Every number is that game's alone. The row under the column names shows what each game starts at; emptying a field puts it back. A number you've changed shows in the accent color. Coefficients take one decimal. What you type is saved with your records."),
-      p("The highlights", "Each market price gets an expected return per $1 at your number: for a spread, its chance to cover at its price; for a moneyline, your win chance at its price. A price at or above the Hurdle lights up: green when the visitor's side or a moneyline is worth taking, red when the home team's spread is. Hover a price for its return."),
+      p("The highlights", "Each market price is held against yours as a percentage gap: a spread by how far the market's is from yours, over the size of yours (at 7%, against your 9.5 only 8.5 or 10.5 light); a moneyline by how much more the market pays that side than your price. A gap at or above the Hurdle lights up: green when the visitor's spread or a moneyline is the one to take, red when the home team's spread is. Hover a price for its gap."),
       p("Key numbers", "NFL margins bunch on 3 and 7, and the returns count that: a market line on the far side of 3 or 7 from yours is worth a lot more than one past a dead number like 4 or 5."),
-      p("Fit", "A game's √Fit sets its DVOA diff coefficient to the one that best fits the week's market spreads, given each game's own HFA and Off bye, whatever was there before. √Fit all games does it for every game. Numbers Fit sets show in Fit's green; the ones you type, in blue."));
+      p("Fit", "√Fit vs all games sets each game's DVOA diff coefficient to the one that best fits the other games' market spreads this week, given each game's own HFA and Off bye: a game's own line never feeds its own number, so where your line and the market differ, it's the market's game against the rest of the week. A game's own √Fit sets its coefficient so its line lands on its own market spread: it copies the market, a read of how much DVOA the market prices into that game, and won't light anything up. Numbers Fit sets show in Fit's green; the ones you type, in blue."));
     return box;
   }
   // The table (the user, Nov 4 2026: "move the factors and coefficients to each game"): one row a game, its own HFA and, for each term, its own coefficient × its own
@@ -142,10 +142,12 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
   // the DVOA coefficient that best fits the week's market spreads given each game's own other numbers, its HFA and its Off bye, least squares through zero over the
   // week's games with a market spread and both teams' DVOA (calc.js hcFitCoef), the DVOA difference at its divisional share where the box is on. A game's Fit sets
   // its own coefficient to it; Fit all games sets every game's. A number set this way shows in Fit's green until it's typed over. null without games to fit on.
+  // Each game left out of its own fit (the user, Nov 4 2026, "try #1"): its coefficient is fitted on the other games' market spreads, so it varies game to game and
+  // its own line can't make it agree with the market. A game the fit can't use (no market spread or DVOA) takes the fit on all of them. { all, byKey } or null.
   function hcFitDvoa(wk) {
     const terms = hc.eq.terms.filter(hcVarOf), tDv = terms.find(t => t.v === "dvoa"), tBye = terms.find(t => t.v === "bye");
     if (!tDv) return null;
-    const xs = [], ys = [];
+    const xs = [], ys = [], keys = [];
     hcWeekRows(wk).forEach(r => {
       const g = r.g.game, ln = g.line;
       if (r.a.gp < hc.minGames || r.h.gp < hc.minGames || !ln || g.noLine || ln.noSp || !Number.isFinite(ln.sp)) return;
@@ -153,13 +155,18 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
       if (dv === null) return;
       const s = hcSetOf(hcKeyOf(r)), hfa = s.hfa !== undefined ? s.hfa : hc.eq.hfa, div = hcDivisional(g) && s.div !== false;
       const bye = tBye ? (s.c.bye !== undefined ? s.c.bye : tBye.coef) * (Calc.hcByeAdjust(hcByeEff(), r) || 0) : 0;
-      xs.push(div ? dv * RULES.userSet.hcDivDvoa : dv); ys.push(-ln.sp + hfa - bye);   // the market's visitor margin, less what the other numbers already give
+      xs.push(div ? dv * RULES.userSet.hcDivDvoa : dv); ys.push(-ln.sp + hfa - bye); keys.push(hcKeyOf(r));   // the market's visitor margin, less what the other numbers already give
     });
-    return Calc.hcFitCoef(xs, ys);
+    const all = Calc.hcFitCoef(xs, ys);
+    if (all === null) return null;
+    const out = Calc.hcFitLeaveOut(xs, ys), byKey = new Map(keys.map((k, i) => [k, out[i] === null ? all : out[i]])), points = new Map(keys.map((k, i) => [k, { x: xs[i], y: ys[i] }]));
+    return { all, byKey, points };
   }
   // Set a game's DVOA coefficient to the fitted one, marked as Fit's
-  const hcSetDvoa = (k, coef) => { const s = hcSetFor(k); s.c.dvoa = hcRound(coef, 10); s.fit = s.fit || {}; s.fit.dvoa = true; };
-  const hcFitRows = (wk, keys) => { const c = hcFitDvoa(wk); if (c === null) return false; keys.forEach(k => hcSetDvoa(k, c)); hcSave(); drawHcRows(); return true; };
+  const hcSetDvoa = (k, coef) => { const s = hcSetFor(k); s.c.dvoa = hcRound(coef, 10 ** hcDecOf("dvoa")); s.fit = s.fit || {}; s.fit.dvoa = true; };
+  // A game's own Fit: the coefficient that lands its line on its market spread (calc.js hcFitOne)
+  const hcFitOwn = (wk, k) => { const f = hcFitDvoa(wk), p = f && f.points.get(k), c = p ? Calc.hcFitOne(p.x, p.y) : null; if (c === null) return false; hcSetDvoa(k, c); hcSave(); drawHcRows(); return true; };
+  const hcFitRows = (wk, keys) => { const f = hcFitDvoa(wk); if (!f) return false; keys.forEach(k => hcSetDvoa(k, f.byKey.has(k) ? f.byKey.get(k) : f.all)); hcSave(); drawHcRows(); return true; };
   // Off bye is a game's adjustment in points (the user, Nov 4 2026: "the value is the adjustment that should be applied to the game. no byes is 0"): the bye effect
   // measured over all the data, this season and the last 5, for the visitor and the home team apart (calc.js hcByeEffect), applied to whichever team is off a bye;
   // one number to type per game where a team is, nothing where neither is.
@@ -186,16 +193,16 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
     if (dv >= 0) hd.children[3 + dv].classList.add("hc-src");   // where FTN's DVOA stands, on its column's name's hover: no subtitles (the user, Nov 4 2026)
     // under the headers, the numbers a game starts at, so they stay in sight while a game's are changed (the user, Nov 4 2026): −HFA and each term's coefficient
     const starts = el("tr", "hc-starts"), startCell = (parts, tip) => { const td = el("th"); td.append(...parts); if (tip) td.title = tip; return td; }, num = v => el("span", "hc-sv", hcNum(v)), op = x => el("span", "hc-op", x);
-    const fitAll = el("button", "hc-guide-btn hc-fit hc-fit-all"); fitAll.type = "button"; fitAll.append(hcRoot("Fit all games")); fitAll.title = "Set every game's DVOA diff coefficient to the one that best fits this week's market spreads, given each game's HFA and Off bye";
+    const fitAll = el("button", "hc-guide-btn hc-fit hc-fit-all"); fitAll.type = "button"; fitAll.append(hcRoot("Fit vs all games")); fitAll.title = "Set every game's DVOA diff coefficient to the one that best fits the other games' market spreads this week, each game left out of its own fit";
     fitAll.addEventListener("click", () => { const wkNow = Number(document.querySelector("#handicap .hc-games").dataset.week); if (!hcFitRows(wkNow, hcWeekRows(wkNow).filter(r => r.a.gp >= hc.minGames && r.h.gp >= hc.minGames).map(hcKeyOf))) fitAll.title = "No market spreads with DVOA to fit on this week"; });
     const hurdle = el("input"), hurdleBox = el("span", "hc-hurdle"), hurdleField = el("span", "hc-hbox");
-    hurdle.type = "number"; hurdle.step = "0.5"; hurdle.value = String(hcRound(hcHurdle() * 100, 100)); hurdle.title = "The EV hurdle: a market price is highlighted when its expected return at your result is at least this";
+    hurdle.type = "number"; hurdle.step = "0.5"; hurdle.value = String(hcRound(hcHurdle() * 100, 100)); hurdle.title = "The hurdle: a market price is highlighted when its percentage gap from yours is at least this";
     hurdle.addEventListener("input", () => { const x = Number(hurdle.value); if (hurdle.value !== "" && Number.isFinite(x)) { hc.hurdle = x; hcSave(); drawHcRows(); } });
     hurdleField.append(hurdle, el("span", null, "%")); hurdleField.addEventListener("click", () => hurdle.focus());
     hurdleBox.append(el("span", "hc-hlabel", "Hurdle"), hurdleField);
     const fitAllCell = startCell([hurdleBox, fitAll]); fitAllCell.classList.add("hc-fit-all-cell");
     starts.append(startCell([]), fitAllCell, startCell([op("−"), hcDec(el("span", "hc-sv hc-dec hc-dec2"), hcNum(hc.eq.hfa))], "Home field advantage a game starts at"),
-      ...hcCols(terms).map(t => t === "div" ? startCell([el("span", "hc-sv hc-sv-c", "× " + RULES.userSet.hcDivDvoa)], "A divisional game's share of the DVOA difference") : t.v === "bye" ? hcByeStartCell(startCell, t) : startCell([hcDec(el("span", "hc-sv hc-dec"), t.coef.toFixed(1))], `The coefficient a game starts at on ${hcVarOf(t).short}`)));
+      ...hcCols(terms).map(t => t === "div" ? startCell([el("span", "hc-sv hc-sv-c", "× " + RULES.userSet.hcDivDvoa)], "A divisional game's share of the DVOA difference") : t.v === "bye" ? hcByeStartCell(startCell, t) : startCell([hcDec(el("span", "hc-sv hc-dec" + (t.v === "dvoa" ? " hc-decdv" : "")), t.coef.toFixed(hcDecOf(t.v)))], `The coefficient a game starts at on ${hcVarOf(t).short}`)));
     thead.append(hd, starts);
     tbl.append(thead, el("tbody", "hc-rows"));
     parts.push(tbl);
@@ -292,20 +299,20 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
     td.append(box);
     return td;
   };
-  // Opportunities by expected value (the user, Nov 4 2026: "only highlight market opportunities outside of a band"): each market price's return per $1 at your result
-  // (calc.js hcEv), highlighted when it clears the EV hurdle at the table's foot, so moneylines and spreads are held to the same bar.
+  // Opportunities by percentage gap (the user, Nov 4 2026: "only highlight market opportunities outside of a band"; Nov 5: "a percentage difference of absolute values"):
+  // each market price against yours (calc.js hcGap), highlighted when its gap clears the hurdle, so moneylines and spreads are held to the same bar.
   const hcHurdle = () => (Number.isFinite(hc.hurdle) ? hc.hurdle : RULES.userSet.hcHurdle * 100) / 100;
   const hcPct = v => (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(1) + "%";
-  // A game's moneylines, yours and the market's, each side's market highlighted when its EV clears the hurdle. mine: [visitor, home] or null; ev: hcEv's, or null.
-  function hcMoneylines(game, r, mine, ev) {
+  // A game's moneylines, yours and the market's, each side's market highlighted when it pays that side more than yours by the hurdle. mine: [visitor, home] or null; gap: hcGap's, or null.
+  function hcMoneylines(game, r, mine, gap) {
     const g = r.g.game, mkt = g.line && !g.noLine ? g.line.ml : null, bar = hcHurdle();
     const [mv, mh] = game.querySelectorAll(".hc-ml:not(.hc-mml)"), [kv, kh] = game.querySelectorAll(".hc-mml");
     [[mv, kv, 0, "v"], [mh, kh, 1, "h"]].forEach(([me, mk, i, s]) => {
       me.textContent = mine ? odds(mine[i]) : ""; me.title = "Your price, from your spread by the key number model";
       mk.textContent = mkt && Number.isFinite(mkt[i]) ? odds(mkt[i]) : "";
-      const e = ev && ev.ml ? ev.ml[s] : null, take = e !== null && e >= bar;
+      const e = gap && gap.ml ? gap.ml[s] : null, take = e !== null && e >= bar;
       mk.classList.toggle("hc-take", take);
-      mk.title = e === null ? "The market's moneyline" : `The market's moneyline: ${hcPct(e)} expected at your result${take ? ", over the hurdle" : ""}`;
+      mk.title = e === null ? "The market's moneyline" : `The market's moneyline: pays ${hcPct(e)} against yours${take ? ", over the hurdle" : ""}`;
     });
   }
   // A spread on a fixed decimal point (the user, Nov 4 2026: bold and plain spreads differ in width): the part before the point right-aligned in a box of fixed width,
@@ -315,13 +322,14 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
     const i = text.lastIndexOf(".");
     span.replaceChildren(el("span", "hc-pi", i < 0 ? text : text.slice(0, i)), el("span", "hc-pd", i < 0 ? "" : text.slice(i)));
   };
-  // The market's visitor spread: green when the visitor's spread clears the hurdle, red when the home team's does (the user, Nov 4 2026).
-  function hcMarketLine(span, r, ev) {
-    const g = r.g.game, ln = g.line, sp = ln && !g.noLine && !ln.noSp ? ln.sp : null, e = ev && ev.sp, bar = hcHurdle();
+  // The market's visitor spread: green when it gives the visitor more than yours by the hurdle, the visitor's spread to take; red when less, the home team's (the user, Nov 4 2026).
+  function hcMarketLine(span, r, gap) {
+    const g = r.g.game, ln = g.line, sp = ln && !g.noLine && !ln.noSp ? ln.sp : null, e = gap ? gap.sp : null, bar = hcHurdle();
     hcPoint(span, sp == null ? "" : hcLine(sp));
-    span.classList.toggle("hc-take", !!e && e.v >= bar);
-    span.classList.toggle("hc-fade", !!e && e.h >= bar);
-    span.title = sp == null ? "" : !e ? "The market's visitor spread" : `The market's visitor spread at your result: the visitor's ${hcPct(e.v)}, the home team's ${hcPct(e.h)}${e.v >= bar ? ": the visitor's spread clears the hurdle" : e.h >= bar ? ": the home team's spread clears the hurdle" : ""}`;
+    const v = e !== null && e >= bar, h = e !== null && -e >= bar, pct = e === null ? "" : Number.isFinite(e) ? Math.abs(e * 100).toFixed(1) + "%" : "off your pick'em";
+    span.classList.toggle("hc-take", v);
+    span.classList.toggle("hc-fade", h);
+    span.title = sp == null ? "" : e === null ? "The market's visitor spread" : e === 0 ? "The market's visitor spread: the same as yours" : `The market's visitor spread: ${pct} ${e > 0 ? "more" : "less"} for the visitor than yours${v ? ": the visitor's spread clears the hurdle" : h ? ": the home team's spread clears the hurdle" : ""}`;
   }
   // Both teams in one division (DIVS, by nickname).
   const hcDivisional = g => { const a = divOf(nick(g, "away")); return a >= 0 && a === divOf(nick(g, "home")); };
@@ -332,11 +340,14 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
   // top, "× value" under it, the value right-justified so the points line up down the column.
   const hcStack = (coef, val) => { const s = el("span", "hc-stack"), low = el("span", "hc-low"); low.append(el("span", "hc-op", "×"), val); s.append(coef, low); return s; };
   // Up and down arrows at a field's right (the user, Nov 4 2026: DVOA diff's coefficient), a tenth a press, as typing it would: the field turns blue and is saved
-  const hcSpin = input => {
+  // The decimals a term's coefficient takes: DVOA diff's two, the rest one
+  const hcDecOf = v => (v === "dvoa" ? 2 : 1);
+  const hcSpin = (input, dec = 1) => {
     const box = el("span", "hc-spin"), arrows = el("span", "hc-arrows");
-    [["▲", 0.1, "Up a tenth"], ["▼", -0.1, "Down a tenth"]].forEach(([g, d, tip]) => {
+    const step = 10 ** -dec, name = dec === 2 ? "a hundredth" : "a tenth";
+    [["▲", step, "Up " + name], ["▼", -step, "Down " + name]].forEach(([g, d, tip]) => {
       const b = el("button", null, g); b.type = "button"; b.title = tip; b.tabIndex = -1;
-      b.addEventListener("click", () => { const now = Number(input.value) || 0; input.value = (Math.round((now + d) * 10) / 10).toFixed(1); input.dispatchEvent(new Event("input", { bubbles: true })); input.dispatchEvent(new Event("blur")); });
+      b.addEventListener("click", () => { const now = Number(input.value) || 0; input.value = (Math.round((now + d) * 10 ** dec) / 10 ** dec).toFixed(dec); input.dispatchEvent(new Event("input", { bubbles: true })); input.dispatchEvent(new Event("blur")); });
       arrows.append(b);
     });
     box.append(input, arrows);
@@ -420,8 +431,8 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
         td.append(hcStack(field(() => hcSetOf(k).c.bye, () => t.coef, x => keep((s, del, y) => { if (del) delete s.c.bye; else s.c.bye = y; }, x), "The coefficient on this game's bye adjustment: 1 takes it as measured", 1, "bye"), shown));
         return td;
       }
-      const coefIn = field(() => hcSetOf(k).c[t.v], () => t.coef, x => keep((s, del, y) => { if (del) delete s.c[t.v]; else s.c[t.v] = y; }, x), `The coefficient on ${v.h.toLowerCase()}, for this game`, 1, t.v);
-      if (HC_FIXED.has(t.v)) { const shown = el("span", "hc-val"); shown.title = v.h; fixedVals.push(() => { const val = v.f(r.h, r.a, hcExtra(r.g.game)); hcDec(shown, val === null ? "none" : val.toFixed(1)); }); td.append(hcStack(t.v === "dvoa" ? hcSpin(coefIn) : coefIn, shown)); return td; }
+      const coefIn = field(() => hcSetOf(k).c[t.v], () => t.coef, x => keep((s, del, y) => { if (del) delete s.c[t.v]; else s.c[t.v] = y; }, x), `The coefficient on ${v.h.toLowerCase()}, for this game`, hcDecOf(t.v), t.v);
+      if (HC_FIXED.has(t.v)) { const shown = el("span", "hc-val"); shown.title = v.h; fixedVals.push(() => { const val = v.f(r.h, r.a, hcExtra(r.g.game)); hcDec(shown, val === null ? "none" : val.toFixed(1)); }); td.append(hcStack(t.v === "dvoa" ? hcSpin(coefIn, hcDecOf("dvoa")) : coefIn, shown)); return td; }
       td.append(
         coefIn,
         el("span", "hc-op", "×"),
@@ -449,15 +460,15 @@ import { divOf } from "./panels.js?v=mw2r5e2j";
       }
       const line = -margin, theo = Calc.hcTheo(-margin, hcMeanWin());   // theo takes the home team's margin, an expected margin
       hcPoint(theoSpan, hcLine(line));   // your spread after the visitor (the user, Nov 4 2026), the row's prediction since the column at the right went
-      const ln = r.g.game.line && !r.g.game.noLine ? r.g.game.line : null, ev = Calc.hcEv(hcWinProb(), -margin, ln ? { sp: ln.noSp ? null : ln.sp, spj: ln.spj, ml: ln.ml } : null);
-      hcMarketLine(mktSpan, r, ev);
-      hcMoneylines(game, r, theo.ml, ev);   // your spread as moneylines, by the key number model, and the market's
+      const ln = r.g.game.line && !r.g.game.noLine ? r.g.game.line : null, gap = Calc.hcGap({ sp: line, ml: theo.ml }, ln ? { sp: ln.noSp ? null : ln.sp, ml: ln.ml } : null);
+      hcMarketLine(mktSpan, r, gap);
+      hcMoneylines(game, r, theo.ml, gap);   // your spread as moneylines, by the key number model, and the market's
     }
     tr.hcUpd = nr => { if (nr) r = nr; upd(); };
     const fit = el("button", "hc-guide-btn hc-fit"), name = `${abbr(nick(r.g.game, "away"))} @ ${abbr(nick(r.g.game, "home"))}`;
     fit.append(hcRoot("Fit"));
-    fit.type = "button"; fit.title = `Set ${name}'s DVOA diff coefficient to the one that best fits week ${r.g.week}'s market spreads, given each game's HFA and Off bye`;
-    fit.addEventListener("click", () => { if (!hcFitRows(r.g.week, [k])) fit.title = "No market spreads with DVOA to fit on this week"; });
+    fit.type = "button"; fit.title = `Set ${name}'s DVOA diff coefficient to the one that lands its line on its own market spread: it copies the market, so nothing here will light up`;
+    fit.addEventListener("click", () => { if (!hcFitOwn(r.g.week, k)) fit.title = "No market spread, or no DVOA difference, to fit this game on"; });
     game.append(fit);   // in the game's cell, at its right, left of the rule
     tr.prepend(hcPreviewCell(r.g));
     // Divisional: a box on a divisional game, on until it's unticked; ticked, the DVOA difference counts hcDivDvoa of itself

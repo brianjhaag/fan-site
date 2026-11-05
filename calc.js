@@ -3,7 +3,7 @@
 // RULES is the one home for tunable numbers: userSet is the user's (change only on the user's say-so), defaults are Claude's. SPEC.md section 13 explains each.
 const Calc = (() => {
   const RULES = {
-    userSet: { capital: 0.05, theoCash: 10 / 220, theoBonus: 0.45, pairBase: 1000, hcHurdle: 0.03, hcDivDvoa: 0.67 },   // hcHurdle: the Handicap's EV hurdle, its starting value (the user, Nov 4 2026: "start with 3"); hcDivDvoa: the DVOA difference's share in a divisional game ("0.67")
+    userSet: { capital: 0.05, theoCash: 10 / 220, theoBonus: 0.45, pairBase: 1000, hcHurdle: 0.03, hcDivDvoa: 0.67 },   // hcHurdle: the Handicap's hurdle, the percentage gap a market price needs, its starting value (the user, Nov 4 2026: "start with 3"); hcDivDvoa: the DVOA difference's share in a divisional game ("0.67")
     defaults: {
       hold: 0.045, spreadPrice: -110, kalshiFee: 0.07,
       lift: 10, hedgeMinPay: 0.25, hedgeMaxPay: 0.75, lockFloor: 0.5, hedgeStep: 5, hedgeMaxContracts: 5000,
@@ -409,24 +409,31 @@ const Calc = (() => {
   const hcByeAdjust = (eff, row) => (eff ? eff.v * hcBye(row.a) + eff.h * hcBye(row.h) : null);
   // One coefficient through zero (the user, Nov 4 2026: Fit sets DVOA diff's): the least squares slope of ys on xs with no intercept, sum(x y) / sum(x x), rounded by
   // the caller. null without a point that moves.
+  // The coefficient that makes one game's line land on its market (the user, Nov 4 2026: "just fit the DVOA against this game", knowing it only copies the market):
+  // y / x, what the market leaves for DVOA over the game's DVOA difference. null when the difference is 0.
+  const hcFitOne = (x, y) => (Number.isFinite(x) && Number.isFinite(y) && Math.abs(x) > 1e-9 ? y / x : null);
+  // Each point's coefficient fitted on the others alone (the user, Nov 4 2026: a game's own market line never feeds its own coefficient): hcFitCoef with point i
+  // left out, for every i. null where the others don't move.
+  function hcFitLeaveOut(xs, ys) {
+    let sxy = 0, sxx = 0;
+    xs.forEach((x, i) => { sxy += x * ys[i]; sxx += x * x; });
+    return xs.map((x, i) => { const a = sxx - x * x; return a > 1e-9 ? (sxy - x * ys[i]) / a : null; });
+  }
   function hcFitCoef(xs, ys) {
     let sxy = 0, sxx = 0;
     xs.forEach((x, i) => { if (Number.isFinite(x) && Number.isFinite(ys[i])) { sxy += x * ys[i]; sxx += x * x; } });
     return sxx > 0 ? sxy / sxx : null;
   }
-  // A game's market prices valued at your result (the user, Nov 4 2026: one band for moneylines and spreads alike): each side's expected return per $1, from the key
-  // number model's margins around your predicted home margin read as an expected margin (winProb = marginModel(sigma), its mean). Spread: the visitor covers when the home margin is under the market's line
-  // (sp, the visitor's points), pushes on it, priced at the spread's juice (spj, -110 without one). Moneyline: your win chance at each side's market price.
-  // line: { sp, spj, ml } in the page's form, [visitor, home]. Out: { sp: { v, h } | null, ml: { v, h } | null }.
-  function hcEv(winProb, homeMargin, line) {
-    const q = winProb.mean(homeMargin), out = { sp: null, ml: null };   // your margin is an expected margin (marginModel's mean)
-    if (line && Number.isFinite(line.sp)) {
-      const L = line.sp, MM = 70, j = line.spj || [], dv = decimalOf(Number.isFinite(j[0]) ? j[0] : D.spreadPrice), dh = decimalOf(Number.isFinite(j[1]) ? j[1] : D.spreadPrice);
-      let pv = 0, ph = 0, push = 0;
-      for (let m = -MM; m <= MM; m++) { const x = q.P(m); if (m < L) pv += x; else if (m > L) ph += x; else push += x; }
-      out.sp = { v: pv * (dv - 1) - ph, h: ph * (dh - 1) - pv };
-    }
-    if (line && Array.isArray(line.ml) && Number.isFinite(line.ml[0]) && Number.isFinite(line.ml[1])) out.ml = { v: (1 - q.win) * decimalOf(line.ml[0]) - 1, h: q.win * decimalOf(line.ml[1]) - 1 };
+  // A game's market prices against your numbers, as a percentage gap (the user, Nov 5 2026: "a percentage difference of absolute values", so at 7% a 9.5 line lights only
+  // at 8.5 or 10.5; it replaced an EV reading that lit a market equal to your line). Spread: the market's visitor points minus yours, over your points' size, plus when the
+  // market gives the visitor more (the visitor's side to take), minus when less (the home team's). Moneyline: each side's market payout (decimal odds) over your price's,
+  // less 1, plus when the market pays that side more. mine: { sp, ml } your visitor spread and [visitor, home] moneylines; line: { sp, ml } the market's, the same form.
+  // Out: { sp: number | null, ml: { v, h } | null }. Your pick'em against any other market spread is an infinite gap.
+  function hcGap(mine, line) {
+    const out = { sp: null, ml: null };
+    if (mine && line && Number.isFinite(mine.sp) && Number.isFinite(line.sp)) { const d = line.sp - mine.sp; out.sp = d === 0 ? 0 : mine.sp === 0 ? Math.sign(d) * Infinity : d / Math.abs(mine.sp); }
+    const ok = a => Array.isArray(a) && Number.isFinite(a[0]) && Number.isFinite(a[1]);
+    if (mine && line && ok(mine.ml) && ok(line.ml)) out.ml = { v: decimalOf(line.ml[0]) / decimalOf(mine.ml[0]) - 1, h: decimalOf(line.ml[1]) / decimalOf(mine.ml[1]) - 1 };
     return out;
   }
   // The DVOA difference's coefficient in a divisional game (the user, Nov 4 2026: "apply an additional factor of 0.67 to the dvoa diff, to reflect the teams knowing each
@@ -738,6 +745,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcEv, hcDivCoef };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, hcFitLeaveOut, hcFitOne, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcGap, hcDivCoef };
 })();
 export { Calc };

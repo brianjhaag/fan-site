@@ -1204,7 +1204,10 @@
   #handicap .hc-rows .hc-op + .hc-val { text-align: right; padding-right: 2px; }   /* DVOA's and Off bye's values right-justified, so negatives and positives line up (the user, Nov 4 2026) */
   #handicap .hc-rows td:nth-child(3) input { width: 56px; text-align: center; padding: 0 2px; }   /* HFA, centered in its field (the user, Nov 4 2026) */
   #handicap .hc-games .hc-table thead th:nth-child(n+3) { text-align: center; }
-  #handicap .hc-spin { position: relative; display: inline-block; }   /* a field with its arrows hung at its right, so the field stays on the column's point */
+  #handicap .hc-spin { position: relative; display: inline-block; }
+  #handicap .hc-rows .hc-cv .hc-spin input:not(.hc-op + input) { width: 64px; padding: 0 2px; text-align: center; }   /* DVOA's two decimals, centered in the field (the user, Nov 4 2026); its values and default sit on the same point */
+  #handicap .hc-rows .hc-stack:has(.hc-spin) .hc-val .hc-di { width: 20px; }   /* DVOA's values, on the centered coefficient's point */
+  #handicap tr.hc-starts .hc-dec.hc-decdv .hc-di { width: 16px; }   /* and its default */   /* a field with its arrows hung at its right, so the field stays on the column's point */
   #handicap .hc-arrows { position: absolute; left: calc(100% + 2px); top: 0; bottom: 0; display: flex; flex-direction: column; }
   #handicap .hc-arrows button { flex: 1; width: 18px; padding: 0; border: 1px solid var(--paper-edge); background: none; color: var(--ink-dim); font-size: 9px; line-height: 1; cursor: pointer; }
   #handicap .hc-arrows button:hover { color: var(--ink); background: rgb(255 255 255 / .06); }
@@ -1242,7 +1245,7 @@
   #handicap .hc-gm > .hc-gv, #handicap .hc-gm > .hc-gh, #handicap .hc-gm > .hc-at { grid-row: 1 / span 2; }
   #handicap .hc-gv { justify-self: end; }
   #handicap .hc-gh { justify-self: start; padding-left: 20px; }   /* room for its helmet, left of the badge */
-  #handicap .hc-at { justify-self: center; font-weight: 700; color: var(--ink); }
+  #handicap .hc-at { justify-self: center; font-weight: 700; color: var(--ink); font-size: 1.3em; position: relative; left: -10px; }   /* bigger, and moved left toward the spreads (the user, Nov 5 2026) */
   #handicap .hc-gs { justify-self: end; }
   #handicap .hc-ml { color: var(--ink); padding-inline: 3px; }   /* yours padded as the market's, so both end together */
   #handicap .hc-mlv { justify-self: end; }   /* the visitor's, outside its helmet */
@@ -1264,10 +1267,10 @@
   #handicap tr.hc-starts .hc-sv { display: inline-block; box-sizing: border-box; width: 80px; padding: 0 5px; text-align: center; vertical-align: middle; }   /* a field's width, so a start sits over the field it starts */
   #handicap tr.hc-starts .hc-op { color: inherit; }
   #handicap .hc-dec, #handicap .hc-rows .hc-stack .hc-val { display: inline-flex; width: 56px; padding: 0; }   /* a number split at its point: */
-  #handicap .hc-di { width: 22px; text-align: right; white-space: nowrap; }   /* the part before the point, ending where the column's point starts (mono: a coefficient field's point) */
-  #handicap .hc-df { flex: 1; text-align: left; }
+  #handicap .hc-di { flex: none; width: 22px; text-align: right; white-space: nowrap; }   /* the part before the point, ending where the column's point starts (mono: a coefficient field's point) */
+  #handicap .hc-df { flex: 1 1 0; min-width: 0; text-align: left; white-space: nowrap; }
   #handicap tr.hc-starts .hc-sv.hc-dec { display: inline-flex; width: 56px; padding: 0; text-align: left; }
-  #handicap .hc-dec2 .hc-di { width: 14px; }   /* HFA's start, on HFA's point */
+  #handicap .hc-dec2 .hc-di { width: 15px; }   /* HFA's start, on HFA's point */
   #handicap .hc-rows .hc-stack .hc-val .hc-di { width: 26px; }   /* the values, in the names' type: its narrower point centered on the same line */
   #handicap .hc-stack .hc-low { position: relative; }
   #handicap .hc-stack .hc-low .hc-op { position: absolute; right: 100%; top: 50%; transform: translateY(-50%); margin-right: 2px; }   /* "×" just left of the value, out of its way */
