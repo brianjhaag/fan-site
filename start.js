@@ -1,27 +1,27 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mw33ju01";
-import "./layout.js?v=mw33ju01";
-import "./risk.js?v=mw33ju01";
-import "./panels.js?v=mw33ju01";
-import "./handicap.js?v=mw33ju01";
-import "./tracker.js?v=mw33ju01";
-import "./trade.js?v=mw33ju01";
-import "./telecasts.js?v=mw33ju01";
-import "./cards.js?v=mw33ju01";
-import "./settings.js?v=mw33ju01";
-import { drawCode, useOwnMethods } from "./code.js?v=mw33ju01";
-import { Fan } from "./hosts.js?v=mw33ju01";
-import { WEEK_GAMES } from "./espn.js?v=mw33ju01";
-import { sendManifest, useWallLinks } from "./telecasts.js?v=mw33ju01";
-import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, startLines, leaguesOn, leaveOffLeague, marketWanted, switchWeek, view, weekNow } from "./base.js?v=mw33ju01";
-import { drawSectionTabs } from "./layout.js?v=mw33ju01";
-import { drawByes, drawGameCards } from "./cards.js?v=mw33ju01";
-import { LEAGUES_READY } from "./leagues.js?v=mw33ju01";
-import { drawRiskDetail, drawTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw33ju01";
-import { drawSeasonStats, drawGraphs } from "./panels.js?v=mw33ju01";
-import { drawHandicap } from "./handicap.js?v=mw33ju01";
-import { drawLedger, drawPick, drawSavedTickets, startRecords } from "./tracker.js?v=mw33ju01";
-import { drawSettings, findConnector } from "./settings.js?v=mw33ju01";
+import "./base.js?v=mw3s4vr0";
+import "./layout.js?v=mw3s4vr0";
+import "./risk.js?v=mw3s4vr0";
+import "./panels.js?v=mw3s4vr0";
+import "./handicap.js?v=mw3s4vr0";
+import "./tracker.js?v=mw3s4vr0";
+import "./trade.js?v=mw3s4vr0";
+import "./telecasts.js?v=mw3s4vr0";
+import "./cards.js?v=mw3s4vr0";
+import "./settings.js?v=mw3s4vr0";
+import { drawCode, useOwnMethods } from "./code.js?v=mw3s4vr0";
+import { Fan } from "./hosts.js?v=mw3s4vr0";
+import { WEEK_GAMES } from "./espn.js?v=mw3s4vr0";
+import { sendManifest, useWallLinks } from "./telecasts.js?v=mw3s4vr0";
+import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, startLines, leaguesOn, leaveOffLeague, marketWanted, switchWeek, view, weekNow } from "./base.js?v=mw3s4vr0";
+import { drawSectionTabs } from "./layout.js?v=mw3s4vr0";
+import { drawByes, drawGameCards } from "./cards.js?v=mw3s4vr0";
+import { LEAGUES_READY } from "./leagues.js?v=mw3s4vr0";
+import { drawRiskDetail, drawTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw3s4vr0";
+import { drawSeasonStats, drawGraphs } from "./panels.js?v=mw3s4vr0";
+import { drawHandicap } from "./handicap.js?v=mw3s4vr0";
+import { drawLedger, drawPick, drawSavedTickets, startRecords } from "./tracker.js?v=mw3s4vr0";
+import { drawSettings, findConnector } from "./settings.js?v=mw3s4vr0";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };
@@ -45,7 +45,7 @@ import { drawSettings, findConnector } from "./settings.js?v=mw33ju01";
   // the page opens on the CURRENT week: NFL weeks run Wednesday to Tuesday, and Week 8 starts Wed Oct 28 2026 (the same window the lines script uses)
   { const w0 = weekNow(); document.querySelectorAll(".strip-tabs [data-week]").forEach(b => b.classList.toggle("now", Number(b.dataset.week) === w0)); if (WEEK_GAMES[w0] && w0 !== curWeek) switchWeek(w0); }
   // ignore hover until the pointer really moves: the spot under a stationary mouse at load must not light anything up. A touch screen has no hover, and this would swallow its first tap
-  if (!navigator.maxTouchPoints) { const root = document.documentElement; root.classList.add("nohover"); const on = () => { root.classList.remove("nohover"); removeEventListener("mousemove", on, true); removeEventListener("pointerdown", on, true); removeEventListener("touchstart", on, true); }; addEventListener("mousemove", on, true); addEventListener("pointerdown", on, true); addEventListener("touchstart", on, true); }
+  if (!navigator.maxTouchPoints) { const root = document.documentElement; root.classList.add("no-hover"); const on = () => { root.classList.remove("no-hover"); removeEventListener("mousemove", on, true); removeEventListener("pointerdown", on, true); removeEventListener("touchstart", on, true); }; addEventListener("mousemove", on, true); addEventListener("pointerdown", on, true); addEventListener("touchstart", on, true); }
   Fan.setLeagues([...leaguesOn]);
   leaveOffLeague();
   drawByes(); changed("tickets"); drawNow(); drawPick();

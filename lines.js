@@ -3,7 +3,7 @@
 // the connector's lines.rs and ingest.rs, and checked against them on the same real answers before they were retired (tools/dev/compare-lines.js).
 // It reaches the network only through fan.fetch, which keeps to the connector's list of hosts, and saves nothing: the connector saves what it returns and keeps the timer. A feed problem
 // comes back as an error for the connector to act on. No retries here, on purpose: the feeds are free (CLAUDE.md rule 7). The page never loads it.
-import { SHARED } from "./shared.js?v=mw33ju01";
+import { SHARED } from "./shared.js?v=mw3s4vr0";
 
 const Lines = (() => {
   const MAX_GAP = 0.08;   // a wider book says nothing about the price
@@ -107,9 +107,9 @@ const Lines = (() => {
   // ---- Polymarket US: the exchange US users trade on, from its public gateway, no key ----
   // A league's games come in one listing, each with its moneyline. Each game's full-game spreads and totals are then asked for by name, one request a game: its whole event is megabytes of props.
   // A market is a yes on its long side: a team at a line, or the over. Its best ask buys that side, and one less its best bid buys the other.
-  const pmTeam = (ev, id, lg) => { const t = arr(obj(ev).teams).find(t => JSON.stringify(obj(t).id ?? null) === JSON.stringify(id ?? null)); return t && typeof t.abbreviation === "string" ? fix(lg.codes, t.abbreviation.toUpperCase()) : null; };
-  const pmLongTeam = (ev, m, lg) => { if (!Array.isArray(obj(m).marketSides)) return null; const s = m.marketSides.find(s => obj(s).long === true); return s ? pmTeam(ev, s.teamId, lg) : null; };
-  const pmQuotes = m => { const a = truthy(num(obj(obj(m).bestAskQuote).value)), b = num(obj(obj(m).bestBidQuote).value); return a === null || b === null ? null : [a, b]; };
+  const polyTeam = (ev, id, lg) => { const t = arr(obj(ev).teams).find(t => JSON.stringify(obj(t).id ?? null) === JSON.stringify(id ?? null)); return t && typeof t.abbreviation === "string" ? fix(lg.codes, t.abbreviation.toUpperCase()) : null; };
+  const polyLongTeam = (ev, m, lg) => { if (!Array.isArray(obj(m).marketSides)) return null; const s = m.marketSides.find(s => obj(s).long === true); return s ? polyTeam(ev, s.teamId, lg) : null; };
+  const polyQuotes = m => { const a = truthy(num(obj(obj(m).bestAskQuote).value)), b = num(obj(obj(m).bestBidQuote).value); return a === null || b === null ? null : [a, b]; };
   const polymarket = (f, n, lg) => {
     const [from, to] = windowOf(lg, n), tag = slateTag(lg, n), pm = lg.polymarket, out = [];
     const list = getJson(`${f.polymarket}/v2/leagues/${lg.code}/events?limit=100`);
@@ -121,7 +121,7 @@ const Lines = (() => {
       const date = utcDay(y, mo, d);
       if (date < from || date > to) continue;
       const code = s => fix(lg.codes, s.toUpperCase()), away = code(p[1]), home = code(p[2]);
-      const m0 = arr(ev.markets).find(m => obj(m).sportsMarketTypeV2 === "SPORTS_MARKET_TYPE_MONEYLINE"), q0 = m0 && pmQuotes(m0), long = q0 ? pmLongTeam(ev, m0, lg) : null;
+      const m0 = arr(ev.markets).find(m => obj(m).sportsMarketTypeV2 === "SPORTS_MARKET_TYPE_MONEYLINE"), q0 = m0 && polyQuotes(m0), long = q0 ? polyLongTeam(ev, m0, lg) : null;
       const g = { id: `${tag}-${away}-${home}`, away, home, start: rfc3339(ev.startTime), ml: long === null ? null : long === away ? [q0[0], 1 - q0[1]] : [1 - q0[1], q0[0]], mlTk: null, spreads: [], totals: [] };
       const names = [];
       for (let k = 1; k <= pm.spreads; k++) names.push(`asc-${slug}-neg-${k}pt5`, `asc-${slug}-pos-${k}pt5`);
@@ -129,12 +129,12 @@ const Lines = (() => {
       fan.wait(200);
       const ms = getJson(`${f.polymarket}/v1/markets?${names.map(x => "slug=" + x).join("&")}&limit=100`);
       for (const m of arr(obj(ms).markets)) {
-        const q = pmQuotes(m), line = typeof obj(m).line === "number" ? m.line : null;
+        const q = polyQuotes(m), line = typeof obj(m).line === "number" ? m.line : null;
         if (!q || line === null) continue;
         const [a, b] = q;
         if (a - b > MAX_GAP) continue;
         if (str(m.slug).startsWith("tsc-")) { g.totals.push({ k: line, over: a, under: 1 - b, mid: (a + b) / 2 }); continue; }
-        const team = pmLongTeam(ev, m, lg);
+        const team = polyLongTeam(ev, m, lg);
         if (team === null) continue;
         const first = team === away ? "away" : "home", k = Math.abs(line), mid = (a + b) / 2;
         if (line < 0) g.spreads.push({ fav: first, k, favAsk: a, dogAsk: 1 - b, mid, tk: null, src: "" });
@@ -169,10 +169,10 @@ const Lines = (() => {
       if (liveOnly && !started) continue;
       let lad = null;
       if (!liveOnly) {   // the ladder for in-game hedges, with both venues' asks side by side and Kalshi's market tickers
-        const mlA = {}, mlH = {}, rungs = [];
+        const mlAway = {}, mlHome = {}, rungs = [];
         for (const [n, g] of gs) {
           const q = n === "kalshi" ? "k" : "p";
-          if (g.ml) { mlA[q] = f4(g.ml[0]); mlH[q] = f4(g.ml[1]); if (q === "k" && g.mlTk) { mlA.tk = g.mlTk[0]; mlH.tk = g.mlTk[1]; } }
+          if (g.ml) { mlAway[q] = f4(g.ml[0]); mlHome[q] = f4(g.ml[1]); if (q === "k" && g.mlTk) { mlAway.tk = g.mlTk[0]; mlHome.tk = g.mlTk[1]; } }
           for (const e of g.spreads) {
             const key = `${e.fav}|${e.k}`;
             let r = rungs.find(x => x.key === key);
@@ -185,7 +185,7 @@ const Lines = (() => {
         const cell = (r, k) => (k in r.cells ? r.cells[k] : null);
         const sp = rungs.filter(r => r.k >= 1.5 && r.k <= 20.5).sort((p, q) => cmp(p.k, q.k) || cmp(p.fav, q.fav)).map(r => [r.fav, r.k, cell(r, "kf"), cell(r, "kd"), cell(r, "tk"), cell(r, "pf"), cell(r, "pd")]);
         const k = gs.find(x => x[0] === "kalshi");
-        lad = { v: 2, at: now, ml: { away: mlA, home: mlH }, sp, tot: k ? k[1].totals.map(e => [e.k, f4(e.over), f4(e.under)]) : [] };
+        lad = { v: 2, at: now, ml: { away: mlAway, home: mlHome }, sp, tot: k ? k[1].totals.map(e => [e.k, f4(e.over), f4(e.under)]) : [] };
       }
       if (started && gs.some(x => x[0] === "kalshi")) gs = gs.filter(x => x[0] === "kalshi");   // in-game the exchanges drift apart: use Kalshi alone, the deeper book
       if (started && now > first + 4 * HOUR) continue;   // finished: keeps its saved lines
@@ -195,8 +195,8 @@ const Lines = (() => {
       const ml = [american(lowest(mls.map(m => m[0]))), american(lowest(mls.map(m => m[1])))];
       const sp = pick(gs.map(x => x[1].spreads).filter(l => l.length), e => `${e.fav}|${e.k}`, e => e.mid), tt = pick(gs.map(x => x[1].totals).filter(l => l.length), e => String(e.k), e => e.mid);
       // A market missing its spread or total still gives a line (the user's, Nov 3 2026: "get something up on the screen"): what's missing is flagged, noSp or noTot, over placeholder numbers the page dashes.
-      const fav = sp ? sp[0].fav : "home", k = sp ? sp[0].k : 0, favAsk = sp ? lowest(sp.map(e => e.favAsk)) : null, dogAsk = sp ? lowest(sp.map(e => e.dogAsk)) : null, favP = sp ? american(favAsk) : -110, dogP = sp ? american(dogAsk) : -110;
-      const line = { sp: fav === "away" ? -k : k, spj: fav === "away" ? [favP, dogP] : [dogP, favP], tot: tt ? tt[0].k : (lg && lg.neutralTotal) || 45, toj: tt ? [american(lowest(tt.map(e => e.over))), american(lowest(tt.map(e => e.under)))] : [-110, -110], ml };
+      const fav = sp ? sp[0].fav : "home", k = sp ? sp[0].k : 0, favAsk = sp ? lowest(sp.map(e => e.favAsk)) : null, dogAsk = sp ? lowest(sp.map(e => e.dogAsk)) : null, favPrice = sp ? american(favAsk) : -110, dogPrice = sp ? american(dogAsk) : -110;
+      const line = { sp: fav === "away" ? -k : k, spj: fav === "away" ? [favPrice, dogPrice] : [dogPrice, favPrice], tot: tt ? tt[0].k : (lg && lg.neutralTotal) || 45, toj: tt ? [american(lowest(tt.map(e => e.over))), american(lowest(tt.map(e => e.under)))] : [-110, -110], ml };
       if (!sp) line.noSp = true;
       if (!tt) line.noTot = true;
       const data = {};
@@ -246,7 +246,7 @@ const Lines = (() => {
 
   // ---- Playbook's history: finished regular-season games with closing lines, from nflverse's public games table ----
   const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const playbookRows = (text, firstSeason) => {
+  const trendsRows = (text, firstSeason) => {
     const lines = text.trim().split("\n"), head = (lines.shift() || "").split(","), rows = [];
     for (const l of lines) {
       const c = l.split(","), cell = name => { const i = head.indexOf(name); return i >= 0 && i < c.length ? c[i] : ""; };
@@ -294,8 +294,8 @@ const Lines = (() => {
     if (!lg) return { docs: [], meta: null };
     return kind === "finals" ? { docs: finals(f, lg, n), meta: null } : pull(f, n, kind === "live", lg, now, prices);
   });
-  const playbook = (firstSeason, f) => answer(() => ({ rows: playbookRows(getText(f.gamesTable, 60), firstSeason) }));
+  const playbook = (firstSeason, f) => answer(() => ({ rows: trendsRows(getText(f.gamesTable, 60), firstSeason) }));
 
-  return { steps, liveSteps, run, playbook, merge, playbookRows, american, nflWeek, parseEvent, liveWindow, kalshi, polymarket, finals, league };
+  return { steps, liveSteps, run, playbook, merge, trendsRows, american, nflWeek, parseEvent, liveWindow, kalshi, polymarket, finals, league };
 })();
 export { Lines };

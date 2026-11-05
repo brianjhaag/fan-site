@@ -38,7 +38,7 @@ function browserStore(idb, name = "fan") {
   const plain = v => JSON.parse(JSON.stringify(v));
   const asked = q => new Promise((ok, no) => { q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
   // work(objectStore) runs in one transaction. Its answer counts once the transaction has finished, so a saved record is really saved.
-  const inTx = async (store, access, work) => {
+  const inTransaction = async (store, access, work) => {
     const tx = (await opened).transaction(store, access);
     let out;
     return new Promise((ok, no) => {
@@ -48,13 +48,13 @@ function browserStore(idb, name = "fan") {
     });
   };
   const inCol = col => window.IDBKeyRange.bound([col], [col, []]);
-  const rowsOf = col => inTx("records", "readonly", s => new Promise((ok, no) => {
+  const rowsOf = col => inTransaction("records", "readonly", s => new Promise((ok, no) => {
     const rows = [], q = s.openCursor(inCol(col));
     q.onsuccess = () => { const c = q.result; if (!c) return ok(rows); rows.push({ id: c.key[1], data: c.value }); c.continue(); };
     q.onerror = () => no(q.error);
   }));
-  const get = async (col, id) => { const d = await inTx("records", "readonly", s => asked(s.get([col, id]))); return d === undefined ? null : d; };
-  const set = async (col, id, data) => { const d = plain(data); await inTx("records", "readwrite", s => { s.put(d, [col, id]); }); changed([col]); };
+  const get = async (col, id) => { const d = await inTransaction("records", "readonly", s => asked(s.get([col, id]))); return d === undefined ? null : d; };
+  const set = async (col, id, data) => { const d = plain(data); await inTransaction("records", "readwrite", s => { s.put(d, [col, id]); }); changed([col]); };
   const newId = () => Array.from(window.crypto.getRandomValues(new Uint8Array(20)), b => (b % 36).toString(36)).join("");
   const follow = (col, tell, fail) => { const w = { col, fire: () => tell().catch(e => { if (fail) fail(e); }) }; watchers.add(w); w.fire(); return () => watchers.delete(w); };
   return {
@@ -63,7 +63,7 @@ function browserStore(idb, name = "fan") {
     add: (col, data) => set(col, newId(), data),
     update: async (col, id, patch) => {
       const p = plain(patch);
-      await inTx("records", "readwrite", async s => {
+      await inTransaction("records", "readwrite", async s => {
         const q = s.get([col, id]);
         await new Promise((ok, no) => {
           q.onerror = () => no(q.error);
@@ -72,11 +72,11 @@ function browserStore(idb, name = "fan") {
       });
       changed([col]);
     },
-    del: async (col, id) => { await inTx("records", "readwrite", s => { s.delete([col, id]); }); changed([col]); },
+    del: async (col, id) => { await inTransaction("records", "readwrite", s => { s.delete([col, id]); }); changed([col]); },
     watch: (col, fn, fail) => follow(col, async () => { const r = await rowsOf(col); fn(r); }, fail),
     watchDoc: (col, id, fn, fail) => follow(col, async () => { const r = await get(col, id); fn(r); }, fail),
     onChange: fn => { changes.add(fn); return () => changes.delete(fn); },
-    dump: async () => ({ fan: 1, at: Date.now(), records: await inTx("records", "readonly", s => new Promise((ok, no) => {
+    dump: async () => ({ fan: 1, at: Date.now(), records: await inTransaction("records", "readonly", s => new Promise((ok, no) => {
       const rows = [], q = s.openCursor();
       q.onsuccess = () => { const c = q.result; if (!c) return ok(rows); rows.push({ col: c.key[0], id: c.key[1], data: c.value }); c.continue(); };
       q.onerror = () => no(q.error);
@@ -85,12 +85,12 @@ function browserStore(idb, name = "fan") {
     restore: async file => {
       const rows = file && file.fan === 1 && file.records;
       if (!Array.isArray(rows) || rows.some(r => !r || typeof r.col !== "string" || typeof r.id !== "string" || r.data === undefined)) throw new Error("not a Fan export");
-      await inTx("records", "readwrite", s => { rows.forEach(r => s.put(plain(r.data), [r.col, r.id])); });
+      await inTransaction("records", "readwrite", s => { rows.forEach(r => s.put(plain(r.data), [r.col, r.id])); });
       changed([...new Set(rows.map(r => r.col))]);
       return rows.length;
     },
-    kept: async key => { const v = await inTx("local", "readonly", s => asked(s.get(key))); return v === undefined ? null : v; },
-    keep: (key, value) => inTx("local", "readwrite", s => { if (value == null) s.delete(key); else s.put(value, key); })   // file handles can't go through JSON, so this is stored as it is
+    kept: async key => { const v = await inTransaction("local", "readonly", s => asked(s.get(key))); return v === undefined ? null : v; },
+    keep: (key, value) => inTransaction("local", "readwrite", s => { if (value == null) s.delete(key); else s.put(value, key); })   // file handles can't go through JSON, so this is stored as it is
   };
 }
 // The connector's records, over its web address. One long request at a time asks what changed, and each watcher re-reads what it follows.

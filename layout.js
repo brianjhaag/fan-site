@@ -1,13 +1,13 @@
 // The page's strips and fitting (the refactor, Nov 3 2026, from base.js): the bottom strip's tabs and its rows, the section tabs, the page fitted to the window, the ticket column,
 // the band, the left column's two folding cards, and the game strip's arrows.
-import { $, LG, el, last, later, league, trackingOn, showView, subView, tickets, view, graphsOK, SECTIONS, isPhone, mq } from "./base.js?v=mw33ju01";
+import { $, LG, el, last, later, league, trackingOn, showView, subView, tickets, view, graphsOK, SECTIONS, isPhone, mq } from "./base.js?v=mw3s4vr0";
 
 // The bottom strip: a tab for every game of the selected week (kickoff order), first half in the top row, the rest under it. A click opens the game detail tab.
 // The bottom strip belongs to the button highlighted on top. A week: its games, plus Graphs when the slate has lines. Another section: that section's own buttons.
 function drawSectionTabs() {
   later.syncPlace();   // new slate data can bring the ticket's Kalshi market
   if (view === "graphs" && !graphsOK()) { showView("week"); return; }
-  const other = !!SECTIONS[view], row = $("sectiontabs1");
+  const other = !!SECTIONS[view], row = $("bottomSectionTabs");
   document.querySelector(".strip-tabs.graphs-tab").style.display = !other && graphsOK() ? "" : "none";
   if (other) {
     document.querySelector(".bye-box").style.display = "none";
@@ -124,7 +124,7 @@ function updateGameArrows() {
     const wrap = g.parentElement;
     wrap.classList.add("game-arrows"); wrap.style.position = "relative";
     const mk = dir => {
-      const b = el("button", "game-arrow " + (dir < 0 ? "l" : "r"));
+      const b = el("button", "game-arrow " + (dir < 0 ? "side-left" : "side-right"));
       b.type = "button"; b.setAttribute("aria-label", dir < 0 ? "Scroll games left" : "Scroll games right");
       b.innerHTML = '<svg viewBox="0 0 18 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="' + (dir < 0 ? "M14 3 L4 14 L14 25" : "M4 3 L14 14 L4 25") + '"/></svg>';
       let timer = 0, raf = 0, held = false;

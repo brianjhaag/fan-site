@@ -1,9 +1,9 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { Fan } from "./hosts.js?v=mw33ju01";
-import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, sportsbookAbbr, sportsbookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw33ju01";
-import { setFold } from "./layout.js?v=mw33ju01";
-import { TEAM, abbr } from "./leagues.js?v=mw33ju01";
-import { setTrends } from "./panels.js?v=mw33ju01";
+import { Fan } from "./hosts.js?v=mw3s4vr0";
+import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, sportsbookAbbr, sportsbookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw3s4vr0";
+import { setFold } from "./layout.js?v=mw3s4vr0";
+import { TEAM, abbr } from "./leagues.js?v=mw3s4vr0";
+import { setTrends } from "./panels.js?v=mw3s4vr0";
   Object.assign(later, { syncPrices, sportsbookReport, enterMoneyline, enterSpread, enterTotal, showSaved, weekChanged });
   const SPORTSBOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))}${g.line.noSp ? "" : " " + pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };   // no spread market yet: no spread named
@@ -111,13 +111,13 @@ import { setTrends } from "./panels.js?v=mw33ju01";
   gameSelect.replaceChildren();
   gameSelect.add(new Option("Select a game", ""));
   const groups = new Map();
-  const optWidth = 8 + 3 + Math.max(...GAMES.map(g => gameSpread(g).length));
+  const optionWidth = 8 + 3 + Math.max(...GAMES.map(g => gameSpread(g).length));
   GAMES.forEach((g, i) => {
     const day = dayFmt.format(new Date(g.t));
     if (!groups.has(day)) { const og = document.createElement("optgroup"); og.label = day; groups.set(day, og); gameSelect.append(og); }
     // Time on the left, matchup pushed to the right with non-breaking spaces (the select uses a monospace font).
     const left = g.final ? "Final" : timeFmt.format(new Date(g.t));
-    const gap = Math.max(2, optWidth - left.length - gameSpread(g).length);
+    const gap = Math.max(2, optionWidth - left.length - gameSpread(g).length);
     groups.get(day).append(new Option(left + " ".repeat(gap) + gameSpread(g), i));
   });
   }
@@ -161,7 +161,7 @@ import { setTrends } from "./panels.js?v=mw33ju01";
     const heads = $("heads");
     heads.replaceChildren();
     COLS.forEach(c => {
-      const b = el("button", "gh" + (c.ctr ? " ctr" : c.num ? " num" : ""), c.h + (sortCol === c.k ? (sortDir > 0 ? " ▲" : " ▼") : ""));
+      const b = el("button", "grid-head" + (c.ctr ? " ctr" : c.num ? " num" : ""), c.h + (sortCol === c.k ? (sortDir > 0 ? " ▲" : " ▼") : ""));
       b.type = "button"; b.style.gridArea = `${c.at[0]} / ${c.at[1]}`;
       b.addEventListener("click", () => {
         if (sortCol === c.k) sortDir = -sortDir; else { sortCol = c.k; sortDir = 1; }
@@ -230,7 +230,7 @@ import { setTrends } from "./panels.js?v=mw33ju01";
   }
   let editMsgTimer;
   function editMsg(text) {
-    const m = $("edMsg");
+    const m = $("editNote");
     m.textContent = text; m.hidden = !text;
     clearTimeout(editMsgTimer);
     if (text) editMsgTimer = setTimeout(() => { m.hidden = true; }, 4000);
@@ -244,10 +244,10 @@ import { setTrends } from "./panels.js?v=mw33ju01";
     }[col.k];
     let field;
     if (col.k === "book") {
-      field = el("select", "ced");
+      field = el("select", "cell-editor");
       SPORTSBOOKS.filter(b => b !== "Kalshi").forEach(b => field.add(new Option(b, b)));
       field.value = raw;
-    } else { field = el("input", "ced"); field.type = "text"; field.value = raw; field.autocomplete = "off"; }
+    } else { field = el("input", "cell-editor"); field.type = "text"; field.value = raw; field.autocomplete = "off"; }
     field.setAttribute("aria-label", col.h);
     cell.replaceChildren(field);
     field.focus();
@@ -282,7 +282,7 @@ import { setTrends } from "./panels.js?v=mw33ju01";
       if (r.t.parlay) li.title = r.t.legs.map(legText).join("\n");
       r.cells.forEach((v, i) => {
         const c = COLS[i], editable = !r.t.fromFills && c.edit && c.edit(r.t);   // a real fill's ticket can't be edited (the user, Nov 3 2026)
-        const cell = el("span", [c.ctr ? "ctr" : c.num ? "num" : "", editable ? "ed" : "", c.at[0] === 2 ? "r2" : ""].filter(Boolean).join(" ") || null, v);
+        const cell = el("span", [c.ctr ? "ctr" : c.num ? "num" : "", editable ? "editable" : "", c.at[0] === 2 ? "row-two" : ""].filter(Boolean).join(" ") || null, v);
         cell.style.gridArea = `${c.at[0]} / ${c.at[1]}`;
         if (editable) { cell.title = "Click to edit"; cell.addEventListener("click", e => { e.stopPropagation(); startEdit(r.t, c, cell); }); }
         li.append(cell);
@@ -331,7 +331,7 @@ import { setTrends } from "./panels.js?v=mw33ju01";
     if (!books.size) { pop.append(el("div", "dim", "No wagers yet.")); return pop; }
     const rows = [...books].sort((a, c) => c[1].cash + c[1].bonus - a[1].cash - a[1].bonus);
     const all = rows.reduce((t, [, b]) => { Object.keys(b).forEach(k => { t[k] = (t[k] || 0) + b[k]; }); return t; }, {});
-    const cls = v => Math.round(v) > 0 ? "pos" : Math.round(v) < 0 ? "neg" : "dim";
+    const cls = v => Math.round(v) > 0 ? "profit" : Math.round(v) < 0 ? "loss" : "dim";
     const table = el("table"), head = el("tr");
     ["Book", "Bets", "Wagered", "Vig", "Open", "Won–Lost", "Returned", "Net cash"].forEach(x => head.append(el("th", null, x)));
     table.append(head);
@@ -340,7 +340,7 @@ import { setTrends } from "./panels.js?v=mw33ju01";
       if (foot) name$.textContent = name; else name$.append(sportsbookTag(name));
       const done = b.done > 0;
       tr.append(name$, el("td", null, String(b.n)), el("td", null, b.cash || !b.bonus ? money(b.cash) + (b.bonus ? " + B" + money(b.bonus) : "") : "B" + money(b.bonus)),
-        el("td", pricesOn() && b.vig < -0.5 ? "pos" : null, pricesOn() ? vigText(b.vig) : "—"),
+        el("td", pricesOn() && b.vig < -0.5 ? "profit" : null, pricesOn() ? vigText(b.vig) : "—"),
         el("td", b.open ? null : "dim", b.open ? String(b.open) : "—"),
         el("td", done ? null : "dim", done ? `${b.won}–${b.lost}${b.push ? "–" + b.push : ""}` : "—"),
         el("td", done ? null : "dim", done ? money(b.ret) : "—"),
@@ -361,7 +361,7 @@ import { setTrends } from "./panels.js?v=mw33ju01";
   // Net cash counts settled wagers only (a lost bonus wager costs nothing).
   // A sheet of ledger paper: a title, a line under it, then the table.
   function ledgerCard(title, sub, table) {
-    const card = el("div", "lcard");
+    const card = el("div", "ledger-card");
     card.append(el("h2", null, title), sub, table);
     return card;
   }
@@ -380,16 +380,16 @@ import { setTrends } from "./panels.js?v=mw33ju01";
     rows.forEach(([, b]) => Object.keys(all).forEach(k => { all[k] += b[k] || 0; }));
     if (!rows.length) { box.append(el("p", "dim", "No wagers saved yet.")); return; }
     const byClass = ledgerRows(counted, betClass);
-    const cls = v => Math.round(v) < 0 ? "neg" : Math.round(v) > 0 ? null : "dim";
+    const cls = v => Math.round(v) < 0 ? "loss" : Math.round(v) > 0 ? null : "dim";
     const cent = v => "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const netText = v => { const r = Math.round(v); return r < 0 ? `(${money(-r)})` : r > 0 ? money(r) + " " : "— "; };   // a loss in parentheses, with the figures still lined up
-    const table = el("table", "lsheet"), thead = el("thead"), hr = el("tr");
+    const table = el("table", "ledger-sheet"), thead = el("thead"), hr = el("tr");
     ["Sportsbook", "Balance", "Open bets", "Open cash stakes", "Open bonus stakes", "Account total", "Wagers", "Cash wagered", "Bonus wagered", "Won–Lost", "Net cash"].forEach(h => hr.append(el("th", null, h)));
     if (balances.asOf) hr.children[1].title = `Balances as of ${balances.asOf}`;
     hr.children[5].title = "Balance + cash staked on open bets (bonus stakes are not cash)";
     thead.append(hr);
     const body = el("tbody");
-    const section = title => { const tr = el("tr", "lsec"), td = el("td", null, title); td.colSpan = hr.children.length; tr.append(td); body.append(tr); };
+    const section = title => { const tr = el("tr", "ledger-section"), td = el("td", null, title); td.colSpan = hr.children.length; tr.append(td); body.append(tr); };
     // Balances aren't split by bet type, so those rows leave the Balance and Account total columns empty (hasBal false).
     const line = (name, b, hasBal, rowClass) => {
       const tr = el("tr", rowClass), first = el("td");
@@ -401,10 +401,10 @@ import { setTrends } from "./panels.js?v=mw33ju01";
     };
     section("By sportsbook");
     rows.forEach(([name, b]) => line(sportsbookTag(name), b, true));
-    line("All books", all, true, "ltotal");
+    line("All books", all, true, "ledger-total");
     section("By bet type");
     FAN_CLASSES.filter(c => byClass.has(c)).forEach(c => line(c, byClass.get(c), false));
-    line("All bets", all, false, "ltotal");
+    line("All bets", all, false, "ledger-total");
     table.append(thead, body);
     box.append(ledgerCard("Ledger", el("small", null, `All leagues, all weeks.${balances.asOf ? ` Balances as of ${balances.asOf}.` : ""}`), table));
   }
@@ -447,11 +447,11 @@ import { setTrends } from "./panels.js?v=mw33ju01";
       line.placeholder = { Moneyline: "+120", Spread: "-3.5", Total: "42.5" }[type.value];
       line.setAttribute("aria-label", type.value === "Moneyline" ? "Odds" : type.value === "Spread" ? "Points" : "Total");
     }
-    const seg = el("div", "seg");
+    const segmentBox = el("div", "segments");
     names.forEach((s, i) => {
-      const lab = el("label"), inp = el("input"), sp = el("span", null, s);
-      inp.type = "radio"; inp.name = "pick"; inp.value = s;
-      inp.addEventListener("change", () => {
+      const labelEl = el("label"), radioInput = el("input"), sp = el("span", null, s);
+      radioInput.type = "radio"; radioInput.name = "pick"; radioInput.value = s;
+      radioInput.addEventListener("change", () => {
         if (g.noLine) return;   // no market here: the placeholder isn't a price, so the user types their own
         if (line) line.value = lineText(type.value, sideLine(g, type.value, i));
         if (price) {
@@ -461,18 +461,18 @@ import { setTrends } from "./panels.js?v=mw33ju01";
       });
       // Moneyline and spread pick a team, so each side takes that team's color.
       if (type.value !== "Total") {
-        lab.className = "team";
+        labelEl.className = "team";
         const k = teamLook(g, i === 0 ? "away" : "home");
-        lab.style.setProperty("--tb", k.bg); lab.style.setProperty("--tf", k.fg); lab.style.setProperty("--to", k.outline || "transparent");
+        labelEl.style.setProperty("--tb", k.bg); labelEl.style.setProperty("--tf", k.fg); labelEl.style.setProperty("--to", k.outline || "transparent");
       }
-      lab.append(inp, sp); seg.append(lab);
+      labelEl.append(radioInput, sp); segmentBox.append(labelEl);
     });
-    box.append(seg);
+    box.append(segmentBox);
     if (line && type.value !== "Moneyline") {
       // Up and down arrows move the points by 0.5. On Kalshi the price follows to that strike's ask when the ladder has one.
       const w = el("span", "tick");
       const step = d => {
-        const i = [...seg.querySelectorAll("input")].findIndex(r => r.checked), cur = parseLine(line.value), base = Number.isFinite(cur) ? cur : i >= 0 ? sideLine(g, type.value, i) : type.value === "Total" ? lineOf(g).tot : 0, n = base + d;
+        const i = [...segmentBox.querySelectorAll("input")].findIndex(r => r.checked), cur = parseLine(line.value), base = Number.isFinite(cur) ? cur : i >= 0 ? sideLine(g, type.value, i) : type.value === "Total" ? lineOf(g).tot : 0, n = base + d;
         line.value = lineText(type.value, n);
         if (kal && price && i >= 0 && g.lad && g.lad.v === 2 && status(g)[1] !== "live") {
           const fav = (i === 0) === (n < 0) ? "away" : "home";
@@ -481,7 +481,7 @@ import { setTrends } from "./panels.js?v=mw33ju01";
         }
         line.dispatchEvent(new Event("input", { bubbles: true }));
       };
-      [["up", "▲", .5, "Up 0.5"], ["dn", "▼", -.5, "Down 0.5"]].forEach(([c, t, d, a]) => {
+      [["up", "▲", .5, "Up 0.5"], ["down", "▼", -.5, "Down 0.5"]].forEach(([c, t, d, a]) => {
         const b = el("button", c, t); b.type = "button"; b.tabIndex = -1; b.setAttribute("aria-label", a);
         b.addEventListener("click", e => { e.preventDefault(); step(d); });
         w.append(b);
@@ -652,21 +652,21 @@ import { setTrends } from "./panels.js?v=mw33ju01";
   // Choosing or leaving Kalshi changes how the price is entered (cents instead of American odds).
   let wasKalshi = false;
   // The game picker: a button and a list over the whole wager card; it drives the hidden select and fires its input event, so the form works as before.
-  const helmetImg = n => TEAM[n] && TEAM[n].art ? helmImg(n, "hl") : null;
+  const helmetImg = n => TEAM[n] && TEAM[n].art ? helmImg(n, "picker-helm") : null;
   function gameFace(g) {   // helmet, abbreviation and the visitor's spread @ helmet and abbreviation
     const f = el("span", "gface"); f.style.display = "inline-flex"; f.style.alignItems = "center"; f.style.gap = "7px";
     [helmetImg(nick(g, "away")), el("span", null, abbr(nick(g, "away"))), el("span", "sp", g.noLine || g.line.noSp ? "" : pts(g.line.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1))), el("span", "at", "@"), helmetImg(nick(g, "home")), el("span", null, abbr(nick(g, "home")))].forEach(x => x && f.append(x));
     return f;
   }
   function syncGame() {
-    gameBtn.replaceChildren(gameSelect.value === "" ? el("span", "ph", "Select game") : gameFace(GAMES[gameSelect.value]));
+    gameBtn.replaceChildren(gameSelect.value === "" ? el("span", "placeholder", "Select game") : gameFace(GAMES[gameSelect.value]));
     [...gameList.querySelectorAll(".g")].forEach(li => li.setAttribute("aria-selected", String(li.dataset.i === gameSelect.value)));
   }
   const closeGames = () => { gameList.hidden = true; gameBtn.setAttribute("aria-expanded", "false"); };
   function pickGame(i) { gameSelect.value = String(i); gameSelect.dispatchEvent(new Event("input", { bubbles: true })); closeGames(); gameBtn.focus(); }
   function openGames() {
     gameList.replaceChildren();
-    const head = el("li", "gh", "Select game"); head.addEventListener("click", closeGames); gameList.append(head);
+    const head = el("li", "grid-head", "Select game"); head.addEventListener("click", closeGames); gameList.append(head);
     let day = "";
     GAMES.forEach((g, i) => {
       const d = dayFmt.format(new Date(g.t));
@@ -686,12 +686,12 @@ import { setTrends } from "./panels.js?v=mw33ju01";
   // The custom sportsbook list drives the hidden select and fires its input event, so the rest of the form works as before.
   const sportsbookBtn = $("sportsbookBtn"), sportsbookList = $("sportsbookList");
   const syncSportsbook = () => {
-    sportsbookBtn.replaceChildren(sportsbookSelect.value ? sportsbookTag(sportsbookSelect.value) : el("span", "ph", "Select sportsbook"));
+    sportsbookBtn.replaceChildren(sportsbookSelect.value ? sportsbookTag(sportsbookSelect.value) : el("span", "placeholder", "Select sportsbook"));
     [...sportsbookList.children].filter(li => li.dataset.v).forEach(li => li.setAttribute("aria-selected", String(li.dataset.v === sportsbookSelect.value)));
   };
   const closeSportsbooks = () => { sportsbookList.hidden = true; sportsbookBtn.setAttribute("aria-expanded", "false"); };
   const pickSportsbook = v => { sportsbookSelect.value = v; sportsbookSelect.dispatchEvent(new Event("input", { bubbles: true })); closeSportsbooks(); sportsbookBtn.focus(); };
-  { const head = el("li", "gh", "Select sportsbook"); head.addEventListener("click", closeSportsbooks); sportsbookList.append(head); }
+  { const head = el("li", "grid-head", "Select sportsbook"); head.addEventListener("click", closeSportsbooks); sportsbookList.append(head); }
   SPORTSBOOKS.forEach(b => { const li = el("li"); li.setAttribute("role", "option"); li.dataset.v = b; li.append(sportsbookTag(b)); li.addEventListener("click", () => pickSportsbook(b)); sportsbookList.append(li); });
   sportsbookBtn.addEventListener("click", () => {
     const open = sportsbookList.hidden;

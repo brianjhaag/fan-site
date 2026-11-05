@@ -26,7 +26,7 @@ const Calc = (() => {
   const RULES = {
     userSet: { capital: 0.05, theoCash: 10 / 220, theoBonus: 0.45, pairBase: 1000, hcHurdle: 0.03, hcDivDvoa: 0.67 },   // hcHurdle: the Handicap's hurdle, the percentage gap a market price needs, its starting value (the user, Nov 4 2026: "start with 3"); hcDivDvoa: the DVOA difference's share in a divisional game ("0.67")
     defaults: {
-      hold: 0.045, spreadPrice: -110, kalshiFee: 0.07,
+      vig: 0.045, spreadPrice: -110, kalshiFee: 0.07,
       lift: 10, hedgeMinPay: 0.25, hedgeMaxPay: 0.75, lockFloor: 0.5, hedgeStep: 5, hedgeMaxContracts: 5000,
       tolPerPoint: 0.005, bandKeep: 0.25, narrow: 0.25
     }
@@ -99,7 +99,7 @@ const Calc = (() => {
   const riskOf = (t, od) => t.bonus ? t.amount * bonusFactor(od) : t.amount;
   function winChance(t) {
     const q = 1 / decimalOf(ticketPrice(t));
-    return t.kalshi ? q : Math.min(0.99, q / Math.pow(1 + D.hold, t.parlay ? t.legs.length : 1));
+    return t.kalshi ? q : Math.min(0.99, q / Math.pow(1 + D.vig, t.parlay ? t.legs.length : 1));
   }
 
   /* ==== Kalshi: fees, sizing, fills, markets ==== */
@@ -110,15 +110,15 @@ const Calc = (() => {
   const contractsFor = (amount, p) => Math.floor(amount / (p + D.kalshiFee * p * (1 - p)) + 1e-9);
   // A hand-booked Kalshi ticket: no fee is added, the amount typed is what was paid, fee included. Contracts are the dollars divided by the price; each pays $1.
   function kalshiCalc(cents, spent) {
-    const C = spent / (cents / 100), dec = 100 / cents;
-    return { C, cost: spent, fee: 0, total: spent, win: C - spent, american: dec >= 2 ? (dec - 1) * 100 : dec > 1 ? -100 / (dec - 1) : -10000 };
+    const C = spent / (cents / 100), decimalOdds = 100 / cents;
+    return { C, cost: spent, fee: 0, total: spent, win: C - spent, american: decimalOdds >= 2 ? (decimalOdds - 1) * 100 : decimalOdds > 1 ? -100 / (decimalOdds - 1) : -10000 };
   }
   // A fill as a bet: selling YES at p is the same position as buying NO at 1 - p.
   const fillSide = x => (x.action === "sell" && x.side === "yes" ? { side: "no", price: Math.round((1 - x.price) * 10000) / 10000 } : { side: x.side, price: x.price });
   // An order's trades, { id: { n, p, fee } }, as ticket figures. The amount is everything paid, the fee counted once.
   function fillAmounts(trades) {
-    const list = Object.values(trades), C = list.reduce((s, r) => s + r.n, 0), cost = list.reduce((s, r) => s + r.n * r.p, 0), fee = list.reduce((s, r) => s + r.fee, 0), total = cost + fee, dec = C / total;
-    return { contracts: C, cost, fee, total, american: dec >= 2 ? Math.round((dec - 1) * 100) : -Math.round(100 / (dec - 1)), cents: Math.round(cost / C * 1000) / 10 };
+    const list = Object.values(trades), C = list.reduce((s, r) => s + r.n, 0), cost = list.reduce((s, r) => s + r.n * r.p, 0), fee = list.reduce((s, r) => s + r.fee, 0), total = cost + fee, decimalOdds = C / total;
+    return { contracts: C, cost, fee, total, american: decimalOdds >= 2 ? Math.round((decimalOdds - 1) * 100) : -Math.round(100 / (decimalOdds - 1)), cents: Math.round(cost / C * 1000) / 10 };
   }
   // Kalshi's fills against the records, as tools/dev/check-records.js and the connector's timed check both run it: is each fill saved, does each order have one ticket, and do contracts and dollars agree.
   // fills: Kalshi's (the fills_list tool), wagers and saved: the records' wagers and fills, as { id, data }. since: tickets older than this aren't looked for. `bad` counts what doesn't agree.
@@ -188,8 +188,8 @@ const Calc = (() => {
   function replyFill(o, side, limit) {
     const avg = o.average_fill_price == null ? null : side === "no" ? Math.round((1 - o.average_fill_price) * 10000) / 10000 : o.average_fill_price;
     if (!(o.filled > 0)) return { avg };
-    const contracts = o.filled, price = avg != null ? avg : limit, feeEach = o.average_fee_paid || 0, total = contracts * price + contracts * feeEach, dec = contracts / total;
-    return { avg, contracts, amount: Math.round(total * 100) / 100, american: dec >= 2 ? Math.round((dec - 1) * 100) : -Math.round(100 / (dec - 1)), cents: Math.round(price * 1000) / 10, fee: Math.round(contracts * feeEach * 100) / 100 };
+    const contracts = o.filled, price = avg != null ? avg : limit, feeEach = o.average_fee_paid || 0, total = contracts * price + contracts * feeEach, decimalOdds = contracts / total;
+    return { avg, contracts, amount: Math.round(total * 100) / 100, american: decimalOdds >= 2 ? Math.round((decimalOdds - 1) * 100) : -Math.round(100 / (decimalOdds - 1)), cents: Math.round(price * 1000) / 10, fee: Math.round(contracts * feeEach * 100) / 100 };
   }
 
   // Place's limit: the ticket's price plus what the user will pay up, in whole cents. An immediate-or-cancel order still fills at the best price there is, so this costs nothing unless the market moved.
@@ -208,8 +208,8 @@ const Calc = (() => {
     const both = q.sp.filter(r => { const o = oldRow.get(r.fav + "|" + r.K); return o && o[5] != null; });
     const s = near(!started && both.length ? both : q.sp), t = near(q.tot), mA = q.ml.away && q.ml.away.k, mH = q.ml.home && q.ml.home.k;
     if (s && t && mA && mH) {
-      const o = oldRow.get(s.fav + "|" + s.K), pf = started || !o ? null : o[5], pd = started || !o ? null : o[6], favP = quoteOf(low(s.kf, pf)), dogP = quoteOf(low(s.kd, pd));
-      const line = { sp: s.fav === "away" ? -s.K : s.K, spj: s.fav === "away" ? [favP, dogP] : [dogP, favP], tot: t.K, toj: [quoteOf(t.over), quoteOf(t.under)],
+      const o = oldRow.get(s.fav + "|" + s.K), pf = started || !o ? null : o[5], pd = started || !o ? null : o[6], favPrice = quoteOf(low(s.kf, pf)), dogPrice = quoteOf(low(s.kd, pd));
+      const line = { sp: s.fav === "away" ? -s.K : s.K, spj: s.fav === "away" ? [favPrice, dogPrice] : [dogPrice, favPrice], tot: t.K, toj: [quoteOf(t.over), quoteOf(t.under)],
         ml: started ? [quoteOf(mA), quoteOf(mH)] : [quoteOf(low(mA, old && old.ml.away.p)), quoteOf(low(mH, old && old.ml.home.p))] };
       if (started) patch.live = { ...line, at: q.at }; else patch.line = line;
     }
@@ -238,21 +238,21 @@ const Calc = (() => {
   // 15.0% combined), from deucescracked.com/blog/nfl-margin-of-victory-data-1999-2025. Each margin's weight is its share divided by what a smooth
   // folded normal with the same bulk (P(margin <= 21) = 85%) would give, so 3 weighs ~2.9, 7 ~1.9, 14 ~1.4 and 9, 12 or 19 under 0.6; beyond 21 the weight is 1.
   const MARGIN_SHARE = { 1: 4.16, 2: 4.05, 3: 15.12, 4: 4.88, 5: 3.57, 6: 5.99, 7: 9.03, 8: 3.72, 9: 1.61, 10: 5.51, 11: 2.35, 12: 1.65, 13: 2.76, 14: 4.88, 15: 1.5, 16: 2.12, 17: 3.57, 18: 2.32, 19: 1.18, 20: 2.14, 21: 2.65 };
-  const MARGIN_W = (() => {
+  const MARGIN_WEIGHT = (() => {
     const erf = x => { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; };
     const Phi = z => 0.5 * (1 + erf(z / Math.SQRT2)), s0 = 21.5 / 1.4395, w = [0];
     for (let m = 1; m <= 21; m++) w[m] = (MARGIN_SHARE[m] / 100) / (2 * (Phi((m + 0.5) / s0) - Phi((m - 0.5) / s0)));
     return m => { m = Math.abs(m); return m <= 21 ? w[m] : 1; };
   })();
   // marginModel(sigma) returns win(d): the chance a team wins outright when its spread-implied expected margin is d points (a team getting 3.5 has
-  // d = -3.5). Signed final margins m (not 0) have weight MARGIN_W(|m|) * normal(m; mu, sigma); mu is solved so that the line d is the median
+  // d = -3.5). Signed final margins m (not 0) have weight MARGIN_WEIGHT(|m|) * normal(m; mu, sigma); mu is solved so that the line d is the median
   // (as much weight above d as below it; a margin equal to d is a push and counts on neither side). win(d) = weight above 0 over all weight.
   function fanMarginModel(sigma, flat) {   // flat: no key numbers (NBA)
     const MM = 70, memo = new Map();
     const detail = d => {
       if (d === 0) return { win: 0.5, over: 0.5, push: 0, P: () => 0 };
       if (memo.has(d)) return memo.get(d);
-      const W = (m, mu) => (flat ? 1 : MARGIN_W(m)) * Math.exp(-0.5 * ((m - mu) / sigma) ** 2);
+      const W = (m, mu) => (flat ? 1 : MARGIN_WEIGHT(m)) * Math.exp(-0.5 * ((m - mu) / sigma) ** 2);
       const gap = mu => { let up = 0, dn = 0; for (let m = -MM; m <= MM; m++) { if (m === 0) continue; const x = W(m, mu); if (m > d) up += x; else if (m < d) dn += x; } return up - dn; };
       let lo = d - 25, hi = d + 25;
       for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (gap(mid) > 0) hi = mid; else lo = mid; }
@@ -268,7 +268,7 @@ const Calc = (() => {
     f.band = (d, a, b) => { const q = detail(d); let t = 0; for (let m = a; m <= b; m++) t += q.P(m); return t; };   // chance the team's margin lands from a to b
     // mean(e): the same margins read from an expected margin e, a regression's output, rather than a line (the user, Nov 4 2026: "my way of coming up with the number
     // 3.2 says a 3 point margin is much more likely than 4"): mu solved so the margins' average is e. { win, P } as detail gives them.
-    const meanMemo = new Map(), Wm = (m, mu) => (flat ? 1 : MARGIN_W(m)) * Math.exp(-0.5 * ((m - mu) / sigma) ** 2);
+    const meanMemo = new Map(), Wm = (m, mu) => (flat ? 1 : MARGIN_WEIGHT(m)) * Math.exp(-0.5 * ((m - mu) / sigma) ** 2);
     f.mean = e => {
       if (meanMemo.has(e)) return meanMemo.get(e);
       const avg = mu => { let s = 0, t = 0; for (let m = -MM; m <= MM; m++) { if (m === 0) continue; const x = Wm(m, mu); s += m * x; t += x; } return s / t; };
@@ -287,9 +287,9 @@ const Calc = (() => {
   const liveModel = (() => { return g => { const m = liveCache; const k = leagueId(g), r = leagueOf(g); return m[k] || (m[k] = marginModel(r.sigma, !r.keyNumbers)); }; })();
   const totalSd = g => leagueOf(g).totalSd;
   const normCdf = z => { const t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2), p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
-  // A spread bet's chances at its own number, on a market where the side's spread is sTeam.
-  function fanCoverChances(g, sTeam, line) {
-    const q = liveModel(g).detail(sTeam === 0 ? -0.001 : -sTeam);   // the side's expected margin is minus its spread
+  // A spread bet's chances at its own number, on a market where the side's spread is teamSpread.
+  function fanCoverChances(g, teamSpread, line) {
+    const q = liveModel(g).detail(teamSpread === 0 ? -0.001 : -teamSpread);   // the side's expected margin is minus its spread
     let win = 0, push = 0;
     for (let m = -70; m <= 70; m++) { if (m === 0) continue; const x = q.P(m); if (m > -line) win += x; else if (m === -line) push += x; }
     return { win, push };
@@ -330,30 +330,30 @@ const Calc = (() => {
   /* ==== The flagged pair (Graphs) ==== */
   // Each team's two ways to be backed, as expected return per $1 at the actual prices (so the vig is in them). p = { g, side, sp, ml }; winProb from marginModel.
   const fanEvMoneyline = (winProb, p) => winProb(-p.sp) * decimalOf(p.ml) - 1;
-  const fanEvPoints = (winProb, p) => { const q = winProb.detail(-p.sp), dec = decimalOf(p.g.line.spj[p.side === "home" ? 1 : 0]); return q.over * (dec - 1) - (1 - q.over - q.push); };
+  const fanEvPoints = (winProb, p) => { const q = winProb.detail(-p.sp), decimalOdds = decimalOf(p.g.line.spj[p.side === "home" ? 1 : 0]); return q.over * (decimalOdds - 1) - (1 - q.over - q.push); };
   const fanShowsML = (winProb, p) => evMoneyline(winProb, p) >= evPoints(winProb, p);
   // A game is flagged when the favorite's better price is the moneyline and the underdog's the points. The two differ by a percent or so of return, which a one-cent move can flip,
   // so the favorite's moneyline may trail its points, and the underdog's points its moneyline, by a combined tolPerPoint of return per $1 for every point of spread.
   const fanPairFlagged = (winProb, fav, dog) => Math.max(0, evPoints(winProb, fav) - evMoneyline(winProb, fav)) + Math.max(0, evMoneyline(winProb, dog) - evPoints(winProb, dog)) <= D.tolPerPoint * Math.abs(dog.sp);
   // The popup's stakes, from the existing position's worst in each region (E_*) and each leg's profit per $1 (r*). Blowout worst = 0; the just-past-spread band worst = bandKeep of the
   // moneyline's profit on the base; small-upset worst = (1 - narrow) x big-upset worst. A stake that comes out negative is dropped: the position already has enough of it.
-  function pairStakes({ aNew, rML, rD, rB, rN, Eblow, Eband, Enar, Ebig }) {
+  function pairStakes({ stakeFavMl, perDollarMl, rD, rB, rN, worstBlowout, worstPastSpread, worstSmallUpset, worstBigUpset }) {
     const base = RULES.userSet.pairBase, NARROW = D.narrow;
-    const bNew = Math.max(0, (D.bandKeep * rML * base - Eband + Eblow) / (1 + rB));
-    const D0 = Eblow + rML * aNew - bNew, U0 = -aNew + rD * D0 + rB * bNew;
-    const cNew = Math.max(0, ((1 - NARROW) * (Ebig + U0) - (Enar + U0)) / (rN * (1 + rD) + (1 - NARROW) * (1 - rD * rN)));
-    return { bNew, cNew, dNew: Math.max(0, D0 + rN * cNew) };
+    const stakeBlowout = Math.max(0, (D.bandKeep * perDollarMl * base - worstPastSpread + worstBlowout) / (1 + rB));
+    const D0 = worstBlowout + perDollarMl * stakeFavMl - stakeBlowout, U0 = -stakeFavMl + rD * D0 + rB * stakeBlowout;
+    const stakeUpset = Math.max(0, ((1 - NARROW) * (worstBigUpset + U0) - (worstSmallUpset + U0)) / (rN * (1 + rD) + (1 - NARROW) * (1 - rD * rN)));
+    return { stakeBlowout, stakeUpset, stakeDogPoints: Math.max(0, D0 + rN * stakeUpset) };
   }
 
   /* ==== Playbook ==== */
   // Records and flat-bet return at the closing prices.
-  function pbStats(list) {
-    const win = o => profitOf(1, o), s = { n: list.length, mw: 0, ml: 0, mp: 0, aw: 0, al: 0, ap: 0, ar: 0, o: 0, u: 0, op: 0, or: 0 };
+  function trendsStats(list) {
+    const win = o => profitOf(1, o), s = { n: list.length, mlWins: 0, mlLosses: 0, mlProfit: 0, atsWins: 0, atsLosses: 0, atsPushes: 0, atsProfit: 0, overs: 0, unders: 0, totalPushes: 0, overProfit: 0 };
     list.forEach(t => {
-      if (t.m > 0) { s.mw++; s.mp += win(t.ml); } else if (t.m < 0) { s.ml++; s.mp -= 1; }
+      if (t.m > 0) { s.mlWins++; s.mlProfit += win(t.ml); } else if (t.m < 0) { s.mlLosses++; s.mlProfit -= 1; }
       const c = t.m + t.sp;
-      if (c > 0) { s.aw++; s.ar += win(t.spo); } else if (c < 0) { s.al++; s.ar -= 1; } else s.ap++;
-      if (t.points > t.total) { s.o++; s.or += win(t.oo); } else if (t.points < t.total) { s.u++; s.or -= 1; } else s.op++;
+      if (c > 0) { s.atsWins++; s.atsProfit += win(t.spreadOdds); } else if (c < 0) { s.atsLosses++; s.atsProfit -= 1; } else s.atsPushes++;
+      if (t.points > t.total) { s.overs++; s.overProfit += win(t.overOdds); } else if (t.points < t.total) { s.unders++; s.overProfit -= 1; } else s.totalPushes++;
     });
     return s;
   }
@@ -420,12 +420,12 @@ const Calc = (() => {
   }
   // The bye effect (the user, Nov 4 2026: "apply the bye effect as measured over the past seasons to both visitor and home separately"): least squares, over finals, of
   // the visitor's margin beyond -HFA on two flags, the visitor off a bye and the home team off a bye (hcBye), so each side's effect is measured on its own. rows: hcStates
-  // rows with finals. Out: { v (points to the visitor when it's off a bye), h (points to the visitor when the home team is, so a home team's gain is negative), seV, seH,
-  // n, onV, onH }, or null when it can't be fitted.
+  // rows with finals. Out: { v (points to the visitor when it's off a bye), h (points to the visitor when the home team is, so a home team's gain is negative), seVisitor, seHome,
+  // n, byeGamesVisitor, byeGamesHome }, or null when it can't be fitted.
   function fanHcByeEffect(rows, hfa) {
     const f = olsFit(rows.map(r => [hcBye(r.a), hcBye(r.h)]), rows.map(r => r.g.final[0] - r.g.final[1] + hfa));
     if (!f) return null;
-    return { v: f.b[0], h: f.b[1], seV: f.se[0], seH: f.se[1], n: f.n, onV: rows.filter(r => hcBye(r.a)).length, onH: rows.filter(r => hcBye(r.h)).length };
+    return { v: f.b[0], h: f.b[1], seVisitor: f.se[0], seHome: f.se[1], n: f.n, byeGamesVisitor: rows.filter(r => hcBye(r.a)).length, byeGamesHome: rows.filter(r => hcBye(r.h)).length };
   }
   // A game's bye adjustment, in points to the visitor: 0 when neither team is off a bye, the visitor's effect when it is, the home team's when it is, both when both are.
   const hcByeAdjust = (eff, row) => (eff ? eff.v * hcBye(row.a) + eff.h * hcBye(row.h) : null);
@@ -471,8 +471,8 @@ const Calc = (() => {
   // The theo from the projected result, the home team's margin: its spread (the home line, minus when favored) and each side's moneyline, rounded the way a quote is,
   // from the key number model (winProb = marginModel(sigma)).
   function fanHcTheo(margin, winProb) {
-    const pHome = margin === 0 ? 0.5 : margin > 0 ? winProb(margin) : 1 - winProb(-margin);
-    return { spread: -margin, pHome, ml: [quoteOf(1 - pHome), quoteOf(pHome)] };
+    const chanceHome = margin === 0 ? 0.5 : margin > 0 ? winProb(margin) : 1 - winProb(-margin);
+    return { spread: -margin, chanceHome, ml: [quoteOf(1 - chanceHome), quoteOf(chanceHome)] };
   }
 
   // Is this a usable number for a bet? A moneyline is 100 or more either way; a total is above zero.
@@ -496,17 +496,17 @@ const Calc = (() => {
   Object.assign(M, FAN);
   // The contract: what a method must give back, tried on a sample before the user's replaces Fan's. null passes; a reason refuses it, and Fan's stays. A method with no check here
   // is taken as it is: it differs from Fan's by the user's choice.
-  const p01 = x => Number.isFinite(x) && x >= 0 && x <= 1;
+  const isProbability = x => Number.isFinite(x) && x >= 0 && x <= 1;
   const num = x => Number.isFinite(x);
   const CONTRACT = {
-    noVig: f => (p01(f([-150, 130], false)) && p01(f([-150, 130], true)) ? null : "a team's chance must be a number from 0 to 1"),
+    noVig: f => (isProbability(f([-150, 130], false)) && isProbability(f([-150, 130], true)) ? null : "a team's chance must be a number from 0 to 1"),
     spreadFromMl: f => (num(f([-150, 130], 12.25)) ? null : "a spread must be a number"),
-    marginModel: f => { const w = f(12.25, false); if (typeof w !== "function" || !p01(w(3))) return "it must give a function of the margin, a chance from 0 to 1"; if (typeof w.detail !== "function" || !p01(w.detail(3).win)) return "its detail(d) must give { win, over, push, P }"; if (typeof w.mean !== "function" || !p01(w.mean(3.2).win)) return "its mean(e) must give { win, P }"; return typeof w.band === "function" ? null : "it must have band(d, a, b)"; },
+    marginModel: f => { const w = f(12.25, false); if (typeof w !== "function" || !isProbability(w(3))) return "it must give a function of the margin, a chance from 0 to 1"; if (typeof w.detail !== "function" || !isProbability(w.detail(3).win)) return "its detail(d) must give { win, over, push, P }"; if (typeof w.mean !== "function" || !isProbability(w.mean(3.2).win)) return "its mean(e) must give { win, P }"; return typeof w.band === "function" ? null : "it must have band(d, a, b)"; },
     hcFitOne: f => (num(f(2, 4)) && f(0, 4) === null ? null : "a coefficient, or null with no difference"),
     hcFitCoef: f => (num(f([1, 2, 3], [2, 4, 6])) ? null : "a coefficient must be a number"),
     hcFitLeaveOut: f => { const r = f([1, 2, 3], [2, 4, 6]); return Array.isArray(r) && r.length === 3 ? null : "one coefficient per game"; },
     hcFitGaps: f => { const r = f([1, 2, 3], [2, 4, 6]); return Array.isArray(r) && r.length === 3 ? null : "one gap per game"; },
-    hcTheo: f => { const r = f(3, FAN.marginModel(12.25)); return r && num(r.spread) && p01(r.pHome) && Array.isArray(r.ml) && r.ml.length === 2 ? null : "it must give { spread, pHome, ml: [visitor, home] }"; },
+    hcTheo: f => { const r = f(3, FAN.marginModel(12.25)); return r && num(r.spread) && isProbability(r.chanceHome) && Array.isArray(r.ml) && r.ml.length === 2 ? null : "it must give { spread, pHome, ml: [visitor, home] }"; },
     hcGap: f => { const r = f({ sp: -3, ml: [130, -150] }, { sp: -3.5, ml: [135, -155] }); return r && "sp" in r && "ml" in r ? null : "it must give { sp, ml }"; },
   };
   // Puts a user's methods in Fan's place: an object of functions by these names (the user's methods file, methods/user.js, sets UserMethods). Starts from Fan's own each time,
@@ -668,23 +668,23 @@ const Calc = (() => {
       if (!lad || lad.v !== 2 || !L || !(bets.length || shares.length) || g.final || g.noLine) return null;
       const an = nick(g, "away"), hn = nick(g, "home"), q = liveModel(g).detail(L.sp === 0 ? 0.001 : L.sp);
       const list = outcomes(g, bets, shares, { tot: L.tot, ties: false }), xs = list.map(o => o.x), ts = list.map(o => o.T), p = list.map(o => q.P(o.x) * o.w);
-      const pTot = p.reduce((a, b) => a + b, 0) || 1;
+      const chanceTotal = p.reduce((a, b) => a + b, 0) || 1;
       const own = xs.map((x, i) => bets.reduce((s, t) => s + ticketPL(t, an, x, ts[i], true), 0));   // cash results: a lost bonus bet costs nothing
       // Multi-game parlays count as their share of this game. `base` has their other legs winning; `dead` has them losing, so a lock has to hold either way.
       const base = xs.map((x, i) => own[i] + shares.reduce((s, q) => s + shareCash(g, q.t, q.f, x, ts[i]), 0));
       const dead = own.map(v => v - shares.reduce((s, q) => s + (q.t.bonus ? 0 : riskOf(q.t, q.t.odds) * q.f), 0));
       // Candidates are Kalshi's own asks (that is where the Execute button trades); the cheaper Polymarket ask, when there is one, rides along as `alt`.
-      const cands = [];
-      [["home", hn, x => x > 0], ["away", an, x => x < 0]].forEach(([sd, team, pays]) => { const m = lad.ml && lad.ml[sd]; const o = lad.ml && lad.ml[sd === "home" ? "away" : "home"]; if (m && m.k > 0 && m.tk) cands.push({ txt: `${team} to win`, a: m.k, sp: o && o.k > 0 ? Math.max(0, (m.k + o.k - 1) / 2) : 0, alt: m.p, tk: m.tk, side: "yes", pays, tkt: { type: "Moneyline", side: team } }); });
+      const candidates = [];
+      [["home", hn, x => x > 0], ["away", an, x => x < 0]].forEach(([sd, team, pays]) => { const m = lad.ml && lad.ml[sd]; const o = lad.ml && lad.ml[sd === "home" ? "away" : "home"]; if (m && m.k > 0 && m.tk) candidates.push({ txt: `${team} to win`, a: m.k, sp: o && o.k > 0 ? Math.max(0, (m.k + o.k - 1) / 2) : 0, alt: m.p, tk: m.tk, side: "yes", pays, ticketFields: { type: "Moneyline", side: team } }); });
       (lad.sp || []).forEach(([fav, K, kf, kd, tk, pf, pd]) => {
         if (!tk) return;
-        const fh = fav === "home", favT = fh ? hn : an, dogT = fh ? an : hn, sp = kf && kd ? Math.max(0, (kf + kd - 1) / 2) : 0;
-        if (kf) cands.push({ txt: `${favT} −${K}`, a: kf, sp, alt: pf, tk, side: "yes", pays: x => (fh ? x : -x) > K, tkt: { type: "Spread", side: favT, line: -K } });   // yes on "<fav> wins by over K": the favorite covers
-        if (kd) cands.push({ txt: `${dogT} +${K}`, a: kd, sp, alt: pd, tk, side: "no", pays: x => (fh ? x : -x) < K, tkt: { type: "Spread", side: dogT, line: K } });   // no on it: the underdog +K
+        const fh = fav === "home", favTeam = fh ? hn : an, dogTeam = fh ? an : hn, sp = kf && kd ? Math.max(0, (kf + kd - 1) / 2) : 0;
+        if (kf) candidates.push({ txt: `${favTeam} −${K}`, a: kf, sp, alt: pf, tk, side: "yes", pays: x => (fh ? x : -x) > K, ticketFields: { type: "Spread", side: favTeam, line: -K } });   // yes on "<fav> wins by over K": the favorite covers
+        if (kd) candidates.push({ txt: `${dogTeam} +${K}`, a: kd, sp, alt: pd, tk, side: "no", pays: x => (fh ? x : -x) < K, ticketFields: { type: "Spread", side: dogTeam, line: K } });   // no on it: the underdog +K
       });
       const worst0 = Math.min(...base), best0 = Math.max(...base);
       if (best0 <= 0) return null;
-      const profitP = arr => arr.reduce((s, v, i) => s + (v > 0.5 ? p[i] : 0), 0) / pTot;
+      const profitChance = arr => arr.reduce((s, v, i) => s + (v > 0.5 ? p[i] : 0), 0) / chanceTotal;
       // The budget is the edge in the bets, priced against the market so a bet at the market price has none: the Vig column's figure, turned into cash terms for a bonus bet.
       // Under way, each bet is priced at the live win chance instead.
       const edgeOf = t => { if (live) return projectedPL(t); if (!t.bonus) return -vigOf(t); const d = decimalOf(ticketPrice(t)), w = (1 - vigOf(t) / t.amount) / d; return t.amount * w * (d - 1); };
@@ -692,10 +692,10 @@ const Calc = (() => {
       const better = (a, b) => !b || a.m > b.m + 1 || (a.m > b.m - 1 && a.e > b.e);
       const deadWorst = Math.min(...dead);
       let lock = null, hedge = null;
-      cands.forEach(c => {
+      candidates.forEach(c => {
         if (!(c.a > 0.01 && c.a < 0.99)) return;
         const pays = xs.map(x => c.pays(x)), fee = feePer(c.a), win = 1 - c.a - fee, lose = -c.a - fee;   // per contract, Kalshi's fee included
-        const pw = xs.reduce((s, x, i) => s + (pays[i] ? p[i] : 0), 0) / pTot, cost1 = fee + c.sp, charge = cost1 + CAPITAL * (c.a + fee), fair = pw >= D.hedgeMinPay && pw <= D.hedgeMaxPay;
+        const pw = xs.reduce((s, x, i) => s + (pays[i] ? p[i] : 0), 0) / chanceTotal, cost1 = fee + c.sp, charge = cost1 + CAPITAL * (c.a + fee), fair = pw >= D.hedgeMinPay && pw <= D.hedgeMaxPay;
         let top = -Infinity;
         for (let n = D.hedgeStep; n <= D.hedgeMaxContracts; n += D.hedgeStep) {
           const after = base.map((v, i) => v + (pays[i] ? win : lose) * n), m = Math.min(...after);
@@ -711,8 +711,8 @@ const Calc = (() => {
       const pick = lock || hedge;
       if (!pick) return null;
       const { c, n, after } = pick;
-      return { kind: lock ? "lock" : "hedge", txt: c.txt, n, ask: c.a, src: "Kalshi", tk: c.tk, side: c.side, alt: c.alt, tkt: c.tkt, gk: gameKey(g), gn: gameLabel(g), gt: g.t, cost: n * c.a, at: lad.at,
-        parlays: shares.length, fee: pick.fee, edgeBefore: edge0, edgeAfter: pick.e, worstBefore: worst0, worstAfter: pick.m, bestBefore: best0, bestAfter: pick.b, pBefore: profitP(base), pAfter: profitP(after) };
+      return { kind: lock ? "lock" : "hedge", txt: c.txt, n, ask: c.a, src: "Kalshi", tk: c.tk, side: c.side, alt: c.alt, ticketFields: c.ticketFields, gk: gameKey(g), gn: gameLabel(g), gt: g.t, cost: n * c.a, at: lad.at,
+        parlays: shares.length, fee: pick.fee, edgeBefore: edge0, edgeAfter: pick.e, worstBefore: worst0, worstAfter: pick.m, bestBefore: best0, bestAfter: pick.b, chanceBefore: profitChance(base), chanceAfter: profitChance(after) };
     }
     // A Kalshi ticker read as a bet: its game, type, side and line. Null when it is not a game, spread or total on the schedule.
     const KX_ALIAS = { WSH: ["WAS"], JAX: ["JAC"], LAR: ["LA"], LV: ["LVR"], NE: ["NWE"], NO: ["NOR"], GB: ["GNB"], TB: ["TAM"], SF: ["SFO"], KC: ["KAN"], LAC: ["SDG"] };
@@ -721,7 +721,7 @@ const Calc = (() => {
     function readTicker(tk, side) {
       const m = TICKER.exec(String(tk));
       if (!m) return null;
-      const [, lg, kind, yy, mon, dd, teams, team, num] = m, day = `20${yy}-${String("JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC".indexOf(mon) / 3 + 1).padStart(2, "0")}-${dd}`;
+      const [, lg, kind, yy, month, dd, teams, team, num] = m, day = `20${yy}-${String("JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC".indexOf(month) / 3 + 1).padStart(2, "0")}-${dd}`;
       const g = ALL_GAMES.find(x => leagueId(x) === lg.toLowerCase() && x.t.slice(0, 10) === day && kxCodes(nick(x, "away")).some(a => kxCodes(nick(x, "home")).some(h => a + h === teams)));
       if (!g) return null;
       const an = nick(g, "away"), hn = nick(g, "home"), K = Number(num) - .5, yes = side === "yes";
@@ -811,6 +811,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, hcFitLeaveOut, hcFitGaps, hcFitOne, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcGap, hcDivCoef, useMethods, METHOD_NAMES, fan: FAN };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, trendsStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, hcFitLeaveOut, hcFitGaps, hcFitOne, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcGap, hcDivCoef, useMethods, METHOD_NAMES, fan: FAN };
 })();
 export { Calc };

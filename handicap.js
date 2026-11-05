@@ -1,11 +1,11 @@
 // The Handicap section (the NFL first; the user, Nov 4 2026): each game's own numbers to the user's spread and moneylines, against the market's. Moved out of panels.js.
-import { divideX } from "./layout.js?v=mw33ju01";
-import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw33ju01";
-import { Fan } from "./hosts.js?v=mw33ju01";
-import { CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw33ju01";
-import { TEAM, abbr } from "./leagues.js?v=mw33ju01";
-import { Calc } from "./calc.js?v=mw33ju01";
-import { divOf } from "./panels.js?v=mw33ju01";
+import { divideX } from "./layout.js?v=mw3s4vr0";
+import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw3s4vr0";
+import { Fan } from "./hosts.js?v=mw3s4vr0";
+import { GAME_CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw3s4vr0";
+import { TEAM, abbr } from "./leagues.js?v=mw3s4vr0";
+import { Calc } from "./calc.js?v=mw3s4vr0";
+import { divOf } from "./panels.js?v=mw3s4vr0";
 
   /* ==== Handicap (the NFL first; the user, Nov 4 2026): your spread for each game, from numbers you set game by game, against the market's. ==== */
   // A game's visitor margin = −HFA + each term's coefficient × its value (calc.js HC_VARS and hcVisitorMargin): DVOA diff (FTN's, shown, its coefficient yours; times
@@ -32,10 +32,10 @@ import { divOf } from "./panels.js?v=mw33ju01";
   hcMigrate();
   // Kept in this browser at once, and in the person's own records a moment later (the user, Nov 4 2026: "defintely need to save edits on the real thing"): the
   // connector's records on this computer, backed up with them and read by any browser here, or this browser's own store with no connector.
-  let hcStoreT = null, hcFromStore = false;
+  let hcStoreTimer = null, hcFromStore = false;
   const hcSave = () => {
     try { localStorage.setItem(HC_KEY, JSON.stringify(hc)); } catch (e) {}
-    clearTimeout(hcStoreT); hcStoreT = setTimeout(() => { if (Fan.store) Fan.store.set("handicap", "nfl", JSON.parse(JSON.stringify(hc))).catch(() => {}); }, 800);
+    clearTimeout(hcStoreTimer); hcStoreTimer = setTimeout(() => { if (Fan.store) Fan.store.set("handicap", "nfl", JSON.parse(JSON.stringify(hc))).catch(() => {}); }, 800);
   };
   // The records' copy, read once: it wins over this browser's, and with none there, this browser's goes in. Read at page load, not when the Handicap opens (the user, Nov 4 2026: the table "flexes into place after some redraw": the records' copy came in after the first
   // draw and built it all again). hcStoreDone: the records have answered, or there are none to ask; the Handicap waits for that before its first draw, for at most
@@ -102,7 +102,7 @@ import { divOf } from "./panels.js?v=mw33ju01";
     // HFA starts as the average home margin over all the data, this season and the last 5, which takes nflverse's table once
     if (hc.eq.hfa == null) {
       const past = pastNflGames();
-      if (!past.ready) { box.append(el("p", "pg-stub-t", past.problem ? `Couldn't read nflverse's games table: ${past.problem}. Reload the page to try again.` : "Reading the last 5 seasons from nflverse's games table, once for this browser, to start home field advantage at their average…")); return; }
+      if (!past.ready) { box.append(el("p", "page-stub-text", past.problem ? `Couldn't read nflverse's games table: ${past.problem}. Reload the page to try again.` : "Reading the last 5 seasons from nflverse's games table, once for this browser, to start home field advantage at their average…")); return; }
       const sample = hcSample();
       hc.eq.hfa = sample.length ? hcRound(sample.reduce((s, r) => s + r.g.final[1] - r.g.final[0], 0) / sample.length, 100) : 0;
       hcSave();
@@ -115,7 +115,7 @@ import { divOf } from "./panels.js?v=mw33ju01";
   }
   // How to: what the page shows and how it works, in plain words
   function hcHowTo() {
-    const box = el("div", "graphs-cell hc-how"), p = (h, ...lines) => { const s = el("div", "hc-how-s"); s.append(el("h3", null, h), ...lines.map(x => el("p", null, x))); return s; };
+    const box = el("div", "graphs-cell hc-how"), p = (h, ...lines) => { const s = el("div", "hc-how-part"); s.append(el("h3", null, h), ...lines.map(x => el("p", null, x))); return s; };
     box.append(el("div", "cap", "How the Handicap works"),
       p("What it is", "Your own line for every game of the week, set game by game, beside the market's. Where the market pays more than your line says it should, the price lights up."),
       p("A game's row", "From the left: the game's preview; the visitor's moneylines, yours on top and the market's under it; the visitor's badge; your spread for the visitor over the market's; @ and the home team; the home moneylines; and Fit. Each team's spread and moneylines are your one number for the game, read two ways."),
@@ -145,16 +145,16 @@ import { divOf } from "./panels.js?v=mw33ju01";
   // Each game left out of its own fit (the user, Nov 4 2026, "try #1"): its coefficient is fitted on the other games' market spreads, so it varies game to game and
   // its own line can't make it agree with the market. A game the fit can't use (no market spread or DVOA) takes the fit on all of them. { all, byKey } or null.
   function hcFitDvoa(wk) {
-    const terms = hc.eq.terms.filter(hcVarOf), tDv = terms.find(t => t.v === "dvoa"), tBye = terms.find(t => t.v === "bye");
-    if (!tDv) return null;
+    const terms = hc.eq.terms.filter(hcVarOf), dvoaTerm = terms.find(t => t.v === "dvoa"), byeTerm = terms.find(t => t.v === "bye");
+    if (!dvoaTerm) return null;
     const xs = [], ys = [], keys = [];
     hcWeekRows(wk).forEach(r => {
       const g = r.g.game, ln = g.line;
       if (r.a.gp < hc.minGames || r.h.gp < hc.minGames || !ln || g.noLine || ln.noSp || !Number.isFinite(ln.sp)) return;
-      const dv = hcVarOf(tDv).f(r.h, r.a, hcExtra(g));
+      const dv = hcVarOf(dvoaTerm).f(r.h, r.a, hcExtra(g));
       if (dv === null) return;
       const s = hcSetOf(hcKeyOf(r)), hfa = s.hfa !== undefined ? s.hfa : hc.eq.hfa, div = hcDivisional(g) && s.div !== false;
-      const bye = tBye ? (s.c.bye !== undefined ? s.c.bye : tBye.coef) * (Calc.hcByeAdjust(hcByeEff(), r) || 0) : 0;
+      const bye = byeTerm ? (s.c.bye !== undefined ? s.c.bye : byeTerm.coef) * (Calc.hcByeAdjust(hcByeEff(), r) || 0) : 0;
       xs.push(div ? dv * RULES.userSet.hcDivDvoa : dv); ys.push(-ln.sp + hfa - bye); keys.push(hcKeyOf(r));   // the market's visitor margin, less what the other numbers already give
     });
     const all = Calc.hcFitCoef(xs, ys);
@@ -164,7 +164,7 @@ import { divOf } from "./panels.js?v=mw33ju01";
     return { all, byKey, points, gaps };
   }
   // Set a game's DVOA coefficient to the fitted one, marked as Fit's
-  const hcSetDvoa = (k, coef) => { const s = hcSetFor(k); s.c.dvoa = hcRound(coef, 10 ** hcDecOf("dvoa")); s.fit = s.fit || {}; s.fit.dvoa = true; };
+  const hcSetDvoa = (k, coef) => { const s = hcSetFor(k); s.c.dvoa = hcRound(coef, 10 ** hcDecimalsOf("dvoa")); s.fit = s.fit || {}; s.fit.dvoa = true; };
   // A game's own Fit: the coefficient that lands its line on its market spread (calc.js hcFitOne)
   const hcFitOwn = (wk, k) => { const f = hcFitDvoa(wk), p = f && f.points.get(k), c = p ? Calc.hcFitOne(p.x, p.y) : null; if (c === null) return false; hcSetDvoa(k, c); hcSave(); drawHcRows(); return true; };
   // vs fit, each game's gap in points from the season's fit (calc.js hcFitGaps), redrawn for every row at once, since one game's numbers move the others' fits
@@ -172,7 +172,7 @@ import { divOf } from "./panels.js?v=mw33ju01";
     const wrap = document.querySelector("#handicap .hc-games"), body = document.querySelector("#handicap .hc-rows");
     if (!wrap || !body) return;
     const f = hcFitDvoa(Number(wrap.dataset.week));
-    body.querySelectorAll("td.hc-vsfit").forEach(td => {
+    body.querySelectorAll("td.hc-vs-fit").forEach(td => {
       const raw = f ? f.gaps.get(td.closest("tr").dataset.k) : undefined, ok = Number.isFinite(raw), v = ok ? Math.round(raw * 10) / 10 : raw;   // rounded first, so a gap under 0.05 shows 0.0, unsigned
       td.textContent = ok ? (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) : "";
       td.title = ok ? `The market gives the visitor ${Math.abs(v).toFixed(1)} ${v >= 0 ? "more" : "less"} than this season's fit: the DVOA coefficient fitted on the other games' market spreads, with this game's HFA and Off bye` : "No market spread or DVOA to compare";
@@ -196,29 +196,29 @@ import { divOf } from "./panels.js?v=mw33ju01";
     wrap.dataset.week = String(wk);
     hcWeekPicker(wk);
     const parts = [];
-    const terms = hc.eq.terms.filter(hcVarOf), tbl = el("table", "hc-table"), thead = el("thead"), hd = el("tr");
+    const terms = hc.eq.terms.filter(hcVarOf), hcTable = el("table", "hc-table"), thead = el("thead"), hd = el("tr");
     const heads = [[""], [""], ["HFA", "Home field advantage: the visitor gives it up, so it enters as a minus"], ...hcCols(terms).map(c => (c === "div" ? ["Divisional", `A divisional game: with its box on, the DVOA difference counts ${RULES.userSet.hcDivDvoa} of itself, the teams knowing each other well`] : [hcVarOf(c).short, `${hcVarOf(c).h}: its coefficient × this game's value`])),
       ["vs fit", "Each game's gap in points from this season's fit: the market's visitor spread minus the one the DVOA coefficient fitted on the other games gives it. The biggest are the games the market prices furthest from this season's performance"]
     ];   // the theo moneylines moved into the game (the user, Nov 4 2026)
     // the column names on two lines, a word a line (the user, Nov 4 2026: "make the header row 2 rows"); Divisional is "Div. game"
-    heads.forEach(([x, tip, l]) => { const th = el("th", l ? "trends-l" : null), words = x === "Divisional" ? ["Div.", "game"] : x ? x.split(" ") : []; words.forEach((w, i) => { if (i) th.append(el("br")); th.append(w); }); if (tip) th.title = tip; hd.append(th); });
+    heads.forEach(([x, tip, l]) => { const th = el("th", l ? "trends-divider" : null), words = x === "Divisional" ? ["Div.", "game"] : x ? x.split(" ") : []; words.forEach((w, i) => { if (i) th.append(el("br")); th.append(w); }); if (tip) th.title = tip; hd.append(th); });
     const dv = hcCols(terms).findIndex(c => c !== "div" && c.v === "dvoa");
     if (dv >= 0) hd.children[3 + dv].classList.add("hc-src");   // where FTN's DVOA stands, on its column's name's hover: no subtitles (the user, Nov 4 2026)
     // under the headers, the numbers a game starts at, so they stay in sight while a game's are changed (the user, Nov 4 2026): −HFA and each term's coefficient
-    const starts = el("tr", "hc-starts"), startCell = (parts, tip) => { const td = el("th"); td.append(...parts); if (tip) td.title = tip; return td; }, num = v => el("span", "hc-sv", hcNum(v)), op = x => el("span", "hc-op", x);
+    const starts = el("tr", "hc-starts"), startCell = (parts, tip) => { const td = el("th"); td.append(...parts); if (tip) td.title = tip; return td; }, num = v => el("span", "hc-start-value", hcNum(v)), op = x => el("span", "hc-op", x);
     const fitAll = el("button", "hc-guide-btn hc-fit hc-fit-all"); fitAll.type = "button"; fitAll.append(hcRoot("Fit vs all games")); fitAll.title = "Set every game's DVOA diff coefficient to the one that best fits the other games' market spreads this week, each game left out of its own fit";
     fitAll.addEventListener("click", () => { const wkNow = Number(document.querySelector("#handicap .hc-games").dataset.week); if (!hcFitRows(wkNow, hcWeekRows(wkNow).filter(r => r.a.gp >= hc.minGames && r.h.gp >= hc.minGames).map(hcKeyOf))) fitAll.title = "No market spreads with DVOA to fit on this week"; });
-    const hurdle = el("input"), hurdleBox = el("span", "hc-hurdle"), hurdleField = el("span", "hc-hbox");
+    const hurdle = el("input"), hurdleBox = el("span", "hc-hurdle"), hurdleField = el("span", "hc-hurdle-field");
     hurdle.type = "number"; hurdle.step = "0.5"; hurdle.value = String(hcRound(hcHurdle() * 100, 100)); hurdle.title = "The hurdle: a market price is highlighted when its percentage gap from yours is at least this";
     hurdle.addEventListener("input", () => { const x = Number(hurdle.value); if (hurdle.value !== "" && Number.isFinite(x)) { hc.hurdle = x; hcSave(); drawHcRows(); } });
     hurdleField.append(hurdle, el("span", null, "%")); hurdleField.addEventListener("click", () => hurdle.focus());
-    hurdleBox.append(el("span", "hc-hlabel", "Hurdle"), hurdleField);
+    hurdleBox.append(el("span", "hc-hurdle-label", "Hurdle"), hurdleField);
     const fitAllCell = startCell([hurdleBox, fitAll]); fitAllCell.classList.add("hc-fit-all-cell");
-    starts.append(startCell([]), fitAllCell, startCell([op("−"), hcDec(el("span", "hc-sv hc-dec hc-dec2"), hcNum(hc.eq.hfa))], "Home field advantage a game starts at"),
-      ...hcCols(terms).map(t => t === "div" ? startCell([el("span", "hc-sv hc-sv-c", "× " + RULES.userSet.hcDivDvoa)], "A divisional game's share of the DVOA difference") : t.v === "bye" ? hcByeStartCell(startCell, t) : startCell([hcDec(el("span", "hc-sv hc-dec" + (t.v === "dvoa" ? " hc-decdv" : "")), t.coef.toFixed(hcDecOf(t.v)))], `The coefficient a game starts at on ${hcVarOf(t).short}`)), startCell([]));
+    starts.append(startCell([]), fitAllCell, startCell([op("−"), hcDecimal(el("span", "hc-start-value hc-decimal hc-decimal-hfa"), hcNum(hc.eq.hfa))], "Home field advantage a game starts at"),
+      ...hcCols(terms).map(t => t === "div" ? startCell([el("span", "hc-start-value hc-sv-c", "× " + RULES.userSet.hcDivDvoa)], "A divisional game's share of the DVOA difference") : t.v === "bye" ? hcByeStartCell(startCell, t) : startCell([hcDecimal(el("span", "hc-start-value hc-decimal" + (t.v === "dvoa" ? " hc-decimal-dvoa" : "")), t.coef.toFixed(hcDecimalsOf(t.v)))], `The coefficient a game starts at on ${hcVarOf(t).short}`)), startCell([]));
     thead.append(hd, starts);
-    tbl.append(thead, el("tbody", "hc-rows"));
-    parts.push(tbl);
+    hcTable.append(thead, el("tbody", "hc-rows"));
+    parts.push(hcTable);
     wrap.replaceChildren(...parts);
     drawHcRows();
   }
@@ -248,36 +248,36 @@ import { divOf } from "./panels.js?v=mw33ju01";
     if (!box) return;
     const go = w => { hc.week = Math.min(18, Math.max(1, w)); hcSave(); drawHcGames(); };
     const from = Math.min(18 - HC_SHOWN + 1, Math.max(1, wk - Math.floor(HC_SHOWN / 2)));
-    const arrow = (d, svg, name) => { const b = el("button", "hc-wka"); b.type = "button"; b.innerHTML = svg; b.title = b.ariaLabel = name; b.disabled = d < 0 ? wk <= 1 : wk >= 18; b.addEventListener("click", () => go(wk + d)); return b; };
-    const tabs = Array.from({ length: HC_SHOWN }, (_, i) => { const w = from + i, b = el("button", "hc-wkt", "Week " + w); b.type = "button"; b.setAttribute("aria-selected", String(w === wk)); b.classList.toggle("now", w === weekNow()); b.addEventListener("click", () => go(w)); return b; });
+    const arrow = (d, svg, name) => { const b = el("button", "hc-week-arrow"); b.type = "button"; b.innerHTML = svg; b.title = b.ariaLabel = name; b.disabled = d < 0 ? wk <= 1 : wk >= 18; b.addEventListener("click", () => go(wk + d)); return b; };
+    const tabs = Array.from({ length: HC_SHOWN }, (_, i) => { const w = from + i, b = el("button", "hc-week-tab", "Week " + w); b.type = "button"; b.setAttribute("aria-selected", String(w === wk)); b.classList.toggle("now", w === weekNow()); b.addEventListener("click", () => go(w)); return b; });
     box.replaceChildren(arrow(-1, "<svg viewBox=\"0 0 12 20\" width=\"12\" height=\"20\" aria-hidden=\"true\"><path d=\"M10 2 2 10l8 8\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>", "Earlier week"), ...tabs, arrow(1, "<svg viewBox=\"0 0 12 20\" width=\"12\" height=\"20\" aria-hidden=\"true\"><path d=\"M2 2l8 8-8 8\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>", "Later week"));
   }
   // The first three columns, the preview, the game and HFA, are frozen at the left, and the terms' columns after the rule scroll sideways under them when they run past
   // the pane (the user, Nov 4 2026: "make it a freeze column control so that the remaining... columns are in a grid control that can scroll horizontally"): never scaled down.
   function fitHcTable() {
-    const wrap = document.querySelector("#handicap .hc-games"), tbl = wrap && wrap.querySelector(".hc-table");
-    if (!tbl) return;
-    tbl.style.zoom = "";
-    const rows = [...tbl.querySelectorAll(".hc-rows tr")];
+    const wrap = document.querySelector("#handicap .hc-games"), hcTable = wrap && wrap.querySelector(".hc-table");
+    if (!hcTable) return;
+    hcTable.style.zoom = "";
+    const rows = [...hcTable.querySelectorAll(".hc-rows tr")];
     rows.forEach(r => { r.style.height = ""; });
     // where each frozen column sticks: the widths of the ones before it
-    const head = tbl.querySelector("thead tr");
+    const head = hcTable.querySelector("thead tr");
     // the scrolling columns spread out to the pane's right edge when there's room (the user, Nov 4 2026: "spread the three of them out to hit our current right edge")
-    const spreadCols = () => { if (head) { const cols = [...head.children].slice(3), pane = wrap.closest(".hc-pane") || wrap; cols.forEach(th => { th.style.width = ""; }); const room = () => pane.getBoundingClientRect().left + pane.clientWidth - tbl.getBoundingClientRect().right; if (cols.length && room() > 1) { const natural = cols.map(th => th.getBoundingClientRect().width), each = (natural.reduce((s, x) => s + x, 0) + room()) / cols.length; cols.forEach((th, i) => { th.style.width = Math.max(natural[i], each) + "px"; }); for (let pass = 0; pass < 2; pass++) { const left = room(); if (Math.abs(left) < 1) break; cols.forEach(th => { th.style.width = (parseFloat(th.style.width) + left / cols.length) + "px"; }); } } } };   // the same width each where they fit, to the pane's inner right edge (border-box widths)
+    const spreadCols = () => { if (head) { const cols = [...head.children].slice(3), pane = wrap.closest(".hc-pane") || wrap; cols.forEach(th => { th.style.width = ""; }); const room = () => pane.getBoundingClientRect().left + pane.clientWidth - hcTable.getBoundingClientRect().right; if (cols.length && room() > 1) { const natural = cols.map(th => th.getBoundingClientRect().width), each = (natural.reduce((s, x) => s + x, 0) + room()) / cols.length; cols.forEach((th, i) => { th.style.width = Math.max(natural[i], each) + "px"; }); for (let pass = 0; pass < 2; pass++) { const left = room(); if (Math.abs(left) < 1) break; cols.forEach(th => { th.style.width = (parseFloat(th.style.width) + left / cols.length) + "px"; }); } } } };   // the same width each where they fit, to the pane's inner right edge (border-box widths)
     spreadCols();
-    if (head && head.children.length >= 3) { const w = i => head.children[i].getBoundingClientRect().width; tbl.style.setProperty("--hc-s2", w(0) + "px"); tbl.style.setProperty("--hc-s3", w(0) + w(1) + "px"); }
+    if (head && head.children.length >= 3) { const w = i => head.children[i].getBoundingClientRect().width; hcTable.style.setProperty("--hc-s2", w(0) + "px"); hcTable.style.setProperty("--hc-s3", w(0) + w(1) + "px"); }
     // the pane reaches down to just above the info line, and the games' rows share out what's left of it, up to twice their own height (the user, Nov 4 2026: "measure
     // to bottom of the area (just above info line) and space out vertically"); past that it scrolls
     const pane = wrap.closest(".hc-pane"), info = document.querySelector("fan-info-line"), box = $("handicap");
     if (!pane || !info) return;
-    const pad = parseFloat(getComputedStyle(box).paddingBottom) || 0, avail = Math.max(200, Math.floor(info.getBoundingClientRect().top - 6 - pad - pane.getBoundingClientRect().top));
+    const pad = parseFloat(getComputedStyle(box).paddingBottom) || 0, available = Math.max(200, Math.floor(info.getBoundingClientRect().top - 6 - pad - pane.getBoundingClientRect().top));
     pane.style.height = ""; pane.style.maxHeight = "none";
-    const spare = avail - pane.scrollHeight;
-    pane.style.maxHeight = pane.style.height = avail + "px";
-    const z = Number(tbl.style.zoom) || 1;
+    const spare = available - pane.scrollHeight;
+    pane.style.maxHeight = pane.style.height = available + "px";
+    const z = Number(hcTable.style.zoom) || 1;
     if (spare > 0 && rows.length > 1) { const each = rows[0].getBoundingClientRect().height / z, add = Math.min(each, spare / z / rows.length); rows.forEach(r => { r.style.height = Math.floor(each + add) + "px"; }); }
     // the hurdle's number centered over the spreads (the user, Nov 4 2026)
-    const hb = box.querySelector(".hc-hurdle"), hf = hb && hb.querySelector(".hc-hbox"), sp1 = box.querySelector(".hc-rows .hc-gs-top");
+    const hb = box.querySelector(".hc-hurdle"), hf = hb && hb.querySelector(".hc-hurdle-field"), sp1 = box.querySelector(".hc-rows .hc-spread-yours");
     if (hb && hf && sp1) { const th = hb.closest("th").getBoundingClientRect(), s = sp1.getBoundingClientRect(), f = hf.getBoundingClientRect(), b0 = hb.getBoundingClientRect(); if (s.width) hb.style.left = Math.round(s.left + s.width / 2 - th.left - (f.left - b0.left) - f.width / 2) + "px"; }
     // the week picker, no further right than the column divide
     const pick = box.querySelector(".hc-wk"), edge = hcDivide();
@@ -304,11 +304,11 @@ import { divOf } from "./panels.js?v=mw33ju01";
   // helmet put moneylines, mine on top, market on bottom, with market opportunity highlighted"): the visitor's moneylines, its badge the row's height, your spread over
   // the market's, "@", the home badge the row's height, the home moneylines. Fixed widths, so every row lines up on the same marks.
   const hcGameCell = g => {
-    const td = el("td", "hc-game"), box = el("div", "hc-gm");
-    const v = el("span", "hc-gv"), h = el("span", "hc-gh");
+    const td = el("td", "hc-game"), box = el("div", "hc-game-grid");
+    const v = el("span", "hc-visitor"), h = el("span", "hc-home");
     v.append(hcChip(nick(g, "away"))); h.append(hcChip(nick(g, "home")));
-    box.append(el("span", "hc-ml hc-mlv"), v, el("span", "hc-gs hc-gs-top"), el("span", "hc-at", "@"), h, el("span", "hc-ml hc-mlh"),
-      el("span", "hc-ml hc-mlv hc-mml"), el("span", "hc-gs hc-gs-low"), el("span", "hc-ml hc-mlh hc-mml"));
+    box.append(el("span", "hc-ml hc-ml-visitor"), v, el("span", "hc-spread hc-spread-yours"), el("span", "hc-at", "@"), h, el("span", "hc-ml hc-ml-home"),
+      el("span", "hc-ml hc-ml-visitor hc-ml-market"), el("span", "hc-spread hc-spread-market"), el("span", "hc-ml hc-ml-home hc-ml-market"));
     td.append(box);
     return td;
   };
@@ -319,7 +319,7 @@ import { divOf } from "./panels.js?v=mw33ju01";
   // A game's moneylines, yours and the market's, each side's market highlighted when it pays that side more than yours by the hurdle. mine: [visitor, home] or null; gap: hcGap's, or null.
   function hcMoneylines(game, r, mine, gap) {
     const g = r.g.game, mkt = g.line && !g.noLine ? g.line.ml : null, bar = hcHurdle();
-    const [mv, mh] = game.querySelectorAll(".hc-ml:not(.hc-mml)"), [kv, kh] = game.querySelectorAll(".hc-mml");
+    const [mv, mh] = game.querySelectorAll(".hc-ml:not(.hc-ml-market)"), [kv, kh] = game.querySelectorAll(".hc-ml-market");
     [[mv, kv, 0, "v"], [mh, kh, 1, "h"]].forEach(([me, mk, i, s]) => {
       me.textContent = mine ? odds(mine[i]) : ""; me.title = "Your price, from your spread by the key number model";
       mk.textContent = mkt && Number.isFinite(mkt[i]) ? odds(mkt[i]) : "";
@@ -333,7 +333,7 @@ import { divOf } from "./panels.js?v=mw33ju01";
   const hcPoint = (span, text) => {
     if (!text) { span.replaceChildren(); return; }
     const i = text.lastIndexOf(".");
-    span.replaceChildren(el("span", "hc-pi", i < 0 ? text : text.slice(0, i)), el("span", "hc-pd", i < 0 ? "" : text.slice(i)));
+    span.replaceChildren(el("span", "hc-points-whole", i < 0 ? text : text.slice(0, i)), el("span", "hc-points-fraction", i < 0 ? "" : text.slice(i)));
   };
   // The market's visitor spread: green when it gives the visitor more than yours by the hurdle, the visitor's spread to take; red when less, the home team's (the user, Nov 4 2026).
   function hcMarketLine(span, r, gap) {
@@ -348,30 +348,30 @@ import { divOf } from "./panels.js?v=mw33ju01";
   const hcDivisional = g => { const a = divOf(nick(g, "away")); return a >= 0 && a === divOf(nick(g, "home")); };
   // A number on its column's decimal point (the user, Nov 4 2026: "do the alignment such that decimal points are vertical"): the part before the point right-aligned
   // in a box ending where the column's point sits, the point and the rest after it. The coefficients' fields put their point on the same line (fan.css).
-  const hcDec = (span, text) => { const i = text.indexOf("."); span.replaceChildren(el("span", "hc-di", i < 0 ? text : text.slice(0, i)), el("span", "hc-df", i < 0 ? "" : text.slice(i))); return span; };
+  const hcDecimal = (span, text) => { const i = text.indexOf("."); span.replaceChildren(el("span", "hc-whole", i < 0 ? text : text.slice(0, i)), el("span", "hc-fraction", i < 0 ? "" : text.slice(i))); return span; };
   // A coefficient over its value, one over the other in the column (the user, Nov 4 2026: "two values for a single column... should be stacked vertically"): the field on
   // top, "× value" under it, the value right-justified so the points line up down the column.
   const hcStack = (coef, val) => { const s = el("span", "hc-stack"), low = el("span", "hc-low"); low.append(el("span", "hc-op", "×"), val); s.append(coef, low); return s; };
   // Up and down arrows at a field's right (the user, Nov 4 2026: DVOA diff's coefficient), a tenth a press, as typing it would: the field turns blue and is saved
   // The decimals a term's coefficient takes: DVOA diff's two, the rest one
-  const hcDecOf = v => (v === "dvoa" ? 2 : 1);
-  const hcSpin = (input, dec = 1) => {
+  const hcDecimalsOf = v => (v === "dvoa" ? 2 : 1);
+  const hcSpin = (input, places = 1) => {
     const box = el("span", "hc-spin"), arrows = el("span", "hc-arrows");
-    const step = 10 ** -dec, name = dec === 2 ? "a hundredth" : "a tenth";
+    const step = 10 ** -places, name = places === 2 ? "a hundredth" : "a tenth";
     [["▲", step, "Up " + name], ["▼", -step, "Down " + name]].forEach(([g, d, tip]) => {
       const b = el("button", null, g); b.type = "button"; b.title = tip; b.tabIndex = -1;
-      b.addEventListener("click", () => { const now = Number(input.value) || 0; input.value = (Math.round((now + d) * 10 ** dec) / 10 ** dec).toFixed(dec); input.dispatchEvent(new Event("input", { bubbles: true })); input.dispatchEvent(new Event("blur")); });
+      b.addEventListener("click", () => { const now = Number(input.value) || 0; input.value = (Math.round((now + d) * 10 ** places) / 10 ** places).toFixed(places); input.dispatchEvent(new Event("input", { bubbles: true })); input.dispatchEvent(new Event("blur")); });
       arrows.append(b);
     });
     box.append(input, arrows);
     return box;
   };
   // A word under a square root sign, the radical and its bar over the word (the user, Nov 4 2026: "signifying sort of the operation at hand")
-  const hcRoot = word => { const s = el("span", "hc-root"); s.append(el("span", "hc-rad", "√"), el("span", "hc-rw", word)); return s; };
+  const hcRoot = word => { const s = el("span", "hc-root"); s.append(el("span", "hc-root-sign", "√"), el("span", "hc-root-word", word)); return s; };
   // A game's preview from its row (the user, Nov 4 2026): the game card's Game preview icon, which opens that game's week with the preview open, as the card's does.
   const hcPreviewCell = rg => {
     const td = el("td", "hc-prev"), b = el("button"), g = rg.game;
-    b.type = "button"; b.title = "Game preview"; b.setAttribute("aria-label", "Game preview"); b.innerHTML = CARD_ACTIONS.find(a => a[0] === "Game preview")[1];
+    b.type = "button"; b.title = "Game preview"; b.setAttribute("aria-label", "Game preview"); b.innerHTML = GAME_CARD_ACTIONS.find(a => a[0] === "Game preview")[1];
     b.addEventListener("click", () => { const from = { view: "handicap", week: curWeek }; switchWeek(rg.week); const k = gameKey(g), on = GAMES.find(x => gameKey(x) === k); if (on) { setDetailGame(on, from); showView("week"); } });   // closing it comes back here
     td.append(b);
     return td;
@@ -379,7 +379,7 @@ import { divOf } from "./panels.js?v=mw33ju01";
   // Off bye's start: the measured effects, the visitor's and the home team's, in points to the visitor
   const hcByeStartCell = (startCell, t) => {
     const e = hcByeEff(), sg = v => (v < 0 ? "−" : "+") + Math.abs(hcRound(v, 10)).toFixed(1);
-    return startCell([], e ? `The bye effect over ${e.n} finals, the last 5 seasons and this one, in points to the visitor: the visitor off a bye ${sg(e.v)} ± ${e.seV.toFixed(2)} (${e.onV} games), the home team off a bye ${sg(e.h)} ± ${e.seH.toFixed(2)} (${e.onH} games)` : "");
+    return startCell([], e ? `The bye effect over ${e.n} finals, the last 5 seasons and this one, in points to the visitor: the visitor off a bye ${sg(e.v)} ± ${e.seVisitor.toFixed(2)} (${e.byeGamesVisitor} games), the home team off a bye ${sg(e.h)} ± ${e.seHome.toFixed(2)} (${e.byeGamesHome} games)` : "");
   };
   // The rows, built once for a week's set of games and then updated in place.
   function drawHcRows() {
@@ -390,10 +390,10 @@ import { divOf } from "./panels.js?v=mw33ju01";
     if (src) src.title = "Total DVOA difference, visitor minus home. " + (d.problem ? `FTN: ${d.problem}` : d.ready ? `FTN through week ${d.week}` : "Reading FTN…");
     const short = r => r.a.gp < hc.minGames || r.h.gp < hc.minGames;
     const flags = r => terms.map(t => { const v = hcVarOf(t); return v.side ? String(v.side(r.a)) + v.side(r.h) : ""; }).join("");
-    const sig = rows.map(r => hcKeyOf(r) + (short(r) ? "s" : "") + flags(r)).join(",") + "|" + terms.map(t => t.v).join(",");
-    if (body.dataset.sig === sig) { const by = new Map(rows.map(r => [hcKeyOf(r), r])); body.querySelectorAll("tr").forEach(tr => { if (tr.hcUpd) tr.hcUpd(by.get(tr.dataset.k)); }); hcDrawGaps(); fitHcTable(); return; }
+    const signature = rows.map(r => hcKeyOf(r) + (short(r) ? "s" : "") + flags(r)).join(",") + "|" + terms.map(t => t.v).join(",");
+    if (body.dataset.signature === signature) { const by = new Map(rows.map(r => [hcKeyOf(r), r])); body.querySelectorAll("tr").forEach(tr => { if (tr.hcUpd) tr.hcUpd(by.get(tr.dataset.k)); }); hcDrawGaps(); fitHcTable(); return; }
     const tb = el("tbody", "hc-rows");
-    tb.dataset.sig = sig;
+    tb.dataset.signature = signature;
     rows.forEach(r => tb.append(hcRow(r, terms, short(r))));
     if (!rows.length) { const tr = el("tr"), td = el("td", "dim", "No games this week."); td.colSpan = 5 + terms.length; tr.append(td); tb.append(tr); }
     body.replaceWith(tb);
@@ -407,7 +407,7 @@ import { divOf } from "./panels.js?v=mw33ju01";
     const tr = el("tr"), k = hcKeyOf(r), game = hcGameCell(r.g.game), theoSpan = el("span", "hc-theo");
     tr.dataset.k = k;
     const mktSpan = el("span", "hc-mkt");   // the market's visitor spread, under yours
-    game.querySelector(".hc-gs-top").append(theoSpan); game.querySelector(".hc-gs-low").append(mktSpan);
+    game.querySelector(".hc-spread-yours").append(theoSpan); game.querySelector(".hc-spread-market").append(mktSpan);
 
     if (short) {
       game.title = `Too few games for a prediction: a team has played under ${hc.minGames}`;
@@ -416,37 +416,37 @@ import { divOf } from "./panels.js?v=mw33ju01";
     }
     // a number to type: own() what's typed for this game, or undefined; start() what it is untouched (null: none); put(v) keeps v, undefined clearing it
     const fields = [], fixedVals = [];
-    // dec: the decimals it takes, a coefficient's one; a second one typed is dropped as it's typed
+    // places: the decimals it takes, a coefficient's one; a second one typed is dropped as it's typed
     // fitKey: the name Fit marks this number by (hfa, or a term's), typing over it clears the mark
-    const field = (own, start, put, tip, dec, fitKey) => {
+    const field = (own, start, put, tip, places, fitKey) => {
       const i = el("input");
-      i.type = "number"; i.step = dec ? String(10 ** -dec) : "any"; i.title = tip;
+      i.type = "number"; i.step = places ? String(10 ** -places) : "any"; i.title = tip;
       i.addEventListener("input", () => {
-        if (dec != null) { const m = i.value.match(/^(-?\d*)\.(\d+)$/); if (m && m[2].length > dec) i.value = m[1] + "." + m[2].slice(0, dec); }
-        const x = Number(i.value); if (i.value === "") put(undefined); else if (Number.isFinite(x)) put(dec != null ? hcRound(x, 10 ** dec) : x); else return; { const s = hc.per[k]; if (s && s.fit && fitKey) { delete s.fit[fitKey]; if (!Object.keys(s.fit).length) delete s.fit; } } hcTidy(k); hcSave(); upd();
+        if (places != null) { const m = i.value.match(/^(-?\d*)\.(\d+)$/); if (m && m[2].length > places) i.value = m[1] + "." + m[2].slice(0, places); }
+        const x = Number(i.value); if (i.value === "") put(undefined); else if (Number.isFinite(x)) put(places != null ? hcRound(x, 10 ** places) : x); else return; { const s = hc.per[k]; if (s && s.fit && fitKey) { delete s.fit[fitKey]; if (!Object.keys(s.fit).length) delete s.fit; } } hcTidy(k); hcSave(); upd();
       });
       i.addEventListener("blur", () => upd());
-      fields.push({ i, own, start, dec, fitKey });
+      fields.push({ i, own, start, places, fitKey });
       return i;
     };
     const keep = (f, v) => { const s = hcSetFor(k); if (v === undefined) f(s, true); else f(s, false, v); };
-    const hfaTd = el("td", "hc-cv");
-    hfaTd.append(el("span", "hc-op", "−"), field(() => hcSetOf(k).hfa, () => hc.eq.hfa, v => keep((s, del, x) => { if (del) delete s.hfa; else s.hfa = x; }, v), "Home field advantage for this game: the visitor gives it up, so it enters as a minus", undefined, "hfa"));
+    const hfaCell = el("td", "hc-coef");
+    hfaCell.append(el("span", "hc-op", "−"), field(() => hcSetOf(k).hfa, () => hc.eq.hfa, v => keep((s, del, x) => { if (del) delete s.hfa; else s.hfa = x; }, v), "Home field advantage for this game: the visitor gives it up, so it enters as a minus", undefined, "hfa"));
     const sideOf = { a: abbr(nick(r.g.game, "away")), h: abbr(nick(r.g.game, "home")) };
     const flagOn = terms.map(t => { const v = hcVarOf(t); return v.side ? ["a", "h"].filter(s => v.side(r[s])) : null; });   // the teams off a bye, for Off bye
     const byeStart = () => Calc.hcByeAdjust(hcByeEff(), r);
-    const termTds = terms.map((t, ti) => {
-      const td = el("td", "hc-cv"), v = hcVarOf(t);
+    const termCells = terms.map((t, ti) => {
+      const td = el("td", "hc-coef"), v = hcVarOf(t);
       if (t.v === "bye") {   // the game's bye adjustment, in points to the visitor
         if (!flagOn[ti].length) return td;
         const shown = el("span", "hc-val");
         shown.title = `Off a bye: ${flagOn[ti].map(sd => sideOf[sd]).join(" and ")}. The points this game's adjusted by for it, to the visitor, from the bye effect measured over the last 5 seasons and this one`;
-        fixedVals.push(() => { const a = byeStart(); hcDec(shown, a === null ? "none" : a.toFixed(2)); });
+        fixedVals.push(() => { const a = byeStart(); hcDecimal(shown, a === null ? "none" : a.toFixed(2)); });
         td.append(hcStack(field(() => hcSetOf(k).c.bye, () => t.coef, x => keep((s, del, y) => { if (del) delete s.c.bye; else s.c.bye = y; }, x), "The coefficient on this game's bye adjustment: 1 takes it as measured", 1, "bye"), shown));
         return td;
       }
-      const coefIn = field(() => hcSetOf(k).c[t.v], () => t.coef, x => keep((s, del, y) => { if (del) delete s.c[t.v]; else s.c[t.v] = y; }, x), `The coefficient on ${v.h.toLowerCase()}, for this game`, hcDecOf(t.v), t.v);
-      if (HC_FIXED.has(t.v)) { const shown = el("span", "hc-val"); shown.title = v.h; fixedVals.push(() => { const val = v.f(r.h, r.a, hcExtra(r.g.game)); hcDec(shown, val === null ? "none" : val.toFixed(1)); }); td.append(hcStack(t.v === "dvoa" ? hcSpin(coefIn, hcDecOf("dvoa")) : coefIn, shown)); return td; }
+      const coefIn = field(() => hcSetOf(k).c[t.v], () => t.coef, x => keep((s, del, y) => { if (del) delete s.c[t.v]; else s.c[t.v] = y; }, x), `The coefficient on ${v.h.toLowerCase()}, for this game`, hcDecimalsOf(t.v), t.v);
+      if (HC_FIXED.has(t.v)) { const shown = el("span", "hc-val"); shown.title = v.h; fixedVals.push(() => { const val = v.f(r.h, r.a, hcExtra(r.g.game)); hcDecimal(shown, val === null ? "none" : val.toFixed(1)); }); td.append(hcStack(t.v === "dvoa" ? hcSpin(coefIn, hcDecimalsOf("dvoa")) : coefIn, shown)); return td; }
       td.append(
         coefIn,
         el("span", "hc-op", "×"),
@@ -458,8 +458,8 @@ import { divOf } from "./panels.js?v=mw33ju01";
       fields.forEach(f => {
         const o = f.own(), v = o !== undefined ? o : f.start();
         const byFit = o !== undefined && !!f.fitKey && !!(hc.per[k] && hc.per[k].fit && hc.per[k].fit[f.fitKey]);
-        f.i.classList.toggle("hc-set", o !== undefined && !byFit); f.i.classList.toggle("hc-fitset", byFit);   // typed: light blue; set by Fit: Fit's green
-        if (document.activeElement !== f.i) f.i.value = v === null || v === undefined ? "" : f.dec != null ? Number(v).toFixed(f.dec) : hcNum(v);
+        f.i.classList.toggle("hc-set", o !== undefined && !byFit); f.i.classList.toggle("hc-fit-set", byFit);   // typed: light blue; set by Fit: Fit's green
+        if (document.activeElement !== f.i) f.i.value = v === null || v === undefined ? "" : f.places != null ? Number(v).toFixed(f.places) : hcNum(v);
         f.i.placeholder = v === null ? "none" : "";
       });
       fixedVals.forEach(f => f());
@@ -487,14 +487,14 @@ import { divOf } from "./panels.js?v=mw33ju01";
     game.append(fit);   // in the game's cell, at its right, left of the rule
     tr.prepend(hcPreviewCell(r.g));
     // Divisional: a box on a divisional game, on until it's unticked; ticked, the DVOA difference counts hcDivDvoa of itself
-    const divTd = el("td", "hc-div"), isDiv = hcDivisional(r.g.game), divOn = () => isDiv && hcSetOf(k).div !== false;
+    const divCell = el("td", "hc-div"), isDiv = hcDivisional(r.g.game), divOn = () => isDiv && hcSetOf(k).div !== false;
     if (isDiv) {
       const box = el("input"); box.type = "checkbox"; box.checked = divOn();
       box.title = `A divisional game: ticked, the DVOA difference counts ${RULES.userSet.hcDivDvoa} of itself`;
       box.addEventListener("change", () => { const s = hcSetFor(k); if (box.checked) delete s.div; else s.div = false; hcTidy(k); hcSave(); upd(); });
-      divTd.append(box);
+      divCell.append(box);
     }
-    tr.append(game, hfaTd, ...hcCols(terms).map(c => (c === "div" ? divTd : termTds[terms.indexOf(c)])), el("td", "hc-vsfit"));
+    tr.append(game, hfaCell, ...hcCols(terms).map(c => (c === "div" ? divCell : termCells[terms.indexOf(c)])), el("td", "hc-vs-fit"));
     upd();
     return tr;
   }

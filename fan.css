@@ -207,8 +207,8 @@
   .help { color: var(--color-ink-dim); font-size: 11px; }
   .help:empty { display: none; }
   #game.invalid + .game-picker .game-picker-btn { border-color: var(--color-danger); }
-  .bk { display: inline-flex; align-items: center; gap: 6px; min-width: 0; vertical-align: middle; }
-  .bico { width: 16px; height: 16px; border-radius: 3px; object-fit: contain; flex: none; }
+  .sportsbook-tag { display: inline-flex; align-items: center; gap: 6px; min-width: 0; vertical-align: middle; }
+  .sportsbook-icon { width: 16px; height: 16px; border-radius: 3px; object-fit: contain; flex: none; }
   .sec-title, fan-info-line { display: flex; justify-content: space-between; align-items: baseline; gap: 1px 12px; line-height: 1.15; flex-wrap: wrap; margin: 0 0 6px; }
   .sec-title h2, fan-info-line h2 { margin: 0; font: 500 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--color-ink-dim); }
   .sec-title small, fan-info-line small { color: var(--color-ink-dim); font-size: 11px; }
@@ -217,8 +217,8 @@
   html, body { overscroll-behavior: none; }   /* no rubber-band bounce at the ends of a scroll */
   body { caret-color: transparent; }   /* no text caret left at a dropdown or button when Chrome's caret browsing (F7) is on [U, Nov 2 2026]; places you type keep theirs */
   input, textarea, [contenteditable] { caret-color: auto; }
-  .tchip { display: inline-block; border: 2px solid transparent; border-radius: 4px; padding: 1px 8px 2px; font: 700 20px/1.1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
-  html.nohover body * { pointer-events: none !important; }   /* until the first real mouse move, nothing reacts to the pointer */
+  .team-chip { display: inline-block; border: 2px solid transparent; border-radius: 4px; padding: 1px 8px 2px; font: 700 20px/1.1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+  html.no-hover body * { pointer-events: none !important; }   /* until the first real mouse move, nothing reacts to the pointer */
   main:has(#graphs:not([hidden])) { padding-bottom: 82px; }   /* the graphs end at the bottom strip: no vertical scroll */
 
   /* ===== Page layout ===== */
@@ -320,7 +320,7 @@
   .strip-tabs button:focus-visible { outline: 2px solid var(--color-green-30); outline-offset: -2px; }
   .refresh { margin-left: 0; font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent); background: transparent; border: 1px solid var(--color-paper-edge); border-radius: 5px; padding: 2px 10px; cursor: pointer; }
   .games + fan-info-line { margin: 4px 0 0; }
-  /* the bottom text uses the same type as the game cards column headers (.slot-h): label font, 700, spaced caps, 16px */
+  /* the bottom text uses the same type as the game cards column headers (.slot-head): label font, 700, spaced caps, 16px */
   fan-info-line #slateNote, .bye-box, .byeLabel { font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   .strip.bottom fan-info-line.folded { height: 70px; flex-wrap: wrap; align-content: space-between; }   /* a narrow layout's info line that doesn't fit, folded (base.js fitSlateLine): the byes over the rest */
   fan-info-line.folded .bye-box { width: calc(100% - 14px); margin-right: 0; }
@@ -354,8 +354,8 @@
   .strip.bottom #tab-graphs { position: relative !important; left: auto; top: auto; width: auto; height: 41px; padding-inline: 14px; }
   /* the strip's second row: Graphs at the far left; Season stats, Handicap and Ledger at the far right, Ledger in the settings window's plain type */
   .strip.bottom .strip-left { flex: none; display: flex; height: 41px; }   /* Graphs on a week, a section's own buttons on that section */
-  .strip.bottom #sectiontabs1 { flex: none; width: auto; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: auto; }
-  .strip.bottom #sectiontabs1:empty { display: none; }
+  .strip.bottom #bottomSectionTabs { flex: none; width: auto; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: auto; }
+  .strip.bottom #bottomSectionTabs:empty { display: none; }
   .strip.bottom .strip-tabs.page-tabs { flex: none; display: flex; width: auto; min-height: 41px; margin: 0 0 0 auto; }
   .strip.bottom .page-tabs button { position: relative; width: auto; height: 41px; padding-inline: 14px; }
   .strip.bottom .strip-tabs.ledger-tab { flex: none; display: block; width: auto; min-height: 41px; margin: 0; }
@@ -412,7 +412,7 @@
   .settings-list { display: grid; align-content: start; box-sizing: border-box; padding: 4px; }
   .settings-list[hidden] { display: none; }
   .settings-telecasts { display: grid; gap: 12px; padding: 8px; }
-  .settings-telecasts .settings-monbtn:disabled { opacity: .4; cursor: default; }
+  .settings-telecasts .settings-find-button:disabled { opacity: .4; cursor: default; }
   .settings-door { padding: 0 12px; }
   .settings-door .settings-check { font-size: 18px; }
   .settings-door-url { margin: 6px 0; font: 600 26px/1.2 var(--font-mono); color: var(--color-accent); user-select: all; }   /* typed into the iPad, so large */
@@ -427,13 +427,13 @@
   .settings-qr { margin: 6px 0; line-height: 0; }   /* the remote's address as a QR code, for a tablet's camera */
   .settings-qr svg { border-radius: 4px; }
   .settings-found { margin: 6px 0; }
-  .settings-foundrow { display: flex; align-items: center; gap: 12px; padding: 4px 0; font-size: 17px; }
-  .settings-foundrow small { color: var(--color-ink-dim); font: 400 13px var(--font-mono); }
+  .settings-found-row { display: flex; align-items: center; gap: 12px; padding: 4px 0; font-size: 17px; }
+  .settings-found-row small { color: var(--color-ink-dim); font: 400 13px var(--font-mono); }
   .wl-asking { margin: 8px 0; padding: 8px 10px; border: 1px solid var(--color-selected); border-radius: 4px; background: var(--color-orange-55-a10); }
-  .wl-askrow { display: flex; align-items: center; gap: 10px; font-size: 16px; padding: 2px 0; }
-  .settings-joinrow { display: flex; gap: 8px; align-items: center; }
-  .settings-joinrow input { flex: 1; padding: 6px 8px; background: var(--color-black-a25); border: 1px solid var(--color-card-rule); color: var(--color-ink); font: 400 15px var(--font-mono); }
-  .settings-joinrow input + input { flex: 0 0 160px; }
+  .wl-ask-row { display: flex; align-items: center; gap: 10px; font-size: 16px; padding: 2px 0; }
+  .settings-join-row { display: flex; gap: 8px; align-items: center; }
+  .settings-join-row input { flex: 1; padding: 6px 8px; background: var(--color-black-a25); border: 1px solid var(--color-card-rule); color: var(--color-ink); font: 400 15px var(--font-mono); }
+  .settings-join-row input + input { flex: 0 0 160px; }
 
   /* The wall (wall.js), at the top of the Telecasts tab: the computers, their monitors and telecast windows, and the day's games */
   .wl-panel { padding: 0 12px 12px; border-bottom: 1px solid var(--color-paper-edge); }
@@ -458,11 +458,11 @@
   .wl-pick { max-width: 100%; }
   .wl-games h3 { margin: 0 0 6px; }
   .wl-game { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid var(--color-paper-edge); }
-  .wl-gname { font-size: 16px; }
+  .wl-game-name { font-size: 16px; }
   .wl-game > small { grid-column: 1; margin: 0 !important; }
   .wl-go { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-  .settings-telecasts .settings-monbtn { justify-self: start; margin: 4px 12px; padding: 12px 28px; font-size: 20px; font-weight: 600; }   /* Find walls */
-  .settings-netcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; row-gap: 4px; }   /* the networks in two columns, with room */
+  .settings-telecasts .settings-find-button { justify-self: start; margin: 4px 12px; padding: 12px 28px; font-size: 20px; font-weight: 600; }   /* Find walls */
+  .settings-network-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; row-gap: 4px; }   /* the networks in two columns, with room */
   .settings-telecasts h3 { margin: 0; padding: 4px 12px 8px; font: 700 15px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--color-ink); }
   .settings-records { display: flex; flex-direction: column; align-items: flex-start; }
   .settings-about { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(88px, .38fr) minmax(0, .95fr) minmax(88px, .38fr) minmax(0, .8fr);   /* the connector's column narrower, its links longer, so they stay attached */ gap: 8px 0; padding: 6px 12px; }   /* the page, a wire, the connector, a wire, the outside services */
@@ -478,7 +478,7 @@
   .settings-about.healthy .settings-gear svg { fill: var(--color-accent); opacity: .9; filter: drop-shadow(0 0 6px var(--color-green-59-a45)); animation: fan-turn 12s linear infinite; }
   @keyframes fan-turn { to { transform: rotate(360deg); } }
   .settings-con { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; margin-top: -4px; padding: 10px 14px; border-top: 1px solid var(--color-card-rule); justify-content: flex-start; }   /* the box's bottom section */
-  .settings-con > .settings-con-ctl { justify-content: flex-start; }
+  .settings-con > .settings-con-controls { justify-content: flex-start; }
   .settings-con > b { font-size: 18px; color: var(--color-ink); }
   .settings-free { font-size: 19px; line-height: 1; color: var(--color-accent); }
   .settings-list:has(.settings-yours) { min-height: 100%; grid-template-rows: auto 1fr; }   /* the statement takes what's left of the window */
@@ -494,12 +494,12 @@
   .settings-wire span { display: block; margin-bottom: 3px; }
   .settings-wire div { position: relative; border-top: 1px dashed var(--color-card-rule); }
   .settings-wire i { position: absolute; top: -5px; width: 0; height: 0; border-block: 4.5px solid transparent; }
-  .settings-wire i.l { left: 0; border-right: 7px solid var(--color-card-rule); }
-  .settings-wire i.r { right: 0; border-left: 7px solid var(--color-card-rule); }
+  .settings-wire i.side-left { left: 0; border-right: 7px solid var(--color-card-rule); }
+  .settings-wire i.side-right { right: 0; border-left: 7px solid var(--color-card-rule); }
   .settings-wire.lit { color: var(--color-accent); }
   .settings-wire.lit div { border-top: 1px solid var(--color-accent); }
-  .settings-wire.lit i.l { border-right-color: var(--color-accent); }
-  .settings-wire.lit i.r { border-left-color: var(--color-accent); }
+  .settings-wire.lit i.side-left { border-right-color: var(--color-accent); }
+  .settings-wire.lit i.side-right { border-left-color: var(--color-accent); }
   .settings-out { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; padding: 5px 10px; background: var(--color-paper); border: 1px solid var(--color-card-rule); border-radius: 3px; }
   .settings-out b { font-size: 16px; color: var(--color-ink); }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; max-width: 70vw; padding: 10px 16px; background: var(--color-paper); color: var(--color-ink); border: 1px solid var(--color-live); border-radius: 3px; font: 400 15px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; box-shadow: 0 6px 24px var(--color-black-a50); }
@@ -514,21 +514,21 @@
   .settings-pick { appearance: auto; padding: 3px 6px; background: var(--color-bg); color: var(--color-ink); border: 1px solid var(--color-card-rule); border-radius: 2px; font: 400 14px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
   .settings-out small { font: 400 14px/1.3 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--color-ink-dim); }
   .settings-list .settings-out button, .settings-list .settings-con button { appearance: none; padding: 6px 10px; background: none; border: 1px solid var(--color-accent); border-radius: 2px; font-size: 14px; line-height: 1.3; color: var(--color-accent); cursor: pointer; }
-  .settings-con-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-  .settings-con-ctl:empty { display: none; }
+  .settings-con-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .settings-con-controls:empty { display: none; }
   .settings-routes { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
   .settings-routes:empty { display: none; }
-  .settings-keyswitch { display: inline-flex; border: 1px solid var(--color-accent); border-radius: 2px; overflow: hidden; }   /* Live / Demo: the key in use, filled */
-  .settings-keyswitch button { appearance: none; padding: 4px 12px; background: none; border: 0; color: var(--color-accent); font: 600 14px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; cursor: pointer; }
-  .settings-keyswitch button + button { border-left: 1px solid var(--color-accent); }
-  .settings-keyswitch button.on { background: var(--color-accent); color: var(--color-bg); cursor: default; }
-  .settings-keyswitch button.err { color: var(--loss, var(--color-red-61)); }
+  .settings-key-switch { display: inline-flex; border: 1px solid var(--color-accent); border-radius: 2px; overflow: hidden; }   /* Live / Demo: the key in use, filled */
+  .settings-key-switch button { appearance: none; padding: 4px 12px; background: none; border: 0; color: var(--color-accent); font: 600 14px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; cursor: pointer; }
+  .settings-key-switch button + button { border-left: 1px solid var(--color-accent); }
+  .settings-key-switch button.on { background: var(--color-accent); color: var(--color-bg); cursor: default; }
+  .settings-key-switch button.err { color: var(--loss, var(--color-red-61)); }
   .settings-routes small { flex-basis: 100%; color: var(--color-ink-dim); font: 400 13px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
   .settings-routes .settings-check { padding: 0; font-size: 14px; }
   .settings-routes .settings-check:hover { background: none; }
   .settings-routes .settings-check:has(input:disabled) { color: var(--color-ink-dim); cursor: default; }
-  .settings-con-ctl .settings-check { padding: 0; font-size: 14px; }
-  .settings-con-ctl .settings-check:hover { background: none; }
+  .settings-con-controls .settings-check { padding: 0; font-size: 14px; }
+  .settings-con-controls .settings-check:hover { background: none; }
   /* A part's card: its checkbox and name, what it does, what it needs. On, it carries the accent: a band down the left, a wash, its border. A large dim icon of what it is sits at the right. */
   .settings-part { box-sizing: border-box; min-height: 102px; align-self: center; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; padding: 8px 16px 8px 66px; background: linear-gradient(135deg, var(--color-white-a4), transparent 60%), var(--color-paper); border: 1px solid var(--color-card-rule); border-radius: 6px; transition: background .3s, box-shadow .3s, border-color .3s; }
   /* A part card's mockup, at its right: a small copy of an element of the page it brings, named under it. */
@@ -541,8 +541,8 @@
   .settings-mock-num { color: var(--color-accent); }
   .settings-mock-place { padding: 3px 7px; border: 1px solid var(--color-accent); border-radius: 2px; color: var(--color-accent); font: 600 13px/1 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
   .settings-mock .gd-badge { height: 22px; padding: 0 6px 0 0; font-size: 12px; border-radius: 3px; margin-left: 8px; }
-  .settings-mock .gd-bhelm { height: 31px; margin: -5px 2px -5px -8px; }
-  .settings-mock .gd-bname { padding-top: 2px; }
+  .settings-mock .gd-badge-helm { height: 31px; margin: -5px 2px -5px -8px; }
+  .settings-mock .gd-badge-name { padding-top: 2px; }
   .settings-part.off .settings-mock-art { opacity: .5; }
   .settings-part-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; }
   .settings-cost { font: 400 15px/1.2 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--color-ink-dim); }
@@ -574,7 +574,7 @@
   .settings-connector { display: grid; gap: 6px; padding: 4px 12px; max-width: 760px; font: 400 16px/1.35 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--color-ink); }
   .settings-connector h3 { margin: 2px 0 0; font: 500 18px/1.15 var(--font-display); color: var(--color-accent); }
   .settings-connector p { margin: 0; }
-  .settings-connector .settings-cmd { display: block; margin-top: 4px; padding: 6px 8px; font: 400 13px/1.3 ui-monospace, Consolas, monospace; background: var(--panel, var(--color-gray-50-a12)); border-radius: 4px; overflow-wrap: anywhere; user-select: all; }   /* the Chromebook's one Terminal line */
+  .settings-connector .settings-command { display: block; margin-top: 4px; padding: 6px 8px; font: 400 13px/1.3 ui-monospace, Consolas, monospace; background: var(--panel, var(--color-gray-50-a12)); border-radius: 4px; overflow-wrap: anywhere; user-select: all; }   /* the Chromebook's one Terminal line */
   .settings-connector ol { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
   .settings-connector li b { font-weight: 600; }
   .settings-connector small { display: block; margin-top: 4px; color: var(--color-ink-dim); }
@@ -625,15 +625,15 @@
   /* ===== Game cards ===== */
   /* hover arrows over the game strip: appear at its left and right edges when the pointer is over the cards and there is more to scroll that way */
   .game-arrow { position: absolute; top: 50%; z-index: 6; width: 34px; height: 72px; margin-top: -36px; padding: 0; border: 1px solid var(--color-card-rule); border-radius: 4px; background: var(--color-gray-7-a82); color: var(--color-ink); cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .12s; display: grid; place-items: center; }
-  .game-arrow.l { left: 4px; }
-  .game-arrow.r { right: 4px; }
+  .game-arrow.side-left { left: 4px; }
+  .game-arrow.side-right { right: 4px; }
   .game-arrow svg { width: 18px; height: 28px; }
   .game-arrows:hover .game-arrow.on { opacity: .9; pointer-events: auto; }
   .game-arrows:hover .game-arrow.on:hover { opacity: 1; border-color: var(--color-accent); }
   .games.kickoff-windows { overscroll-behavior: none; scroll-behavior: auto; display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--color-paper-edge) transparent; padding-bottom: 6px; box-sizing: border-box; }
   .games.kickoff-windows .slot { flex: none; display: flex; flex-direction: column; gap: 4px; }
-  .games.kickoff-windows .slot-h { margin: 0; height: 16px; font: 500 11px/16px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-blue-77); white-space: nowrap; }
-  .games.kickoff-windows .slot-cards .sun-h { align-self: end; grid-column: 1; }   /* the Sunday morning heading sits at the bottom of the empty row above its card */
+  .games.kickoff-windows .slot-head { margin: 0; height: 16px; font: 500 11px/16px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-blue-77); white-space: nowrap; }
+  .games.kickoff-windows .slot-cards .sunday-head { align-self: end; grid-column: 1; }   /* the Sunday morning heading sits at the bottom of the empty row above its card */
   .games.kickoff-windows .slot-cards { display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows), var(--card-h, 165px)); grid-auto-columns: var(--cw, 376px); gap: 4px; }
   .games.kickoff-windows.flat { display: block; overflow: hidden; }   /* every game final: a plain grid, scaled to the box */
   .flat-cards { display: grid; grid-template-columns: repeat(var(--cols), 376px); grid-auto-rows: 165px; gap: 4px; }
@@ -641,61 +641,60 @@
   .game { background: var(--color-paper); border: 1px solid var(--color-card-rule); border-radius: 3px; display: grid; grid-template-rows: 20px minmax(0, 1fr) 36px; min-width: 0; min-height: 0; overflow: hidden; padding-block: 2px; }   /* 2px of air between the card edge and the title bar / bottom row */
   .board { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
   .board td.ml { width: 17%; padding-right: 6px; }   /* columns: moneyline | team badge | spread | total (or the score once the game is over) */
-  .board td.tn { width: 44%; }
+  .board td.team-cell { width: 44%; }
   .board td.tot { width: 20%; vertical-align: middle; font-size: min(24px, 7.2cqw); font-weight: 500; color: var(--color-blue-68); -webkit-text-stroke: .3px currentColor; position: relative; left: -6px; }   /* room for the bigger total */ /* the game total: a little darker and fatter */
   .board th { height: 14px; padding: 0; font-weight: 400; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-ink-dim); text-align: right; }
   .board th.live { color: var(--color-live); }
-  .board td.ml, .board td.tn { text-align: left; }
+  .board td.ml, .board td.team-cell { text-align: left; }
   .board td { height: 24px; padding: 0; text-align: right; border-top: 1px solid var(--color-paper-edge); white-space: nowrap; font-size: min(18px, 5.6cqw); }
   .board td { border-top: 0; }   /* no rules inside the board: none under the card title (no column headings) and none between the team rows */
-  .board .j { color: var(--color-ink-dim); font-size: 9px; }
   .board td.ml { color: var(--color-blue-83); text-indent: -4px; }
   .board td.ml-go { cursor: pointer; }
   .board td.ml-go:hover { text-decoration: underline; }
-  .tname { font-size: clamp(15px, min(46cqh - 9px, 8.4cqw), 46px); display: block; box-sizing: border-box; width: calc(100% - 10px); padding: 0 4px; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+  .team-name { font-size: clamp(15px, min(46cqh - 9px, 8.4cqw), 46px); display: block; box-sizing: border-box; width: calc(100% - 10px); padding: 0 4px; text-align: center; overflow: hidden; text-overflow: ellipsis; }
   /* badge with a helmet: short name (the team's abbreviation), the helmet pinned left and allowed to overrun the badge's edges a little */
-  .tname.has-helm { display: flex; align-items: center; justify-content: flex-start; gap: 0; padding: 0 4px 0 0; overflow: visible; font-size: clamp(15px, min(46cqh - 9px, 8.4cqw), 46px); }
-  .tname.has-helm .helm { flex: none; height: calc(100% + 14px); width: auto; margin: -7px 0 -7px -9px; pointer-events: none; position: relative; z-index: 1; }
-  .tname.has-helm .tn-txt { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; }
+  .team-name.has-helm { display: flex; align-items: center; justify-content: flex-start; gap: 0; padding: 0 4px 0 0; overflow: visible; font-size: clamp(15px, min(46cqh - 9px, 8.4cqw), 46px); }
+  .team-name.has-helm .helm { flex: none; height: calc(100% + 14px); width: auto; margin: -7px 0 -7px -9px; pointer-events: none; position: relative; z-index: 1; }
+  .team-name.has-helm .team-name-text { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; }
   /* The "license" badge: a stamped plate in the team's colors, with two mounting holes and a raised rim */
   .board.lines:has(.plate) td.ml { width: 15%; }
-  .board.lines:has(.plate) td.tn { width: 47%; }
+  .board.lines:has(.plate) td.team-cell { width: 47%; }
   .board.lines:has(.plate) td.tot { width: 19%; }
-  .board .tname.plate { width: calc(100% - 5px); height: clamp(26px, 48.5cqh, 62px); border-width: 1.5px; border-style: solid; border-radius: 5px; box-shadow: inset 0 0 0 1.5px var(--color-black-a28), 0 1px 2px var(--color-black-a60); background-image: radial-gradient(circle at 30% 8px, var(--color-black-a55) 0 1.5px, transparent 2px), radial-gradient(circle at 78% 8px, var(--color-black-a55) 0 1.5px, transparent 2px), linear-gradient(var(--color-white-a10), var(--color-black-a10)); line-height: 1; overflow: hidden; }
-  .board .tname.plate .tn-txt { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-width: 0; line-height: 1; }
-  .board .tname.plate small { display: block; max-width: 100%; overflow: hidden; font: 700 9px/1 var(--font-label); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; opacity: .92; margin-bottom: 1px; }
-  .board .tname.plate .pl-st.long { font-size: 8px; letter-spacing: 0; }   /* a long state name still fits beside the helmet */
-  .board .tname.plate .pl-no { font: 700 1.14em/.92 var(--font-display); letter-spacing: .06em; text-shadow: 0 1px 0 var(--color-white-a22), 0 -1px 0 var(--color-black-a40); }
+  .board .team-name.plate { width: calc(100% - 5px); height: clamp(26px, 48.5cqh, 62px); border-width: 1.5px; border-style: solid; border-radius: 5px; box-shadow: inset 0 0 0 1.5px var(--color-black-a28), 0 1px 2px var(--color-black-a60); background-image: radial-gradient(circle at 30% 8px, var(--color-black-a55) 0 1.5px, transparent 2px), radial-gradient(circle at 78% 8px, var(--color-black-a55) 0 1.5px, transparent 2px), linear-gradient(var(--color-white-a10), var(--color-black-a10)); line-height: 1; overflow: hidden; }
+  .board .team-name.plate .team-name-text { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-width: 0; line-height: 1; }
+  .board .team-name.plate small { display: block; max-width: 100%; overflow: hidden; font: 700 9px/1 var(--font-label); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; opacity: .92; margin-bottom: 1px; }
+  .board .team-name.plate .pl-st.long { font-size: 8px; letter-spacing: 0; }   /* a long state name still fits beside the helmet */
+  .board .team-name.plate .pl-no { font: 700 1.14em/.92 var(--font-display); letter-spacing: .06em; text-shadow: 0 1px 0 var(--color-white-a22), 0 -1px 0 var(--color-black-a40); }
   /* A game under way: a black plate with the final's team and score, sized to fit its width beside a smaller helmet */
-  .board .tname.live { position: relative; container-type: inline-size; background-color: var(--color-black) !important; border-color: var(--color-black) !important; }
-  .board .tname.live .tn-txt.live-sc { position: absolute; inset: 0 4cqw 0 34cqw; z-index: 2; display: flex; flex-direction: row; justify-content: space-between; align-items: center; height: auto; font: 800 19cqw/1 "Doto", var(--font-mono); letter-spacing: 0; color: var(--color-amber-34); text-shadow: 0 0 2px var(--color-black), 0 0 2px var(--color-black); }
-  .board .tname.live.lead .tn-txt.live-sc { color: var(--color-warn); text-shadow: 0 0 2px var(--color-black), 0 0 6px var(--color-orange-56-a45); }
-  .board .tname.live:not(.has-helm) .tn-txt.live-sc { left: 4cqw; }
-  .board .tname.live .helm { width: 38cqw; height: auto; margin-block: 0; }   /* small enough to clear the team's first letter */
+  .board .team-name.live { position: relative; container-type: inline-size; background-color: var(--color-black) !important; border-color: var(--color-black) !important; }
+  .board .team-name.live .team-name-text.live-sc { position: absolute; inset: 0 4cqw 0 34cqw; z-index: 2; display: flex; flex-direction: row; justify-content: space-between; align-items: center; height: auto; font: 800 19cqw/1 "Doto", var(--font-mono); letter-spacing: 0; color: var(--color-amber-34); text-shadow: 0 0 2px var(--color-black), 0 0 2px var(--color-black); }
+  .board .team-name.live.lead .team-name-text.live-sc { color: var(--color-warn); text-shadow: 0 0 2px var(--color-black), 0 0 6px var(--color-orange-56-a45); }
+  .board .team-name.live:not(.has-helm) .team-name-text.live-sc { left: 4cqw; }
+  .board .team-name.live .helm { width: 38cqw; height: auto; margin-block: 0; }   /* small enough to clear the team's first letter */
   /* A final game's card: no top line, the two teams fill it, and a scoreboard F runs down the right */
   .game.is-final { grid-template-rows: minmax(0, 1fr) 36px; }
   .game.is-final .g-mid { padding-inline: 10px 6px; }
-  .game.is-final .board { --fin-fs: clamp(30px, min(40cqh, 14.5cqw), 52px); position: relative; top: 3px; }   /* names, scores and the F share one size */
-  .board td.fin { width: 11%; text-align: center; vertical-align: middle; font: 800 var(--fin-fs)/1 "Doto", var(--font-mono); color: var(--color-warn); text-shadow: 0 0 6px var(--color-orange-56-a45); }
-  .game.is-final .board td.tn { width: auto; }
+  .game.is-final .board { --final-size: clamp(30px, min(40cqh, 14.5cqw), 52px); position: relative; top: 3px; }   /* names, scores and the F share one size */
+  .board td.final { width: 11%; text-align: center; vertical-align: middle; font: 800 var(--final-size)/1 "Doto", var(--font-mono); color: var(--color-warn); text-shadow: 0 0 6px var(--color-orange-56-a45); }
+  .game.is-final .board td.team-cell { width: auto; }
   /* A fixed grid, like a real scoreboard: helmet, three name cells from the left, score cells from the right, the same on every card */
-  .game.is-final .board .tname.over { height: clamp(30px, 47cqh, 72px); line-height: 1; font-size: var(--fin-fs); display: grid; grid-template-columns: auto 1fr calc(var(--score-cells, 2) * 1ch); column-gap: 0; align-items: center; letter-spacing: 0; padding: 0 .2em 0 0; }
-  .game.is-final .board .tname.over.has-helm { grid-template-columns: 2em 3ch 1fr calc(var(--score-cells, 2) * 1ch); column-gap: 0; }
-  .game.is-final .board .tname.over .helm { width: 1.575em; height: min(100.8%, 57.6px); margin: -6% 0 -6% 2px; object-fit: contain; object-position: left center; }
-  .game.is-final .board .tname.over .tn-txt { flex: none; text-align: left; white-space: pre; }
-  .game.is-final .board .tname.over .sc { grid-column: -2 / -1; text-align: right; }
-  .board .tname.over { background: transparent !important; border-color: transparent !important; color: var(--color-amber-34) !important; font-family: "Doto", var(--font-mono); font-size: 34px; font-weight: 800; letter-spacing: 0; padding-right: 0; }   /* final games: helmet stays, the badge goes, the name uses the score's dot-matrix font */
-  .board .tname.over { display: flex; align-items: center; width: 100%; padding: 0 10px 0 0; overflow: visible; }   /* the score sits 10px in from the right */
-  .board .tname.over.lost .helm { opacity: .25; }
-  .board .tname.over.win { color: var(--color-warn) !important; text-shadow: 0 0 6px var(--color-orange-56-a45); }
+  .game.is-final .board .team-name.over { height: clamp(30px, 47cqh, 72px); line-height: 1; font-size: var(--final-size); display: grid; grid-template-columns: auto 1fr calc(var(--score-cells, 2) * 1ch); column-gap: 0; align-items: center; letter-spacing: 0; padding: 0 .2em 0 0; }
+  .game.is-final .board .team-name.over.has-helm { grid-template-columns: 2em 3ch 1fr calc(var(--score-cells, 2) * 1ch); column-gap: 0; }
+  .game.is-final .board .team-name.over .helm { width: 1.575em; height: min(100.8%, 57.6px); margin: -6% 0 -6% 2px; object-fit: contain; object-position: left center; }
+  .game.is-final .board .team-name.over .team-name-text { flex: none; text-align: left; white-space: pre; }
+  .game.is-final .board .team-name.over .sc { grid-column: -2 / -1; text-align: right; }
+  .board .team-name.over { background: transparent !important; border-color: transparent !important; color: var(--color-amber-34) !important; font-family: "Doto", var(--font-mono); font-size: 34px; font-weight: 800; letter-spacing: 0; padding-right: 0; }   /* final games: helmet stays, the badge goes, the name uses the score's dot-matrix font */
+  .board .team-name.over { display: flex; align-items: center; width: 100%; padding: 0 10px 0 0; overflow: visible; }   /* the score sits 10px in from the right */
+  .board .team-name.over.lost .helm { opacity: .25; }
+  .board .team-name.over.win { color: var(--color-warn) !important; text-shadow: 0 0 6px var(--color-orange-56-a45); }
   .board td.score { font: 800 34px/1 "Doto", var(--font-mono); letter-spacing: .04em; color: var(--color-amber-34); }   /* scoreboard-style dot-matrix digits */
   .board td.score.win { color: var(--color-warn); text-shadow: 0 0 6px var(--color-orange-56-a45); }
   .board.lines td.ml, .board.lines td.sp { font: 500 min(17px, 5.2cqw)/1 var(--font-mono); font-variant-numeric: tabular-nums; }   /* the moneyline and the spread read as one pair of numbers */
   .board.lines td.sp { text-align: center; padding-inline: 2px 3cqw; }   /* the spread and the win percent share a center, set so a spread like +3.5 sits as far from the badge as the moneyline does */
-  .board.lines td.sp.wp { opacity: .6; }   /* the win percent can't be traded, so it sits back from the prices */
+  .board.lines td.sp.win-percent { opacity: .6; }   /* the win percent can't be traded, so it sits back from the prices */
   .board.lines td.tot { text-align: center; }   /* the total sits centered between the spread and the gutter */
   .game .g-mid:has(.board.lines) { padding-right: 2px; }
-  .board .tname { font-weight: 700; height: clamp(22px, 43cqh, 48px); line-height: calc(clamp(22px, 43cqh, 48px) - 4px); }   /* badges nearly fill their rows */
+  .board .team-name { font-weight: 700; height: clamp(22px, 43cqh, 48px); line-height: calc(clamp(22px, 43cqh, 48px) - 4px); }   /* badges nearly fill their rows */
   .game { grid-template-columns: minmax(0, 1fr) 36px; }
   .game > :not(.g-gut) { grid-column: 1; }
   /* the game strip still scrolls sideways (wheel, trackpad, drag, arrows) but shows no scrollbar */
@@ -705,7 +704,7 @@
   /* ===== Wager ticket ===== */
   /* The wager ticket's corners match the game cards (3px). */
   .wager-ticket { margin-top: 0; background: var(--color-paper); border: 1px solid transparent; border-radius: 3px; }
-  .wager-ticket .group, .wager-ticket .tabs, .wager-ticket .seg { border-radius: 3px; }
+  .wager-ticket .group, .wager-ticket .tabs, .wager-ticket .segments { border-radius: 3px; }
   .wager-ticket-body { padding: 8px 12px; display: grid; gap: 6px; }
   .amt-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); gap: 0; align-items: start; }
   .check { display: flex; align-items: center; gap: 6px; margin-top: 0; height: 50px; padding: 0 10px; border: 1px solid var(--color-paper-edge); border-radius: 6px; background: var(--color-bg); cursor: pointer; font-size: 12px; }
@@ -735,9 +734,9 @@
   .leg span { min-width: 0; overflow-wrap: anywhere; }
   .leg-x { flex: none; background: none; border: 0; color: var(--color-ink-dim); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px; }
   .leg-x:hover { color: var(--color-danger); }
-  .addleg { justify-self: end; font: 500 12px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent); background: transparent; border: 1px solid var(--color-paper-edge); border-radius: 6px; padding: 8px 12px; cursor: pointer; }
-  .addleg:hover { border-color: var(--color-accent); }
-  .addleg:focus-visible, .leg-x:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  .add-leg { justify-self: end; font: 500 12px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent); background: transparent; border: 1px solid var(--color-paper-edge); border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+  .add-leg:hover { border-color: var(--color-accent); }
+  .add-leg:focus-visible, .leg-x:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
   .parlay-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
   .parlay-row label { width: 120px; }
   .parlay-row input { text-align: center; font-variant-numeric: tabular-nums; }
@@ -756,32 +755,32 @@
   .tick button { position: absolute; right: 1px; width: 18px; height: calc(50% - 1px); padding: 0; border: 0; background: none; color: var(--color-ink-dim); font-size: 9px; line-height: 1; cursor: pointer; }
   .tick button:hover { color: var(--color-ink); background: var(--color-white-a8); }
   .tick button.up { top: 1px; }
-  .tick button.dn { bottom: 1px; }
+  .tick button.down { bottom: 1px; }
   .pick.invalid input[type="text"] { border-color: var(--color-danger); }
   .pick input[type="text"] { text-align: center; font-size: 13px; padding: 5px; font-variant-numeric: tabular-nums; }
-  .seg label.team span { background: var(--tb); color: var(--tf); font-weight: 700; box-shadow: inset 0 0 0 2px var(--to); opacity: .55; }
-  .seg label.team input:checked + span { background: var(--tb); color: var(--tf); opacity: 1; box-shadow: inset 0 0 0 2px var(--to), inset 0 0 0 4px var(--color-bg); }
-  .pick.invalid .seg { border-color: var(--color-danger); }
+  .segments label.team span { background: var(--tb); color: var(--tf); font-weight: 700; box-shadow: inset 0 0 0 2px var(--to); opacity: .55; }
+  .segments label.team input:checked + span { background: var(--tb); color: var(--tf); opacity: 1; box-shadow: inset 0 0 0 2px var(--to), inset 0 0 0 4px var(--color-bg); }
+  .pick.invalid .segments { border-color: var(--color-danger); }
   .pick .hint { grid-column: 1 / -1; display: flex; align-items: center; min-height: 30px; color: var(--color-ink-dim); font-size: 11px; }
   .types[hidden] { display: none; }
   .types { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 3px; }
   .types legend { padding: 0; margin-bottom: 3px; }
-  .seg { display: flex; border: 1px solid var(--color-paper-edge); border-radius: 6px; overflow: hidden; background: var(--color-bg); }
-  .types.invalid .seg { border-color: var(--color-danger); }
-  .seg label { display: block; flex: 1 1 0; min-width: 0; }
-  .seg label + label { border-left: 1px solid var(--color-paper-edge); }
-  .seg input { position: absolute; opacity: 0; pointer-events: none; }
-  .seg span { display: block; text-align: center; padding: 6px 6px; font-size: 12px; cursor: pointer; color: var(--color-ink-dim); white-space: nowrap; }
-  .seg input:checked + span { background: var(--color-accent); color: var(--color-accent-ink); font-weight: 500; }
-  .seg input:focus-visible + span { outline: 2px solid var(--color-accent); outline-offset: -2px; }
-  button.ticket-button { height: 40px; font: 700 23px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; background: var(--color-accent); color: var(--color-accent-ink); border: 0; border-radius: 6px; padding: 0 22px; cursor: pointer; }   /* as tall as a team badge on the game cards (40px) and the same size of type */
-  button.ticket-button:hover { filter: brightness(1.08); }
-  button.ticket-button:active { transform: translateY(1px); }
+  .segments { display: flex; border: 1px solid var(--color-paper-edge); border-radius: 6px; overflow: hidden; background: var(--color-bg); }
+  .types.invalid .segments { border-color: var(--color-danger); }
+  .segments label { display: block; flex: 1 1 0; min-width: 0; }
+  .segments label + label { border-left: 1px solid var(--color-paper-edge); }
+  .segments input { position: absolute; opacity: 0; pointer-events: none; }
+  .segments span { display: block; text-align: center; padding: 6px 6px; font-size: 12px; cursor: pointer; color: var(--color-ink-dim); white-space: nowrap; }
+  .segments input:checked + span { background: var(--color-accent); color: var(--color-accent-ink); font-weight: 500; }
+  .segments input:focus-visible + span { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+  button.wager-ticket-button { height: 40px; font: 700 23px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; background: var(--color-accent); color: var(--color-accent-ink); border: 0; border-radius: 6px; padding: 0 22px; cursor: pointer; }   /* as tall as a team badge on the game cards (40px) and the same size of type */
+  button.wager-ticket-button:hover { filter: brightness(1.08); }
+  button.wager-ticket-button:active { transform: translateY(1px); }
   /* WAGER TICKET, receipt type on the game cards' colors: the page's own paper, rules and accent, 3px corners; geometric sans in caps; scoped to .wager-ticket */
   .wager-ticket { --font-display: "Montserrat", "Helvetica Neue", Arial, sans-serif; --font-mono: "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--color-ink); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; background: var(--color-paper); border: 1px solid var(--color-card-rule); border-radius: 3px; }
   .wager-ticket .group { border: 0; }
   .wager-ticket input[type="text"], .wager-ticket input[type="number"], .wager-ticket select { border-radius: 3px; border-color: var(--color-card-rule); background: var(--color-bg); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 300; }
-  .wager-ticket .tabs, .wager-ticket .seg, .wager-ticket .check, .wager-ticket .leg, .wager-ticket .addleg, .wager-ticket .sportsbook-picker-btn, .wager-ticket .game-picker-btn { border-radius: 3px !important; border-color: var(--color-card-rule); background: var(--color-bg); }
+  .wager-ticket .tabs, .wager-ticket .segments, .wager-ticket .check, .wager-ticket .leg, .wager-ticket .add-leg, .wager-ticket .sportsbook-picker-btn, .wager-ticket .game-picker-btn { border-radius: 3px !important; border-color: var(--color-card-rule); background: var(--color-bg); }
   .wager-ticket .amt-row .tabs { border-radius: 0 3px 3px 0 !important; }
   .wager-ticket .amt-row .check { border-radius: 0 !important; }
   .wager-ticket .amt-row .money input { border-radius: 3px 0 0 3px; }
@@ -791,7 +790,7 @@
   .wager-ticket .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 300; letter-spacing: .04em; text-transform: uppercase; font-size: 12px; }
   .wager-ticket .sportsbook-picker-btn, .wager-ticket .game-picker-btn { font-weight: 400; letter-spacing: .04em; }
   .wager-ticket .tear { display: none; }
-  .wager-ticket button.ticket-button { border-radius: 3px; font-weight: 700; letter-spacing: .06em; }
+  .wager-ticket button.wager-ticket-button { border-radius: 3px; font-weight: 700; letter-spacing: .06em; }
   .wager-ticket button.book { background: var(--color-bg); color: var(--color-ink); border: 1px solid var(--color-card-rule); }
   .wager-ticket button.place { background: var(--color-bg); color: var(--color-ink-dim); border: 1px solid var(--color-card-rule); opacity: .55; cursor: default; }
   .wager-ticket button.place.ready { background: var(--color-green-52); color: var(--color-green-7); border-color: var(--color-green-52); opacity: 1; cursor: pointer; }
@@ -809,34 +808,34 @@
   /* The sportsbook dropdown: a custom list (a native select cannot show icons). The hidden select still holds the value. */
   .sportsbook-picker { display: block; min-width: 0; }
   .sportsbook-picker-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; height: 40px; font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--color-ink); background: var(--color-bg); border: 1px solid var(--color-paper-edge); border-radius: 6px; padding: 0 12px; cursor: pointer; }
-  .sportsbook-picker-btn .ph { color: var(--color-ink-dim); }
+  .sportsbook-picker-btn .placeholder { color: var(--color-ink-dim); }
   #sportsbook.invalid + .sportsbook-picker .sportsbook-picker-btn { border-color: var(--color-danger); }
-  .sportsbook-picker .bico { width: 22px; height: 22px; }
+  .sportsbook-picker .sportsbook-icon { width: 22px; height: 22px; }
   /* the sportsbook list covers the whole right-hand stack like the game list (.col.left is the positioned parent) */
   .sportsbook-picker-list { position: absolute; z-index: 30; inset: 0; margin: 0; padding: 0 8px 8px; list-style: none; background: var(--color-paper); border: 1px solid var(--color-paper-edge); border-radius: 3px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--color-paper-edge) transparent; }
   .sportsbook-picker-list[hidden] { display: none; }
-  .sportsbook-picker-list .gh { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: center; height: 40px; margin: 0 -8px 2px; padding: 0 8px; background: var(--color-paper); border-bottom: 1px solid var(--color-paper-edge); font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--color-ink-dim); cursor: pointer; }
-  .sportsbook-picker-list li:not(.gh) { display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 10px; border-radius: 4px; cursor: pointer; font: 700 22px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
-  .sportsbook-picker-list li:not(.gh) .bk { gap: 10px; }
+  .sportsbook-picker-list .grid-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: center; height: 40px; margin: 0 -8px 2px; padding: 0 8px; background: var(--color-paper); border-bottom: 1px solid var(--color-paper-edge); font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--color-ink-dim); cursor: pointer; }
+  .sportsbook-picker-list li:not(.grid-head) { display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 10px; border-radius: 4px; cursor: pointer; font: 700 22px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
+  .sportsbook-picker-list li:not(.grid-head) .sportsbook-tag { gap: 10px; }
   /* The game picker: a Select game button (the display font, like the tabs) that opens a list over the whole right-hand stack: helmets, abbreviations and the visitor's spread. */
   .game-picker { display: block; min-width: 0; }
   .game-picker-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; height: 40px; font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--color-ink); background: var(--color-bg); border: 1px solid var(--color-paper-edge); border-radius: 6px; padding: 0 12px; cursor: pointer; }
-  .game-picker-btn .ph { color: var(--color-ink-dim); }
-  .game-picker .hl { height: 26px; width: auto; flex: none; pointer-events: none; }
+  .game-picker-btn .placeholder { color: var(--color-ink-dim); }
+  .game-picker .picker-helm { height: 26px; width: auto; flex: none; pointer-events: none; }
   .game-picker-list { position: absolute; z-index: 30; inset: 0; margin: 0; padding: 0 8px 8px; list-style: none; background: var(--color-paper); border: 1px solid var(--color-paper-edge); border-radius: 3px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--color-paper-edge) transparent; }
   .game-picker-list[hidden] { display: none; }
-  .game-picker-list .gh { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: center; height: 40px; margin: 0 -8px 2px; padding: 0 8px; background: var(--color-paper); border-bottom: 1px solid var(--color-paper-edge); font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--color-ink-dim); cursor: pointer; }
+  .game-picker-list .grid-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: center; height: 40px; margin: 0 -8px 2px; padding: 0 8px; background: var(--color-paper); border-bottom: 1px solid var(--color-paper-edge); font: 700 20px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--color-ink-dim); cursor: pointer; }
   .game-picker-list .day { padding: 7px 6px 2px; font: 500 10px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--color-ink-dim); }
   .game-picker-list .g { display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 10px; border-radius: 4px; cursor: pointer; font: 700 23px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
-  .game-picker-list .g .hl { height: 32px; }
+  .game-picker-list .g .picker-helm { height: 32px; }
   .game-picker-list .g .sp { color: var(--color-ink-dim); font-weight: 500; }
   .game-picker-list .g .at { color: var(--color-ink-dim); font-weight: 500; }
   .game-picker-list .g .when { margin-left: auto; font: 400 11px var(--font-mono); letter-spacing: 0; color: var(--color-ink-dim); text-transform: none; }
   .game-picker-list .g:hover { background: var(--color-white-a7); }
   .game-picker-list .g[aria-selected="true"] { color: var(--color-accent); }
-  .sportsbook-picker-list li:not(.gh):hover, .sportsbook-picker-list li.cur { background: var(--color-white-a7); }
+  .sportsbook-picker-list li:not(.grid-head):hover, .sportsbook-picker-list li.cur { background: var(--color-white-a7); }
   .sportsbook-picker-list li[aria-selected="true"] { color: var(--color-accent); }
-  .g-top, .g-mid, .g-bot { padding-inline: 7px; min-width: 0; }
+  .g-top, .g-mid, .g-bottom { padding-inline: 7px; min-width: 0; }
   .g-top { display: flex; align-items: center; font-size: 11px; color: var(--color-ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Before kickoff (no status badge) the info line is centered over the team badges: the badge column starts after the 17% moneyline column
      and is 48% wide, inside the board's 9px side padding. */
@@ -846,16 +845,16 @@
   .g-air { position: absolute; left: calc(4px + 0.41 * (100% - 18px)); top: 50%; transform: translate(-50%, -50%); padding: 0 9px; border: 2px solid var(--color-bad); border-radius: 4px; font: 700 13px/14px var(--font-label); letter-spacing: .1em; text-transform: uppercase; color: var(--color-red-68-2); background: var(--color-red-62-a8); box-shadow: 0 0 6px var(--color-red-62-a45), inset 0 0 5px var(--color-red-62-a25); white-space: nowrap; }   /* "on air": the network in a red outlined button, centered like the old title */
   .g-top.live .g-st { position: absolute; left: calc(4px + 0.41 * (100% - 18px)); top: 50%; transform: translate(-50%, -50%); margin-left: 0; }
   .g-mid { display: flex; align-items: center; padding-inline: 9px; container-type: size; }   /* a size container, so the team badges can scale with the row */
-  .g-bot { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
-  .g-bot .stat { gap: 1px; }
-  .g-bot .stat:nth-child(3), .g-bot.done .stat:nth-child(1) { justify-self: start; margin-left: 68%; }   /* wagers at the left and risk centered on the card; P/L is placed so the gap after risk and its icon about matches the gap before risk */
-  .g-bot .rk-val { position: relative; display: inline-block; white-space: nowrap; }
-  .g-bot .rk-val .tico { position: absolute; left: calc(100% + 4px); top: 50%; transform: translateY(-50%); }   /* beside the value, so the figure stays centered under its label */
-  .g-bot .stat .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 10.5px; letter-spacing: 0; text-transform: uppercase; line-height: 1.1; text-decoration: none; }   /* the totals card's header type (Montserrat bold caps), no underline, tightened so "MAX RISK" fills its column */
-  .g-bot .stat b { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size: 13px; line-height: 1.2; }
-  .g-bot.done .stat:nth-child(1) { grid-column: 3; }
-  .g-bot .stat b:not(.dhi):not(.dlo):not(.dhg) { opacity: .7; }   /* the values are dimmed (the highlights keep their full color) */
-  .g-bot .stat b.settled { text-decoration: underline solid; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }   /* a settled result gets one thick underline that stays inside the bottom row */
+  .g-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+  .g-bottom .stat { gap: 1px; }
+  .g-bottom .stat:nth-child(3), .g-bottom.done .stat:nth-child(1) { justify-self: start; margin-left: 68%; }   /* wagers at the left and risk centered on the card; P/L is placed so the gap after risk and its icon about matches the gap before risk */
+  .g-bottom .rk-val { position: relative; display: inline-block; white-space: nowrap; }
+  .g-bottom .rk-val .hedge-icon { position: absolute; left: calc(100% + 4px); top: 50%; transform: translateY(-50%); }   /* beside the value, so the figure stays centered under its label */
+  .g-bottom .stat .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 10.5px; letter-spacing: 0; text-transform: uppercase; line-height: 1.1; text-decoration: none; }   /* the totals card's header type (Montserrat bold caps), no underline, tightened so "MAX RISK" fills its column */
+  .g-bottom .stat b { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size: 13px; line-height: 1.2; }
+  .g-bottom.done .stat:nth-child(1) { grid-column: 3; }
+  .g-bottom .stat b:not(.mark-lock):not(.mark-risk):not(.mark-hedge) { opacity: .7; }   /* the values are dimmed (the highlights keep their full color) */
+  .g-bottom .stat b.settled { text-decoration: underline solid; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }   /* a settled result gets one thick underline that stays inside the bottom row */
   .g-when { font-family: var(--font-display); font-size: 13px; letter-spacing: .02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .g-st { margin-left: auto; flex: none; padding: 1px 7px; border: 1px solid var(--color-card-rule); border-radius: 3px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
   .g-st.live { color: var(--color-accent); border: 2px solid var(--color-green-75); padding: 0 6px; }   /* in progress: a bright border */
@@ -868,7 +867,7 @@
   .g-gut button.active { color: var(--color-accent); }
   .g-gut button.on-air, .g-gut button.on-air:not(:disabled) { color: var(--color-live); }
   .g-gut button.active svg { outline: 1.5px solid var(--color-accent); outline-offset: 3px; border-radius: 3px; }
-  .g-bot .stat b.livepl:not(.dhi):not(.dlo):not(.dhg) { opacity: 1; }
+  .g-bottom .stat b.live-pl:not(.mark-lock):not(.mark-risk):not(.mark-hedge) { opacity: 1; }
   .g-when { font-family: var(--font-label); font-weight: 700; font-size: 17px; letter-spacing: .04em; }
 
   /* ===== Totals and Saved tickets ===== */
@@ -880,16 +879,16 @@
   .sum td { padding: 4px 5px; text-align: right; white-space: nowrap; }
   .sum th:first-child, .sum td:first-child { text-align: left; }
   .sum tr.foot td { border-bottom: 1px solid var(--color-paper-edge); font-weight: 500; }
-  .sum .pos { color: var(--color-accent); }
-  .sum .neg { color: var(--color-danger); }
+  .sum .profit { color: var(--color-accent); }
+  .sum .loss { color: var(--color-danger); }
   .sum .dim { color: var(--color-ink-dim); }
-  .saved.show-sum .saved-heads, .saved.show-sum #list, .saved.show-sum .ed-msg, .saved.show-sum #search { display: none; }
+  .saved.show-sum .saved-heads, .saved.show-sum #list, .saved.show-sum .edit-note, .saved.show-sum #search { display: none; }
   .saved:not(.show-sum) .sum { display: none; }
   .totals h2 { margin: 0; font: 500 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--color-ink-dim); }
-  .totals .tt-stats { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .totals .totals-stats { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(5, minmax(0, 1fr)); gap: 10px; }
   .totals .stat, .totals .stat:last-child { justify-items: center; text-align: center; }
   .totals .stat b { font-size: 16px; }
-  .totals .stat b.hi { color: var(--color-danger); }
+  .totals .stat b.high { color: var(--color-danger); }
   .totals .stat b.win { color: var(--color-accent); }
   .saved-bar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--color-paper-edge); }
   .saved-tabs { display: contents; }
@@ -900,30 +899,30 @@
   .saved-bar input { width: 100%; min-width: 0; box-sizing: border-box; font: 400 12px var(--font-mono); color: var(--color-ink); background: var(--color-bg); border: 1px solid var(--color-paper-edge); border-radius: 5px; padding: 6px 8px; }
   .saved { --cols: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, .8fr) minmax(0, .9fr) minmax(0, .9fr) 18px; }
   .saved-heads { flex: none; display: grid; grid-template-columns: var(--cols); gap: 0 8px; padding: 0 12px; min-height: 26px; align-items: center; border-bottom: 1px solid var(--color-paper-edge); }
-  .saved-heads .gh { padding: 0; line-height: 1.25; }
-  .gh { font: 500 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-dim); background: none; border: 0; padding: 4px 0; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; }
-  .gh.num { text-align: right; }
-  .gh.ctr, .saved li.row .ctr { text-align: center; }
-  .gh:hover { color: var(--color-ink); }
-  .gh:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  .saved-heads .grid-head { padding: 0; line-height: 1.25; }
+  .grid-head { font: 500 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-dim); background: none; border: 0; padding: 4px 0; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; }
+  .grid-head.num { text-align: right; }
+  .grid-head.ctr, .saved li.row .ctr { text-align: center; }
+  .grid-head:hover { color: var(--color-ink); }
+  .grid-head:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
   .saved ul { flex: 1 1 auto; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 4px 0; scrollbar-width: thin; scrollbar-color: var(--color-paper-edge) transparent; }
   .saved li { padding: 3px 12px; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
   .saved li.empty { color: var(--color-ink-dim); }
   .saved li.row { display: grid; grid-template-columns: var(--cols); gap: 8px; row-gap: 1px; font-size: 12px; font-variant-numeric: tabular-nums; padding-block: 2px; line-height: 1.25; border-bottom: 1px solid var(--color-white-a6); }
-  .saved li.row .r2 { color: var(--color-ink-dim); font-size: 11px; }
+  .saved li.row .row-two { color: var(--color-ink-dim); font-size: 11px; }
   .saved li.row:hover { background: var(--color-white-a3); }
   .saved li.row.from-fill { background: color-mix(in srgb, var(--color-accent) 16%, transparent); box-shadow: inset 3px 0 0 var(--color-accent); }
   .saved li.row.from-fill:hover { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
   .saved li.row .num { text-align: right; }
-  .saved li.row .ed { cursor: text; border-radius: 3px; }
-  .saved li.row .ed:hover { background: var(--color-white-a7); }
+  .saved li.row .editable { cursor: text; border-radius: 3px; }
+  .saved li.row .editable:hover { background: var(--color-white-a7); }
   .saved li.row .del { font: inherit; line-height: 1; color: var(--color-ink-dim); background: none; border: 0; padding: 0; cursor: pointer; border-radius: 3px; }
   .saved li.row .del:hover, .saved li.row .del:focus-visible { color: var(--color-danger); outline: none; }
   .saved li.row .legs { grid-column: 1 / -1; display: grid; gap: 1px; padding: 0 0 2px 10px; color: var(--color-ink-dim); font-size: 11px; line-height: 1.3; }
   .saved li.row .del.arm { color: var(--color-white); background: var(--color-danger); }
-  .ced { width: 100%; min-width: 0; font: inherit; color: var(--color-ink); background: var(--color-bg); border: 1px solid var(--color-accent); border-radius: 3px; padding: 0 3px; text-align: inherit; }
-  .ced:focus-visible { outline: none; }
-  .ed-msg { flex: none; padding: 5px 12px; font-size: 12px; color: var(--color-danger); border-bottom: 1px solid var(--color-paper-edge); }
+  .cell-editor { width: 100%; min-width: 0; font: inherit; color: var(--color-ink); background: var(--color-bg); border: 1px solid var(--color-accent); border-radius: 3px; padding: 0 3px; text-align: inherit; }
+  .cell-editor:focus-visible { outline: none; }
+  .edit-note { flex: none; padding: 5px 12px; font-size: 12px; color: var(--color-danger); border-bottom: 1px solid var(--color-paper-edge); }
   /* the totals card wears the wager ticket's type: Montserrat, light caps labels, regular figures */
   .totals .stat .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }
   .totals .stat b { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size: 14px; }
@@ -942,39 +941,39 @@
   .rk-stats .stat { gap: 4px; min-width: 120px; }
   .rk-stats .stat .lbl { font-size: 11px; }
   .rk-stats .stat b { font-size: 28px; line-height: 1.1; }
-  .rk-stats .stat b.hi { color: var(--color-danger); }
+  .rk-stats .stat b.high { color: var(--color-danger); }
   .rk-stats .stat b.win { color: var(--color-accent); }
   .rk-sides { display: grid; grid-template-columns: 1fr 1fr; margin-top: 2px; margin-bottom: 40px; }   /* the badges sit on the inside; their edges are set from the graph's ticks (see riskGrid) */
-  .rk-sides .tchip { font-size: 38px; padding: 2px 16px 3px; border-radius: 6px; }
+  .rk-sides .team-chip { font-size: 38px; padding: 2px 16px 3px; border-radius: 6px; }
   .rk-side { display: grid; gap: 8px; align-content: start; }
   .rk-side { justify-items: start; }
   .rk-side.end { justify-items: end; text-align: right; }
   .rk-side.end .rk-books { justify-content: flex-end; }
   .rk-side-row { display: flex; align-items: center; gap: 8px; }
   .rk-books { display: flex; flex-wrap: wrap; gap: 6px 24px; min-height: 32px; color: var(--color-ink); font-size: 22px; line-height: 1.1; }   /* critical: which books hold each team, so both sides aren't bet in one place by accident */
-  .rk-books .bk { gap: 10px; }
-  .rk-books .bico { width: 32px; height: 32px; border-radius: 6px; }
+  .rk-books .sportsbook-tag { gap: 10px; }
+  .rk-books .sportsbook-icon { width: 32px; height: 32px; border-radius: 6px; }
   .rk-axis svg { display: block; width: 100%; height: auto; }
   .axis { color: var(--color-ink); }
   .ax-all { fill: none; stroke: var(--color-accent); stroke-width: 2; stroke-dasharray: 6 4; }
-  .ax-alltag { fill: var(--color-accent); font: 700 11px var(--font-mono); letter-spacing: .1em; }
-  .ax-gp { fill: var(--color-accent); }
-  .ax-gn { fill: var(--color-danger); }
-  .axis .ax-gp { fill: var(--color-good); }   /* vibrant profit and loss fills (and white figures with a dark edge so they read on them) */
-  .axis .ax-gn { fill: var(--color-bad); }
-  .axis .ax-pos, .axis .ax-neg { fill: var(--color-white); stroke: none; }
+  .ax-all-label { fill: var(--color-accent); font: 700 11px var(--font-mono); letter-spacing: .1em; }
+  .ax-run-profit { fill: var(--color-accent); }
+  .ax-run-loss { fill: var(--color-danger); }
+  .axis .ax-run-profit { fill: var(--color-good); }   /* vibrant profit and loss fills (and white figures with a dark edge so they read on them) */
+  .axis .ax-run-loss { fill: var(--color-bad); }
+  .axis .ax-cell-profit, .axis .ax-cell-loss { fill: var(--color-white); stroke: none; }
   .ax-no { fill: var(--color-ink-dim); fill-opacity: .12; }
   .ax-frame { fill: none; stroke: var(--color-paper-edge); stroke-width: 1; }
   .ax-cross, .ax-center { stroke: var(--color-ink); stroke-width: 1.5; stroke-dasharray: 0.1 4; stroke-linecap: round; }   /* the total line and the point spread line: the same dotted line, color and weight */
   .ax-cell { font: 500 18px var(--font-mono); }
   .ax-cell2 { font: 500 12px var(--font-mono); fill-opacity: .8; }   /* second line: the result if the other legs of multi-game parlays lose */
-  .ax-pos { fill: var(--color-accent); }
-  .ax-neg { fill: var(--color-danger); }
+  .ax-cell-profit { fill: var(--color-accent); }
+  .ax-cell-loss { fill: var(--color-danger); }
   .ax-tick { stroke: var(--color-ink-dim); stroke-width: 1; opacity: .6; }
   .ax-lbl { fill: var(--color-ink-dim); font: 400 12px var(--font-mono); }
   .ax-tot { fill: var(--color-white); font: 500 13px var(--font-mono); }   /* the total (pre-game, or live while under way), bright white on the vertical axis */
-  .ax-tottick { stroke: var(--color-white); stroke-width: 1.5; }
-  .ax-tottri { fill: var(--color-white); }   /* the total has moved off the graph: a caret toward it, with its value */
+  .ax-total-tick { stroke: var(--color-white); stroke-width: 1.5; }
+  .ax-total-arrow { fill: var(--color-white); }   /* the total has moved off the graph: a caret toward it, with its value */
   /* The card is no longer shown in the page: it is still built (off-screen, at a laid-out width) so a game card click can copy it into a new tab. */
   .risk-detail.rk-off { position: fixed; left: -20000px; top: 0; width: 1100px; visibility: hidden; pointer-events: none; }
   .risk-detail.full { height: 860px; scroll-margin-top: 16px; grid-template-rows: auto auto auto minmax(0, 1fr); }
@@ -990,28 +989,28 @@
   .rk-nums { display: flex; gap: 20px; flex: none; }
   .rk-num { display: grid; gap: 0; text-align: right; }
   .rk-num b { font-weight: 500; font-size: 12px; line-height: 1.3; }
-  .rk-num b.pos { color: var(--color-accent); }
-  .rk-num b.neg { color: var(--color-danger); }
+  .rk-num b.profit { color: var(--color-accent); }
+  .rk-num b.loss { color: var(--color-danger); }
   .rk-num b.dim { color: var(--color-ink-dim); }
   .rk-num.res { min-width: 92px; }
   .stat .lbl { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stat b { font-weight: 500; font-size: 14px; font-variant-numeric: tabular-nums; }
   .stat b.dim { color: var(--color-ink-dim); }
-  .stat b.pos { color: var(--color-accent); }
-  .stat b.neg { color: var(--color-danger); }
-  .stat b.dhi, .stat b.dlo, .stat b.dhg { padding: 0 6px; }
-  .stat b.dhg { background: var(--color-warn); color: var(--color-amber-6); }
-  .stat b.tico { display: inline-flex; align-items: center; justify-content: center; height: 16px; padding: 0 3px; }
-  .stat b.tico svg { display: block; }
+  .stat b.profit { color: var(--color-accent); }
+  .stat b.loss { color: var(--color-danger); }
+  .stat b.mark-lock, .stat b.mark-risk, .stat b.mark-hedge { padding: 0 6px; }
+  .stat b.mark-hedge { background: var(--color-warn); color: var(--color-amber-6); }
+  .stat b.hedge-icon { display: inline-flex; align-items: center; justify-content: center; height: 16px; padding: 0 3px; }
+  .stat b.hedge-icon svg { display: block; }
   .trade-tip { position: fixed; z-index: 60; width: 270px; box-sizing: border-box; padding: 8px 10px; display: grid; gap: 3px; background: var(--color-gray-6); border: 1px solid var(--color-card-rule); border-radius: 4px; box-shadow: 0 6px 18px var(--color-black-a55); font: 400 12px/1.35 "Montserrat", "Helvetica Neue", Arial, sans-serif; color: var(--color-ink-dim); pointer-events: none; }
   .trade-tip b { color: var(--color-white); font-weight: 600; }
-  .stat b.dhi { background: var(--color-green-43); color: var(--color-green-5); }
-  .stat b.dlo { background: var(--color-red-56); color: var(--color-white); }
+  .stat b.mark-lock { background: var(--color-green-43); color: var(--color-green-5); }
+  .stat b.mark-risk { background: var(--color-red-56); color: var(--color-white); }
   .stat b.settled { text-decoration: underline double; text-underline-offset: 3px; }
-  .stat b.livepl { font-weight: 500; }   /* live expected P/L: bright green or red by its sign, no outline */
-  .stat b.livepl.pos { color: var(--color-good); }
-  .stat b.livepl.neg { color: var(--color-bad); }
-  .stat .bsub { color: var(--color-ink-dim); font-size: .7em; font-weight: 400; white-space: nowrap; }
+  .stat b.live-pl { font-weight: 500; }   /* live expected P/L: bright green or red by its sign, no outline */
+  .stat b.live-pl.profit { color: var(--color-good); }
+  .stat b.live-pl.loss { color: var(--color-bad); }
+  .stat .bonus-staked { color: var(--color-ink-dim); font-size: .7em; font-weight: 400; white-space: nowrap; }
   .col.left .risk-detail.rk-over { position: relative; left: auto; width: auto; visibility: visible; pointer-events: auto; flex: none; box-sizing: border-box; height: var(--tk-h, 411px); min-height: 0; overflow: hidden; margin-bottom: var(--tk-slack, 0px); padding: 8px 12px; border-color: var(--color-card-rule); border-radius: 3px; align-content: start; grid-template-rows: none; }
   .col.left .risk-detail.rk-over .rk-list, .col.left .risk-detail.rk-over .sec-title { display: none; }
   .col.left .risk-detail.rk-over { gap: 6px; }
@@ -1022,64 +1021,64 @@
   .rk-over .rk-stats .stat b { font-size: 17px; }
   .rk-over .rk-stats .stat .lbl { font-size: 10px; letter-spacing: .08em; white-space: nowrap; }
   .rk-over .rk-sides { margin-bottom: 4px; }
-  .rk-over .rk-sides .tchip { font-size: 24px; padding: 1px 12px 2px; }
+  .rk-over .rk-sides .team-chip { font-size: 24px; padding: 1px 12px 2px; }
   .rk-over .rk-side { gap: 4px; }
   .rk-over .gd-badge { height: 20px; padding: 0 8px 0 0; font-size: 13.4px; border-radius: 3px; }   /* the four badges, 33% smaller than first drawn (30px tall, 20px type) */
-  .rk-over .gd-bhelm { height: 29.5px; margin: -4.7px 2.7px -4.7px -6.7px; }
-  .rk-over .gd-bname { padding-top: 3px; }   /* Archivo Black's caps sit high in their line box (room is left for descenders): this centers them on the badge */
+  .rk-over .gd-badge-helm { height: 29.5px; margin: -4.7px 2.7px -4.7px -6.7px; }
+  .rk-over .gd-badge-name { padding-top: 3px; }   /* Archivo Black's caps sit high in their line box (room is left for descenders): this centers them on the badge */
   .col.left .risk-detail.rk-over { display: flex; flex-direction: column; }
   .rk-over .rk-stats { margin-top: auto; }   /* the totals sit at the bottom of the card */
   .rk-over .rk-hedge { display: grid; gap: 2px; margin-top: 5px; padding-top: 4px; border-top: 1px solid var(--color-card-rule); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; }   /* the suggested bet, under the sportsbooks */
-  .rk-hedge .hh { font: 700 11px/1.1 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--color-ink-dim); }
-  .rk-hedge .hb { font-size: 13px; line-height: 1.25; color: var(--color-ink); }
-  .rk-hedge .hb b { font-weight: 600; color: var(--color-white); }
-  .rk-hedge .hb small { font-size: 11px; color: var(--color-ink-dim); }
-  .rk-hedge .hr { font-size: 11.5px; line-height: 1.3; color: var(--color-ink-dim); }
-  .rk-hedge .hr b { font-weight: 600; }
-  .rk-hedge .hr b.pos { color: var(--color-good); }
-  .rk-hedge .hr b.neg { color: var(--color-bad); }
-  .rk-hedge .hx { display: flex; flex-direction: row-reverse; justify-content: flex-start; align-items: center; gap: 10px; margin-top: 5px; min-height: 22px; }   /* the button at the right edge, its result to its left */
-  .rk-hedge .hxbtn { appearance: none; cursor: pointer; font: 700 11px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--color-green-5); background: var(--color-good); border: 0; border-radius: 3px; padding: 6px 12px; }
-  .rk-hedge .hxbtn:hover:not(:disabled) { background: var(--color-green-62); }
-  .rk-hedge .hxsl { width: 96px; margin: 0; accent-color: var(--color-good); cursor: pointer; }
-  .rk-hedge .hxbtn:disabled { cursor: default; color: var(--color-ink-dim); background: transparent; box-shadow: inset 0 0 0 1px var(--color-card-rule); }
-  .rk-hedge .hxres { font-size: 11.5px; line-height: 1.3; color: var(--color-ink-dim); }
-  .rk-hedge .hxres.ok { color: var(--color-good); }
-  .rk-hedge .hxres.err { color: var(--color-error); }
+  .rk-hedge .hedge-head { font: 700 11px/1.1 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--color-ink-dim); }
+  .rk-hedge .hedge-body { font-size: 13px; line-height: 1.25; color: var(--color-ink); }
+  .rk-hedge .hedge-body b { font-weight: 600; color: var(--color-white); }
+  .rk-hedge .hedge-body small { font-size: 11px; color: var(--color-ink-dim); }
+  .rk-hedge .hedge-note { font-size: 11.5px; line-height: 1.3; color: var(--color-ink-dim); }
+  .rk-hedge .hedge-note b { font-weight: 600; }
+  .rk-hedge .hedge-note b.profit { color: var(--color-good); }
+  .rk-hedge .hedge-note b.loss { color: var(--color-bad); }
+  .rk-hedge .exec-controls { display: flex; flex-direction: row-reverse; justify-content: flex-start; align-items: center; gap: 10px; margin-top: 5px; min-height: 22px; }   /* the button at the right edge, its result to its left */
+  .rk-hedge .exec-button { appearance: none; cursor: pointer; font: 700 11px/1 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--color-green-5); background: var(--color-good); border: 0; border-radius: 3px; padding: 6px 12px; }
+  .rk-hedge .exec-button:hover:not(:disabled) { background: var(--color-green-62); }
+  .rk-hedge .exec-share { width: 96px; margin: 0; accent-color: var(--color-good); cursor: pointer; }
+  .rk-hedge .exec-button:disabled { cursor: default; color: var(--color-ink-dim); background: transparent; box-shadow: inset 0 0 0 1px var(--color-card-rule); }
+  .rk-hedge .exec-result { font-size: 11.5px; line-height: 1.3; color: var(--color-ink-dim); }
+  .rk-hedge .exec-result.ok { color: var(--color-good); }
+  .rk-hedge .exec-result.err { color: var(--color-error); }
   .col.left .risk-detail.rk-over.has-tune { height: auto; min-height: var(--tk-h, 411px); }
   .demo-badge[hidden] { display: none; }
   fan-info-line .demo-badge { order: 5; flex: none; align-self: flex-end; margin: 0 0 5px 14px; }   /* at the info line's far right, after the version */
   .demo-badge { padding: 3px 7px; font: 700 12px/1.2 "Montserrat", "Helvetica Neue", Arial, sans-serif; letter-spacing: .04em; color: var(--color-orange-7); background: var(--color-orange-56); border-radius: 3px; pointer-events: none; }
   .rk-tune { display: grid; gap: 3px; padding: 4px 6px; border: 1px solid var(--color-card-rule); border-radius: 3px; font-size: 11.5px; line-height: 1.25; color: var(--color-ink-dim); }
-  .rk-tune .ar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 7px; }
+  .rk-tune .rk-tune-row { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 7px; }
   .rk-tune label { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
   .rk-tune input { width: 3.4em; padding: 1px 2px; font: inherit; color: var(--color-ink); background: none; border: 1px solid var(--color-card-rule); border-radius: 2px; }
   .rk-over .rk-stats .stat .lbl { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }   /* the totals card's header type */
   .rk-over .rk-game .gd-badge { height: 26.6px; padding: 0 10.6px 0 0; font-size: 17.8px; border-radius: 4px; position: absolute; top: 0; }   /* the two top badges: 33% bigger than the ones under the axis, helmets included */
-  .rk-over .rk-game .gd-bhelm { height: 39.2px; margin: -6.3px 3.6px -6.3px -8.9px; }
+  .rk-over .rk-game .gd-badge-helm { height: 39.2px; margin: -6.3px 3.6px -6.3px -8.9px; }
   .rk-over .rk-axis { margin-top: -12px; }
   .rk-over .rk-sides .rk-side-row { display: none; }   /* no badges under the axis: the books lists stay at the ends */ /* the "@" is centered over 0 on the graph (--pc = the plot's center), the badges either side of it */
   .rk-over .rk-game .rk-at { position: absolute; left: var(--pc, 50%); top: 50%; transform: translate(-50%, -50%); }
   .rk-over .rk-game .rk-at ~ .gd-badge { left: calc(var(--pc, 50%) + 35px); }   /* 26px, plus the helmet's 9px overhang toward the "@" */
   .rk-over .rk-game .gd-badge:first-child { right: calc(100% - var(--pc, 50%) + 26px); }
-  .rk-over .rk-books .bico { width: 16px; height: 16px; border-radius: 4px; }   /* smaller sportsbooks (icon and code); the amounts keep their size */
+  .rk-over .rk-books .sportsbook-icon { width: 16px; height: 16px; border-radius: 4px; }   /* smaller sportsbooks (icon and code); the amounts keep their size */
   .rk-over .rk-books { min-height: 16px; font-size: 14px; }
-  .rk-over .rk-books .bk { gap: 6px; }
+  .rk-over .rk-books .sportsbook-tag { gap: 6px; }
   .rk-over .rk-stats { display: flex; justify-content: space-between; gap: 6px; }   /* the totals spread across the full width (five or six of them) */
   /* the badges sit at the ends of the x-axis (underdog at the plot's left edge, favorite at its right), on the "Margin of victory" row, so the books get the room below */
   .rk-over .rk-sides { grid-template-columns: 1fr 1fr !important; padding-left: var(--pl, 0); padding-right: var(--pr, 0); margin-top: var(--bdy, 6px); position: relative; }   /* the books and amounts sit below the x-axis (under its "Margin of victory" caption) */
   .rk-over .rk-sides .rk-side:last-child { grid-column: 2 !important; justify-items: end; text-align: right; }
   .rk-over .rk-sides .rk-side:last-child .rk-books { justify-content: flex-end; }
-  .rk-over .rk-sides .rk-side:last-child .rk-bk { align-items: flex-end; }
+  .rk-over .rk-sides .rk-side:last-child .rk-sportsbook { align-items: flex-end; }
   .rk-over .rk-sides .rk-side.end { justify-items: start; text-align: left; }
   .rk-over .rk-sides .rk-side.end .rk-books { justify-content: flex-start; }
-  .rk-over .rk-sides .rk-side.end .rk-bk { align-items: flex-start; }
+  .rk-over .rk-sides .rk-side.end .rk-sportsbook { align-items: flex-start; }
   .rk-over .ax-cell { font-size: 13px; }   /* the P/L figures inside the graph: smaller over the wager ticket */
   .rk-over .ax-cell2 { font-size: 10px; }
-  .rk-bk { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-  .rk-side.end .rk-bk { align-items: flex-end; }
-  .rk-bkamt { font: 500 14px/1 var(--font-mono); color: var(--color-ink-dim); }
-  .rk-over .rk-bkamt { font-size: 17px; }
+  .rk-sportsbook { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .rk-side.end .rk-sportsbook { align-items: flex-end; }
+  .rk-sportsbook-amount { font: 500 14px/1 var(--font-mono); color: var(--color-ink-dim); }
+  .rk-over .rk-sportsbook-amount { font-size: 17px; }
 
   /* ===== Game detail ===== */
   /* the game detail: the card's Game preview icon replaces the cards with a head-to-head of the two teams (data: TEAM_INFO, from ESPN) */
@@ -1094,67 +1093,67 @@
   .gd-team.home { flex-direction: row-reverse; text-align: right; }   /* kickoff, network, result: centered between the two groups */
   .gd-rows { display: grid; grid-auto-rows: 22px; }
   .gd-row { display: grid; grid-template-columns: 1fr 210px 1fr; align-items: center; border-top: 1px solid var(--color-paper-edge); font: 500 15px var(--font-mono); }
-  .gd-row .l { text-align: center; font: 700 15px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--color-ink-dim); }
-  .gd-row .v { padding: 0 18px; color: var(--color-ink); }
-  .gd-row .v.a { text-align: right; }
-  .gd-row .v.best { color: var(--color-accent); font-weight: 600; }
-  .gd-row .v small { font-size: 11px; color: var(--color-ink-dim); margin: 0 6px; }
+  .gd-row .gd-row-label { text-align: center; font: 700 15px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--color-ink-dim); }
+  .gd-row .value { padding: 0 18px; color: var(--color-ink); }
+  .gd-row .value.away { text-align: right; }
+  .gd-row .value.best { color: var(--color-accent); font-weight: 600; }
+  .gd-row .value small { font-size: 11px; color: var(--color-ink-dim); margin: 0 6px; }
   .gd-low { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; min-height: 0; overflow: visible; }   /* visible: the schedule panels reach a few px past the columns (inside the board padding) and were clipped on the left */
   .gd-half { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 10px; height: 100%; min-height: 0; min-width: 0; align-content: start; }
   .gd-col h4 { text-align: center; margin: 0 0 6px; font: 700 18px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--color-ink-dim); }
-  .gd-line { display: flex; gap: 8px; align-items: center; height: var(--lh, 30px); font: 500 var(--lfs, 15px) var(--font-mono); color: var(--color-ink); white-space: nowrap; overflow: hidden; }
-  .gd-line .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .gd-line .w { color: var(--color-accent); font-weight: 600; }
-  .gd-line .x { color: var(--color-danger); font-weight: 600; }
+  .gd-line { display: flex; gap: 8px; align-items: center; height: var(--lh, 30px); font: 500 var(--line-size, 15px) var(--font-mono); color: var(--color-ink); white-space: nowrap; overflow: hidden; }
+  .gd-line .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .gd-line .won { color: var(--color-accent); font-weight: 600; }
+  .gd-line .lost { color: var(--color-danger); font-weight: 600; }
   .gd-line .dim { color: var(--color-ink-dim); }
   .gd-sched { display: flex; gap: 4px; align-items: stretch; margin: 2px -11px 0; padding: 5px 2px 3px; border: 1px solid color-mix(in srgb, var(--tc, var(--color-gray-53)) 18%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--tc, var(--color-gray-53)) 8%, transparent); }   /* the panel is a few px larger than the table on every side (the cells keep the same width: margin -11 + border 1 + padding 2 = -8) */ /* very light team-colored panel */
-  .gd-vlabel.sched { width: 18px; font-size: 12px; letter-spacing: .14em; margin: -7px 0 -5px -4px; border-radius: 3px 8px 8px 3px; }   /* bleeds 1px past the panel's border so no light outline shows around it */ /* the label is rotated 180deg, so the radii are written for the rotated box: the rounded corners end up on the panel's left side */ /* spans the whole panel height, flush with its left edge; slim so the five columns still fit */
+  .gd-vertical-label.sched { width: 18px; font-size: 12px; letter-spacing: .14em; margin: -7px 0 -5px -4px; border-radius: 3px 8px 8px 3px; }   /* bleeds 1px past the panel's border so no light outline shows around it */ /* the label is rotated 180deg, so the radii are written for the rotated box: the rounded corners end up on the panel's left side */ /* spans the whole panel height, flush with its left edge; slim so the five columns still fit */
   .gd-half > .gd-sched:not(.gd-script) { align-self: end; }   /* the schedule stays at the bottom of the board */
   .gd-sched.gd-script { display: block; width: 372px; max-width: 100%; margin: 8px auto 0; padding: 0 0 0 14px; border: 0; border-radius: 0; background: none; box-sizing: border-box; }   /* no label, no background: the text sits right on the board */
-  .gd-sbody { min-width: 0; display: grid; gap: 3px; align-content: start; padding: 0 2px; font: 400 var(--sfs, 14.5px)/1.31 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--color-ink); }   /* the part the eye goes to: an open, readable text face (Source Sans 3) instead of the mono */
-  .gd-sl b { margin-right: 7px; font: 700 15px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--tc); }
-  .gd-sl.role { font: 700 17px/19px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--tc); }
-  .gd-sl.need { color: var(--color-ink); }
-  .gd-sl.inj { color: var(--color-red-48); }
-  .gd-sl.spot { color: var(--color-ink-dim); }
-  .gd-sl.mot { color: var(--color-ink-dim); }
-  .gd-sl.mot.low { color: var(--color-red-48); font-weight: 600; }
-  .gd-sl.mot.buy { color: var(--color-green-33); font-weight: 600; }
+  .gd-script-body { min-width: 0; display: grid; gap: 3px; align-content: start; padding: 0 2px; font: 400 var(--script-size, 14.5px)/1.31 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--color-ink); }   /* the part the eye goes to: an open, readable text face (Source Sans 3) instead of the mono */
+  .gd-script-row b { margin-right: 7px; font: 700 15px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--tc); }
+  .gd-script-row.role { font: 700 17px/19px var(--font-label); letter-spacing: .06em; text-transform: uppercase; color: var(--tc); }
+  .gd-script-row.need { color: var(--color-ink); }
+  .gd-script-row.inj { color: var(--color-red-48); }
+  .gd-script-row.spot { color: var(--color-ink-dim); }
+  .gd-script-row.motivation { color: var(--color-ink-dim); }
+  .gd-script-row.motivation.low { color: var(--color-red-48); font-weight: 600; }
+  .gd-script-row.motivation.buy { color: var(--color-green-33); font-weight: 600; }
   .gd-team { flex-direction: column; gap: 4px; }
   .gd-team.home { flex-direction: column; text-align: center; }
   .gd-badge { display: flex; align-items: center; height: 50px; padding: 0 20px 0 0; border-radius: 6px; font: 700 31px/1 var(--font-display); letter-spacing: .04em; white-space: nowrap; }
-  .gd-bhelm { flex: none; height: 72px; width: auto; margin: -11px 6px -11px -14px; position: relative; z-index: 1; pointer-events: none; }
-  .gd-bname { text-align: center; }
-  .wx-ic { width: 24px; height: 24px; flex: none; }
+  .gd-badge-helm { flex: none; height: 72px; width: auto; margin: -11px 6px -11px -14px; position: relative; z-index: 1; pointer-events: none; }
+  .gd-badge-name { text-align: center; }
+  .weather-icon { width: 24px; height: 24px; flex: none; }
   .gd-wrap .gd-sched h4 { color: var(--tc, var(--color-blue-48)); border-bottom-color: color-mix(in srgb, var(--tc, var(--color-blue-48)) 55%, transparent); }
-  .gd-sgrid .gd-sc:nth-child(n + 5) { border-left: 1px solid color-mix(in srgb, var(--tc, var(--color-gray-53)) 24%, transparent); }   /* slight vertical lines between the five schedule columns */ /* a little wider than its column so the five columns of four weeks fit without clipping (8px gap left between the teams) */
+  .gd-season-grid .gd-sc:nth-child(n + 5) { border-left: 1px solid color-mix(in srgb, var(--tc, var(--color-gray-53)) 24%, transparent); }   /* slight vertical lines between the five schedule columns */ /* a little wider than its column so the five columns of four weeks fit without clipping (8px gap left between the teams) */
   .gd-col:not(.gd-sched) { display: flex; gap: 8px; align-items: stretch; align-self: start; width: 372px; max-width: 100%; margin: 0 auto; }
-  .gd-ilist { flex: 1; min-width: 0; }
-  .gd-vlabel { flex: none; width: 22px; display: grid; place-items: center; writing-mode: vertical-rl; transform: rotate(180deg); font: 700 15px var(--font-label); letter-spacing: .24em; text-transform: uppercase; border-radius: 4px; }   /* vertical, reads bottom to top, team colors */ /* the injury table is narrower than its column (name, status and injury sit closer together); the columns themselves are unchanged */
-  .gd-sgrid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 18px); grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 4px; }
-  .gd-sgrid.gd-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }   /* a daily league's season: sixteen games in four columns */
+  .gd-injury-list { flex: 1; min-width: 0; }
+  .gd-vertical-label { flex: none; width: 22px; display: grid; place-items: center; writing-mode: vertical-rl; transform: rotate(180deg); font: 700 15px var(--font-label); letter-spacing: .24em; text-transform: uppercase; border-radius: 4px; }   /* vertical, reads bottom to top, team colors */ /* the injury table is narrower than its column (name, status and injury sit closer together); the columns themselves are unchanged */
+  .gd-season-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 18px); grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 4px; }
+  .gd-season-grid.gd-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }   /* a daily league's season: sixteen games in four columns */
   .gd-sc { display: flex; gap: 2px; align-items: center; height: 18px; padding: 0 1px; font: 500 10px var(--font-mono); color: var(--color-ink); white-space: nowrap; overflow: hidden; }
   .gd-sc .wk { width: 12px; text-align: right; }   /* (the team text has no ellipsis: it cut CAR to C… by a pixel in the first column) */
-  .gd-sc .nm { flex: 1; min-width: 0; white-space: nowrap; }
-  .gd-sc .w { color: var(--color-accent); font-weight: 600; }
-  .gd-sc .x { color: var(--color-danger); font-weight: 600; }
+  .gd-sc .name { flex: 1; min-width: 0; white-space: nowrap; }
+  .gd-sc .won { color: var(--color-accent); font-weight: 600; }
+  .gd-sc .lost { color: var(--color-danger); font-weight: 600; }
   .gd-sc .dim { color: var(--color-ink-dim); }
   .gd-sc.cur, .gd-sc.bye { background: var(--color-green-59-a16); }
-  .gd-sc .bye-w { flex: 1; text-align: center; }   /* BYE centered in its cell */ /* the game being viewed */
+  .gd-sc .bye-week { flex: 1; text-align: center; }   /* BYE centered in its cell */ /* the game being viewed */
   .gd-line.key { background: var(--color-orange-62-a20); padding: 0 6px; margin: 0 -6px; border-radius: 2px; }   /* key players (the team's statistical leaders, quarterbacks) on the injury report */
   .gd-line .st { font-weight: 600; }
   .gd-line .st.out { color: var(--color-danger); }
-  .gd-line .st.doubt { color: var(--color-live); }
-  .gd-line .st.q { color: var(--color-ink-dim); }
+  .gd-line .st.doubtful { color: var(--color-live); }
+  .gd-line .st.questionable { color: var(--color-ink-dim); }
   .gd-line .st.ir { color: var(--color-ink-dim); font-weight: 500; }
   /* the game detail as a whiteboard: white board in a grey aluminum frame, black and blue marker, highlighter on the key players (local colors: everything inside reads the variables) */
   .gd-wrap { --color-ink: var(--color-blue-15); --color-ink-dim: var(--color-blue-46); --color-accent: var(--color-green-33); --color-danger: var(--color-red-48); --color-live: var(--color-amber-41); --color-paper-edge: var(--color-blue-86); --color-card-rule: var(--color-gray-79); background: linear-gradient(135deg, var(--color-white-a90) 0%, var(--color-white-a0) 38%), var(--color-gray-96-2); color: var(--color-ink); border: 7px solid var(--color-gray-77); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--color-gray-64), inset 0 2px 10px var(--color-black-a8), 0 2px 8px var(--color-black-a45); }
   .gd-wrap .gd-col h4 { color: var(--color-blue-48); border-bottom: 2px solid var(--color-blue-48-a55); width: max-content; margin-left: auto; margin-right: auto; padding: 0 14px 1px; }   /* blue marker titles, underlined */
   .gd-wrap .gd-line.key { background: var(--color-amber-50-a55); }   /* yellow highlighter */
-  .gd-line .pos.clu { background: var(--color-red-51-a40); border-radius: 3px; padding: 0 4px; margin-left: -1px; }   /* red highlighter behind the POSITION text of a clustered unit's players (the line itself is untouched; key players stay yellow and bold) */
-  .gd-line.key .nm { font-weight: 700; }
+  .gd-line .position.cluster { background: var(--color-red-51-a40); border-radius: 3px; padding: 0 4px; margin-left: -1px; }   /* red highlighter behind the POSITION text of a clustered unit's players (the line itself is untouched; key players stay yellow and bold) */
+  .gd-line.key .name { font-weight: 700; }
   .gd-wrap .gd-sc.cur, .gd-wrap .gd-sc.bye { background: var(--color-green-33-a15); }   /* a bye gets the same highlight as the game being viewed */
-  .gd-wrap .gd-line .st.q { color: var(--color-blue-46); }
+  .gd-wrap .gd-line .st.questionable { color: var(--color-blue-46); }
   .gd-wrap .gd-foot { color: var(--color-gray-52); }
   .gd-foot { font: 500 11px/14px var(--font-mono); color: var(--color-ink-dim); text-align: center; white-space: pre-line; }   /* red marker when a unit is clustered (3+ out, doubtful or questionable) */
   /* the game info block on a weather backdrop: sky, clouds, rain, snow, storm, fog, night or a dome, picked from the kickoff-hour forecast */
@@ -1170,24 +1169,24 @@
   .gd-head[data-scene="night"] { background: var(--img-night) center / cover no-repeat; }
   .gd-head[data-scene="dome"] { background: var(--img-dome) center / cover no-repeat; }
   .gd-head[data-scene="none"] { background: linear-gradient(var(--color-gray-94), var(--color-gray-89)); }
-  .gd-head[data-scene="rain"] .wx-ic, .gd-head[data-scene="storm"] .wx-ic, .gd-head[data-scene="night"] .wx-ic, .gd-head[data-scene="dome"] .wx-ic { filter: drop-shadow(0 0 1px var(--color-black-a50)); }
+  .gd-head[data-scene="rain"] .weather-icon, .gd-head[data-scene="storm"] .weather-icon, .gd-head[data-scene="night"] .weather-icon, .gd-head[data-scene="dome"] .weather-icon { filter: drop-shadow(0 0 1px var(--color-black-a50)); }
   /* the header: one info line over the two team badges, on the weather backdrop that runs to the edges of the card's top */
   .gd-head { grid-template-rows: auto minmax(0, 1fr); margin: -10px -14px 0; padding: 4px 14px 0; height: 122px; align-self: start; box-sizing: border-box; }
   .gd-info { grid-column: 1 / -1; text-align: center; white-space: nowrap; font: 400 11.5px/20px var(--font-mono); color: var(--color-ink-dim); }
   .gd-info i { font-style: normal; color: var(--color-ink-dim); }
   .gd-info b { font-weight: 500; letter-spacing: .04em; color: var(--color-ink); }
-  .gd-wxmid { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); z-index: 1; display: flex; align-items: center; gap: 5px; pointer-events: none; font: 400 11.5px/20px var(--font-mono); color: var(--color-ink-dim); white-space: nowrap; }   /* the kickoff forecast: bottom of the frame, centered, same type as the info line */
-  .gd-wxmid .wx-ic { width: 18px; height: 18px; }
-  .gd-wxmid span { font: inherit; }
+  .gd-forecast { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); z-index: 1; display: flex; align-items: center; gap: 5px; pointer-events: none; font: 400 11.5px/20px var(--font-mono); color: var(--color-ink-dim); white-space: nowrap; }   /* the kickoff forecast: bottom of the frame, centered, same type as the info line */
+  .gd-forecast .weather-icon { width: 18px; height: 18px; }
+  .gd-forecast span { font: inherit; }
   /* the backdrop is washed out by 50% white so the lettering on it stays readable; all scenes use the dark lettering */
   .gd-head[data-scene]:not([data-scene=""])::before { content: ""; position: absolute; inset: 0; background: var(--color-white-a50); pointer-events: none; }
   .gd-head > .gd-info, .gd-head > .gd-team { position: relative; z-index: 1; }
   .gd-head > .gd-team { align-self: center; }
   /* lettering over the header: black on the light backdrops (and the plain board), white on the dark ones (storm, night, dome) */
-  .gd-head .gd-info, .gd-head .gd-info i, .gd-head .gd-info b, .gd-head .gd-wxmid { color: var(--color-black); }
-  .gd-head[data-scene="storm"] .gd-info, .gd-head[data-scene="storm"] .gd-info i, .gd-head[data-scene="storm"] .gd-info b, .gd-head[data-scene="storm"] .gd-wxmid, .gd-head[data-scene="night"] .gd-info, .gd-head[data-scene="night"] .gd-info i, .gd-head[data-scene="night"] .gd-info b, .gd-head[data-scene="night"] .gd-wxmid, .gd-head[data-scene="dome"] .gd-info, .gd-head[data-scene="dome"] .gd-info i, .gd-head[data-scene="dome"] .gd-info b, .gd-head[data-scene="dome"] .gd-wxmid { color: var(--color-white); text-shadow: 0 0 3px var(--color-black-a55); }
+  .gd-head .gd-info, .gd-head .gd-info i, .gd-head .gd-info b, .gd-head .gd-forecast { color: var(--color-black); }
+  .gd-head[data-scene="storm"] .gd-info, .gd-head[data-scene="storm"] .gd-info i, .gd-head[data-scene="storm"] .gd-info b, .gd-head[data-scene="storm"] .gd-forecast, .gd-head[data-scene="night"] .gd-info, .gd-head[data-scene="night"] .gd-info i, .gd-head[data-scene="night"] .gd-info b, .gd-head[data-scene="night"] .gd-forecast, .gd-head[data-scene="dome"] .gd-info, .gd-head[data-scene="dome"] .gd-info i, .gd-head[data-scene="dome"] .gd-info b, .gd-head[data-scene="dome"] .gd-forecast { color: var(--color-white); text-shadow: 0 0 3px var(--color-black-a55); }
   /* game preview badges: font #17 (Archivo Black, the Giants pick from the team font sheet) on both team names */
-  .gd-badge .gd-bname { font-family: "Archivo Black", var(--font-display); font-weight: 400; letter-spacing: .03em; }
+  .gd-badge .gd-badge-name { font-family: "Archivo Black", var(--font-display); font-weight: 400; letter-spacing: .03em; }
 
   /* ===== Ledger ===== */
   .section-page { background: var(--color-paper); border: 1px solid var(--color-paper-edge); padding: 10px 16px; min-width: 0; }
@@ -1199,21 +1198,21 @@
   .section-page th:first-child, .section-page td:first-child { text-align: left; }
   .section-page tfoot td { font-weight: 700; border-top: 2px solid var(--color-paper-edge); border-bottom: 0; }
   /* The Ledger tab: a card of green-ruled ledger paper. A single rule above a total, a double rule under it, losses in parentheses. */
-  .lcard { background: var(--color-amber-93); color: var(--color-green-14); border: 1px solid var(--color-card-rule); border-radius: 3px; padding: 14px 18px 18px; box-shadow: 0 6px 20px var(--color-black-a45); }
-  .section-page .lcard h2 { color: var(--color-turf); margin-bottom: 2px; }
-  .section-page .lcard small, .section-page .lcard .trends-note { display: block; margin: 0 0 10px; color: var(--color-gray-36); font-size: 12px; }
-  .section-page table.lsheet { max-width: none; border: 1px solid var(--color-green-62-2); background: var(--color-amber-93); }
-  .section-page .lsheet th { color: var(--color-turf); background: var(--color-lime-87); border-bottom: 2px solid var(--color-green-39); border-left: 1px solid var(--color-green-74); padding: 6px 10px; white-space: normal; vertical-align: bottom; line-height: 1.1; }
-  .section-page .lsheet td { border-bottom: 1px solid var(--color-green-81); border-left: 1px solid var(--color-green-74); padding: 5px 10px; }
-  .section-page .lsheet th:first-child, .section-page .lsheet td:first-child { border-left: 0; border-right: 3px double var(--color-red-46); }   /* the red double rule of a ledger's account column */
-  .section-page .lsheet .lsec td { background: var(--color-lime-90); color: var(--color-turf); font: 700 15px/1.2 var(--font-display); letter-spacing: .08em; text-transform: uppercase; border-left: 0; border-right: 0; padding: 7px 10px 4px; }
-  .section-page .lsheet .ltotal td { font-weight: 700; border-top: 1px solid var(--color-green-14); border-bottom: 3px double var(--color-green-14); }
-  .section-page .lsheet .bico { background: var(--color-paper); border-radius: 2px; }   /* some book icons are white */
-  .section-page .lsheet .neg { color: var(--color-red-38); }
-  .section-page .lsheet .pos { color: var(--color-green-23); }
-  .section-page .lsheet .dim { color: var(--color-gray-48); }
-  .section-page .pos { color: var(--color-accent); }
-  .section-page .neg { color: var(--color-danger); }
+  .ledger-card { background: var(--color-amber-93); color: var(--color-green-14); border: 1px solid var(--color-card-rule); border-radius: 3px; padding: 14px 18px 18px; box-shadow: 0 6px 20px var(--color-black-a45); }
+  .section-page .ledger-card h2 { color: var(--color-turf); margin-bottom: 2px; }
+  .section-page .ledger-card small, .section-page .ledger-card .trends-note { display: block; margin: 0 0 10px; color: var(--color-gray-36); font-size: 12px; }
+  .section-page table.ledger-sheet { max-width: none; border: 1px solid var(--color-green-62-2); background: var(--color-amber-93); }
+  .section-page .ledger-sheet th { color: var(--color-turf); background: var(--color-lime-87); border-bottom: 2px solid var(--color-green-39); border-left: 1px solid var(--color-green-74); padding: 6px 10px; white-space: normal; vertical-align: bottom; line-height: 1.1; }
+  .section-page .ledger-sheet td { border-bottom: 1px solid var(--color-green-81); border-left: 1px solid var(--color-green-74); padding: 5px 10px; }
+  .section-page .ledger-sheet th:first-child, .section-page .ledger-sheet td:first-child { border-left: 0; border-right: 3px double var(--color-red-46); }   /* the red double rule of a ledger's account column */
+  .section-page .ledger-sheet .ledger-section td { background: var(--color-lime-90); color: var(--color-turf); font: 700 15px/1.2 var(--font-display); letter-spacing: .08em; text-transform: uppercase; border-left: 0; border-right: 0; padding: 7px 10px 4px; }
+  .section-page .ledger-sheet .ledger-total td { font-weight: 700; border-top: 1px solid var(--color-green-14); border-bottom: 3px double var(--color-green-14); }
+  .section-page .ledger-sheet .sportsbook-icon { background: var(--color-paper); border-radius: 2px; }   /* some book icons are white */
+  .section-page .ledger-sheet .loss { color: var(--color-red-38); }
+  .section-page .ledger-sheet .profit { color: var(--color-green-23); }
+  .section-page .ledger-sheet .dim { color: var(--color-gray-48); }
+  .section-page .profit { color: var(--color-accent); }
+  .section-page .loss { color: var(--color-danger); }
   .section-page .dim { color: var(--color-ink-dim); }
 
   /* ===== Graphs and flagged pairs ===== */
@@ -1228,8 +1227,8 @@
   .cd-btn { appearance: none; padding: 4px 12px; font: 700 12px/1 "Montserrat", Arial, sans-serif; letter-spacing: .05em; text-transform: uppercase; color: var(--color-gray-6-2); background: var(--color-good); border: 0; border-radius: 3px; cursor: pointer; }
   .cd-btn:disabled { color: var(--color-gray-46); background: var(--color-blue-13); cursor: default; }
   .cd-btn.sure { background: var(--color-error); }
-  .cd-nm, .cd-col { padding: 3px 6px; font: inherit; color: var(--color-gray-92); background: var(--color-blue-10); border: 1px solid var(--color-blue-19); border-radius: 3px; }
-  .cd-nm { flex: 1 1 8em; min-width: 0; } .cd-col { flex: 1 1 28%; min-width: 0; }
+  .cd-name, .cd-col { padding: 3px 6px; font: inherit; color: var(--color-gray-92); background: var(--color-blue-10); border: 1px solid var(--color-blue-19); border-radius: 3px; }
+  .cd-name { flex: 1 1 8em; min-width: 0; } .cd-col { flex: 1 1 28%; min-width: 0; }
   .cd-note { flex-basis: 100%; color: var(--color-gray-59); font-size: 12px; }
   .cd-scroll { overflow: auto; min-height: 0; border: 1px solid var(--color-blue-19); border-radius: 3px; }
   .cd-grid table { width: 100%; max-width: none; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; }
@@ -1240,9 +1239,9 @@
   .cd-grid .cd-none td { color: var(--color-gray-59); cursor: default; }
   .cd-state { font-weight: 700; } .cd-state.st-0 { color: var(--color-gray-59); } .cd-state.st-1 { color: var(--color-blue-81); } .cd-state.st-2 { color: var(--color-amber-55); } .cd-state.st-3 { color: var(--color-error); }
   .cd-low { display: grid; grid-template-rows: 1fr minmax(150px, 30%); gap: 8px; min-height: 0; min-width: 0; }
-  .cd-ed { display: grid; grid-template-columns: auto 1fr; min-height: 0; overflow: hidden; background: var(--color-gray-7); border: 1px solid var(--color-blue-19); border-radius: 3px; font: 13px/1.5 "Chivo Mono", Consolas, monospace; }
+  .cd-editor { display: grid; grid-template-columns: auto 1fr; min-height: 0; overflow: hidden; background: var(--color-gray-7); border: 1px solid var(--color-blue-19); border-radius: 3px; font: 13px/1.5 "Chivo Mono", Consolas, monospace; }
   .cd-nums { margin: 0; padding: 8px 8px 8px 10px; overflow: hidden; text-align: right; color: var(--color-gray-34); user-select: none; font: inherit; }
-  .cd-edwrap { position: relative; min-width: 0; min-height: 0; }
+  .cd-editor-wrap { position: relative; min-width: 0; min-height: 0; }
   .cd-view, .cd-text { position: absolute; inset: 0; margin: 0; padding: 8px; font: inherit; white-space: pre; overflow: auto; tab-size: 2; border: 0; }
   .cd-view { color: var(--color-blue-87); pointer-events: none; overflow: hidden; }
   .cd-text { color: transparent; caret-color: var(--color-white); background: transparent; resize: none; outline: none; }
@@ -1251,25 +1250,25 @@
   .cd-con { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; background: var(--color-gray-7); border: 1px solid var(--color-blue-19); border-radius: 3px; font: 12.5px/1.45 "Chivo Mono", Consolas, monospace; }
   .cd-head { padding: 5px 10px; font: 700 11px/1.2 "Montserrat", Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--color-gray-59); border-bottom: 1px solid var(--color-blue-13); }
   .cd-out { overflow: auto; padding: 6px 10px; white-space: pre-wrap; word-break: break-word; min-height: 0; }
-  .cl-sys, .cl-note { color: var(--color-gray-59); } .cl-in { color: var(--color-blue-68-2); } .cl-out, .cl-print { color: var(--color-blue-87); } .cl-err { color: var(--color-error); } .cl-order { color: var(--color-amber-55); } .cl-state { color: var(--color-good); }
+  .cl-system, .cl-note { color: var(--color-gray-59); } .cl-in { color: var(--color-blue-68-2); } .cl-out, .cl-print { color: var(--color-blue-87); } .cl-err { color: var(--color-error); } .cl-order { color: var(--color-amber-55); } .cl-state { color: var(--color-good); }
   .cd-who { color: var(--color-gray-59); }   /* the algo a console line came from */
   .cd-state.cd-err { text-decoration: underline wavy var(--color-error); }   /* its last run threw: the error is its title, and in the console */
   .cd-btn.cd-arm:not(:disabled) { background: var(--color-error); }
   .cd-prompt { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-top: 1px solid var(--color-blue-13); }
-  .cd-ps { color: var(--color-good); } .cd-in { flex: 1; padding: 2px 0; font: inherit; color: var(--color-white); background: transparent; border: 0; outline: none; }   /* the Graphs panel draws straight onto the page: no boxes, no captions */
+  .cd-in { flex: 1; padding: 2px 0; font: inherit; color: var(--color-white); background: transparent; border: 0; outline: none; }   /* the Graphs panel draws straight onto the page: no boxes, no captions */
   #graphs.bare { background: var(--color-black); border-radius: 3px; position: relative; }   /* the Graphs panel sits on black */
   .flagged-pair { position: fixed; z-index: 60; width: 660px; box-sizing: border-box; padding: 8px 10px 4px; background: var(--color-bg); border: 1px solid var(--color-card-rule); border-radius: 3px; box-shadow: 0 8px 28px var(--color-black-a70); pointer-events: none; }   /* the pair's P/L graph shown on hover */
-  .flagged-pair-tx { display: grid; gap: 3px; margin: 2px 0 4px; font: 12px/1.35 var(--font-mono); color: var(--color-ink); }
-  .flagged-pair-tx b { font-weight: 500; }
-  .flagged-pair-t { width: 100%; border-collapse: collapse; margin: 2px 0 6px; font: 12px/1.3 var(--font-mono); color: var(--color-ink); }
-  .flagged-pair-t th { text-align: left; font: 700 15px var(--font-label); letter-spacing: .04em; color: var(--color-ink-dim); padding: 2px 6px; border-bottom: 1px solid var(--color-card-rule); }
-  .flagged-pair-t td { padding: 3px 6px; vertical-align: top; border-bottom: 1px solid var(--color-card-rule); }
-  .flagged-pair-t td.num, .flagged-pair-t th:nth-child(1), .flagged-pair-t th:nth-child(n+4) { text-align: right; }
-  .flagged-pair-t td small { display: block; font-size: 10.5px; color: var(--color-ink-dim); }
+  .flagged-pair-text { display: grid; gap: 3px; margin: 2px 0 4px; font: 12px/1.35 var(--font-mono); color: var(--color-ink); }
+  .flagged-pair-text b { font-weight: 500; }
+  .flagged-pair-table { width: 100%; border-collapse: collapse; margin: 2px 0 6px; font: 12px/1.3 var(--font-mono); color: var(--color-ink); }
+  .flagged-pair-table th { text-align: left; font: 700 15px var(--font-label); letter-spacing: .04em; color: var(--color-ink-dim); padding: 2px 6px; border-bottom: 1px solid var(--color-card-rule); }
+  .flagged-pair-table td { padding: 3px 6px; vertical-align: top; border-bottom: 1px solid var(--color-card-rule); }
+  .flagged-pair-table td.num, .flagged-pair-table th:nth-child(1), .flagged-pair-table th:nth-child(n+4) { text-align: right; }
+  .flagged-pair-table td small { display: block; font-size: 10.5px; color: var(--color-ink-dim); }
   .flagged-pair-sum { margin-bottom: 4px; font: 500 12px var(--font-mono); color: var(--color-ink-dim); }
-  .flagged-pair-h { font: 700 16px var(--font-label); letter-spacing: .04em; margin-bottom: 4px; }
+  .flagged-pair-head { font: 700 16px var(--font-label); letter-spacing: .04em; margin-bottom: 4px; }
   .flagged-pair .rk-sides { margin-bottom: 6px; }
-  .flagged-pair .rk-sides .tchip { font-size: 22px; padding: 1px 10px 2px; }
+  .flagged-pair .rk-sides .team-chip { font-size: 22px; padding: 1px 10px 2px; }
   #graphs svg.graphs-link { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
   .bare .graphs-cell { border: 0; background: none; padding: 0; }
   .bare .graphs-row { margin-bottom: 0; }
@@ -1286,7 +1285,7 @@
   .graphs .bar.win { fill: var(--color-accent); }
   .graphs .bar.lose { fill: var(--color-ink-dim); }
   .graphs .bar.tie { fill: var(--color-live); }
-  .graphs text.cnt { font-size: 11px; fill: var(--color-ink); }
+  .graphs text.count { font-size: 11px; fill: var(--color-ink); }
   .graphs .grid { stroke: var(--color-paper-edge); stroke-width: 1; }
   .graphs .zero { stroke: var(--color-ink-dim); stroke-width: 1; stroke-dasharray: 4 4; }
   .graphs .mk rect { stroke: none; }
@@ -1294,7 +1293,7 @@
   .graphs .mk text.off { font: 500 11.5px var(--font-mono); letter-spacing: 0; }
   /* the game overview's badges (bdBadge) at card scale: the top row and the badges under the axis */
   .flagged-pair .gd-badge { height: 30px; padding: 0 12px 0 0; font-size: 20px; border-radius: 4px; }
-  .flagged-pair .gd-bhelm { height: 44px; margin: -7px 4px -7px -10px; }
+  .flagged-pair .gd-badge-helm { height: 44px; margin: -7px 4px -7px -10px; }
 
   /* ===== Handicap (the NFL first, Nov 4 2026): the two models' cards side by side, then the week's games, in a pane that scrolls ===== */
   #handicap .hc-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }   /* the week picker at the left, the title and its buttons at the right */
@@ -1302,16 +1301,16 @@
   /* the week picker: the strip's week tabs in the league's type, light on the panel, the strip's orange bars on the week on screen, a chevron either side */
   #handicap .hc-wk { display: flex; align-items: stretch; flex: none; }
   #handicap .hc-wk button { appearance: none; background: none; border: 0; cursor: pointer; color: var(--color-ink-dim); font: 400 20px/1.1 var(--font-league); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
-  #handicap .hc-wk .hc-wkt { position: relative; flex: none; width: var(--cell, 112px); border-top: 5px solid transparent; padding: 4.75px 4px 9.25px; text-align: center; letter-spacing: .04em; font-size: min(20px, calc((var(--cell, 180px) - 8px) / 4.9)); }   /* the top strip's pinned weeks: their width, type and spacing (--cell, set by fitHcTable) */
-  #handicap .hc-wkt.now { color: var(--color-ink); }
-  #handicap .hc-wkt[aria-selected="true"] { color: var(--color-ink); }
-  #handicap .hc-wkt[aria-selected="true"]::before, #handicap .hc-wkt[aria-selected="true"]::after { content: ""; position: absolute; top: 1px; z-index: 1; width: 8px; height: 35px; background: var(--color-selected); clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); pointer-events: none; }   /* the strip's 8px bars */
-  #handicap .hc-wkt[aria-selected="true"]::before { left: -4px; }
-  #handicap .hc-wkt[aria-selected="true"]::after { right: -4px; }
-  #handicap .hc-wkt:hover, #handicap .hc-wka:hover:not(:disabled) { color: var(--color-ink); }
-  #handicap .hc-wka { display: grid; place-items: center; flex: 1 0 34px; }   /* at least HC_ARROW; the two share what the weeks leave */
-  #handicap .hc-wka svg { height: 18px; width: auto; }
-  #handicap .hc-wka:disabled { opacity: .3; cursor: default; }
+  #handicap .hc-wk .hc-week-tab { position: relative; flex: none; width: var(--cell, 112px); border-top: 5px solid transparent; padding: 4.75px 4px 9.25px; text-align: center; letter-spacing: .04em; font-size: min(20px, calc((var(--cell, 180px) - 8px) / 4.9)); }   /* the top strip's pinned weeks: their width, type and spacing (--cell, set by fitHcTable) */
+  #handicap .hc-week-tab.now { color: var(--color-ink); }
+  #handicap .hc-week-tab[aria-selected="true"] { color: var(--color-ink); }
+  #handicap .hc-week-tab[aria-selected="true"]::before, #handicap .hc-week-tab[aria-selected="true"]::after { content: ""; position: absolute; top: 1px; z-index: 1; width: 8px; height: 35px; background: var(--color-selected); clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); pointer-events: none; }   /* the strip's 8px bars */
+  #handicap .hc-week-tab[aria-selected="true"]::before { left: -4px; }
+  #handicap .hc-week-tab[aria-selected="true"]::after { right: -4px; }
+  #handicap .hc-week-tab:hover, #handicap .hc-week-arrow:hover:not(:disabled) { color: var(--color-ink); }
+  #handicap .hc-week-arrow { display: grid; place-items: center; flex: 1 0 34px; }   /* at least HC_ARROW; the two share what the weeks leave */
+  #handicap .hc-week-arrow svg { height: 18px; width: auto; }
+  #handicap .hc-week-arrow:disabled { opacity: .3; cursor: default; }
   #handicap .hc-head h2 { margin-block: 0; }
   #handicap .season-span { flex: none; }
   #handicap .season-span label { flex: none; }
@@ -1329,37 +1328,36 @@
   #handicap .hc-model th, #handicap .hc-model td { padding: 3px 6px; text-align: left; }
   #handicap .hc-model input[type=number] { width: 90px; }
   #handicap .hc-model tr.off td:not(:first-child) { opacity: .45; }
-  #handicap .hc-model tr.hc-int td { border-bottom: 1px solid var(--color-paper-edge); }
   #handicap .hc-table { font-size: 12px; width: auto; max-width: none; }   /* as wide as its columns, not the Ledger's 100% to 1300px, which spread spare room into the game column; fitHcTable scales it down if it's wider than the pane */
   #handicap .hc-table th, #handicap .hc-table td { padding: 3px 6px; text-align: right; }
   #handicap .hc-games .hc-table thead tr:first-child th { font-size: 20px; line-height: 1.05; vertical-align: bottom; white-space: nowrap; }   /* the column names, larger, on two lines (the user, Nov 4 2026) */
   #handicap .hc-games .hc-table thead tr:first-child th.hc-src { cursor: help; }
   #handicap .hc-table th:first-child, #handicap .hc-table td:first-child { text-align: left; }
   #handicap .hc-table .trends-g { text-align: center; border-left: 1px solid var(--color-paper-edge); }
-  #handicap .hc-table .trends-l { border-left: 1px solid var(--color-paper-edge); }
+  #handicap .hc-table .trends-divider { border-left: 1px solid var(--color-paper-edge); }
   /* each game's own numbers (the user, Nov 4 2026): HFA, then each term's coefficient × value, narrow fields without spinners; one typed by hand is in the accent */
-  #handicap td.hc-cv { white-space: nowrap; text-align: center; }
+  #handicap td.hc-coef { white-space: nowrap; text-align: center; }
   #handicap .hc-rows input { box-sizing: border-box; width: 80px; height: 30px; padding: 0 2px; line-height: 30px; font: inherit; font-size: calc(var(--slate-fs, 16px) * 1.25); vertical-align: middle; text-align: center; -moz-appearance: textfield; appearance: textfield; }   /* about a badge's size, the number centered both ways */
   #handicap .hc-rows input::-webkit-inner-spin-button, #handicap .hc-rows input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   #handicap .hc-rows .hc-val { font-family: var(--font-label); font-weight: 700; font-size: 20px; display: inline-block; box-sizing: border-box; width: 44px; height: 30px; line-height: 30px; padding: 0 2px; text-align: center; vertical-align: middle; }   /* a value shown, not typed: DVOA's, FTN's own */   /* 44px: the widest it gets, "-100.0" in this type (the user, Nov 4 2026: "shrunk to known maximum width") */
   #handicap .hc-rows input.hc-set { color: var(--color-blue-74); font-weight: 700; }   /* typed by hand: light blue (the user, Nov 4 2026) */
-  #handicap .hc-rows input.hc-fitset { color: var(--color-green-10); background: var(--color-green-51); font-weight: 700; }   /* set by Fit: Fit's green */
+  #handicap .hc-rows input.hc-fit-set { color: var(--color-green-10); background: var(--color-green-51); font-weight: 700; }   /* set by Fit: Fit's green */
   #handicap .hc-op { color: var(--color-ink-dim); margin: 0 2px; }
   /* coefficient × value close together (the user, Nov 4 2026): the coefficient right-aligned, the value after "×" left-aligned, so the two sit by the "×"; the column's name centered over both */
   /* the pair pinned at the "×" (the user, Nov 4 2026): the coefficient against its right edge, the value against its left, both centered top to bottom */
   #handicap .hc-op { margin: 0 2px; }
-  #handicap .hc-rows .hc-cv input:not(.hc-op + input) { width: 56px; text-align: right; padding: 0 9px 0 2px; }   /* a coefficient, its one decimal's point at the field's middle (the user, Nov 4 2026: decimal points vertical) */
+  #handicap .hc-rows .hc-coef input:not(.hc-op + input) { width: 56px; text-align: right; padding: 0 9px 0 2px; }   /* a coefficient, its one decimal's point at the field's middle (the user, Nov 4 2026: decimal points vertical) */
   /* a rule after the game, with room either side, between it and the numbers */
   #handicap .hc-table td.hc-game, #handicap .hc-games .hc-table thead th:nth-child(2) { padding-right: 18px; }
   #handicap .hc-games .hc-table td.hc-game + td, #handicap .hc-games .hc-table thead th:nth-child(3) { padding-left: 6px; }   /* HFA close to the rule (the user, Nov 4 2026) */
-  #handicap .hc-rows .hc-op + input, #handicap tr.hc-starts .hc-op + .hc-sv { text-align: left; padding-left: 6px; }
+  #handicap .hc-rows .hc-op + input, #handicap tr.hc-starts .hc-op + .hc-start-value { text-align: left; padding-left: 6px; }
   #handicap .hc-rows .hc-op + .hc-val { text-align: right; padding-right: 2px; }   /* DVOA's and Off bye's values right-justified, so negatives and positives line up (the user, Nov 4 2026) */
   #handicap .hc-rows td:nth-child(3) input { width: 56px; text-align: center; padding: 0 2px; }   /* HFA, centered in its field (the user, Nov 4 2026) */
   #handicap .hc-games .hc-table thead th:nth-child(n+3) { text-align: center; }
   #handicap .hc-spin { position: relative; display: inline-block; }
-  #handicap .hc-rows .hc-cv .hc-spin input:not(.hc-op + input) { width: 64px; padding: 0 2px; text-align: center; }   /* DVOA's two decimals, centered in the field (the user, Nov 4 2026); its values and default sit on the same point */
-  #handicap .hc-rows .hc-stack:has(.hc-spin) .hc-val .hc-di { width: 20px; }   /* DVOA's values, on the centered coefficient's point */
-  #handicap tr.hc-starts .hc-dec.hc-decdv .hc-di { width: 16px; }   /* and its default */   /* a field with its arrows hung at its right, so the field stays on the column's point */
+  #handicap .hc-rows .hc-coef .hc-spin input:not(.hc-op + input) { width: 64px; padding: 0 2px; text-align: center; }   /* DVOA's two decimals, centered in the field (the user, Nov 4 2026); its values and default sit on the same point */
+  #handicap .hc-rows .hc-stack:has(.hc-spin) .hc-val .hc-whole { width: 20px; }   /* DVOA's values, on the centered coefficient's point */
+  #handicap tr.hc-starts .hc-decimal.hc-decimal-dvoa .hc-whole { width: 16px; }   /* and its default */   /* a field with its arrows hung at its right, so the field stays on the column's point */
   #handicap .hc-arrows { position: absolute; left: calc(100% + 2px); top: 0; bottom: 0; display: flex; flex-direction: column; }
   #handicap .hc-arrows button { flex: 1; width: 18px; padding: 0; border: 1px solid var(--color-paper-edge); background: none; color: var(--color-ink-dim); font-size: 9px; line-height: 1; cursor: pointer; }
   #handicap .hc-arrows button:hover { color: var(--color-ink); background: var(--color-white-a6); }
@@ -1368,20 +1366,20 @@
   #handicap .hc-stack .hc-low { display: inline-flex; align-items: baseline; color: var(--color-ink-dim); }
   #handicap .hc-stack .hc-low .hc-op { margin: 0 3px 0 0; font-size: 14px; }
   #handicap .hc-rows .hc-stack .hc-val { height: auto; line-height: 1.1; padding: 0; color: var(--color-ink); }
-  #handicap td.hc-vsfit { text-align: right; white-space: nowrap; font-family: "Chivo Mono", ui-monospace, Consolas, monospace; font-size: 20px; color: var(--color-ink); padding-inline: 12px 24px; }   /* the fields' type; right-aligned, so the points line up */   /* vs fit: each game's gap in points from the season's fit */
+  #handicap td.hc-vs-fit { text-align: right; white-space: nowrap; font-family: "Chivo Mono", ui-monospace, Consolas, monospace; font-size: 20px; color: var(--color-ink); padding-inline: 12px 24px; }   /* the fields' type; right-aligned, so the points line up */   /* vs fit: each game's gap in points from the season's fit */
   #handicap td.hc-div { text-align: center; }   /* the Divisional box, centered under its name; with the coefficients stacked over their values the columns are narrow enough for the name to set the width */
   #handicap td.hc-div input { width: 22px; height: 22px; margin: 0; vertical-align: middle; accent-color: var(--color-accent); cursor: pointer; }
   #handicap .hc-hurdle { position: absolute; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 8px; color: var(--color-ink-dim); }   /* the EV hurdle, its number over the spreads (fitHcTable places it) */
-  #handicap .hc-hlabel { font: 700 20px var(--font-label); text-transform: none; }
-  #handicap .hc-hbox { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 72px; height: 30px; border: 1px solid var(--color-paper-edge); border-radius: 3px; background: var(--color-paper, transparent); color: var(--color-ink); cursor: text; }   /* the number and "%" together, centered */
+  #handicap .hc-hurdle-label { font: 700 20px var(--font-label); text-transform: none; }
+  #handicap .hc-hurdle-field { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 72px; height: 30px; border: 1px solid var(--color-paper-edge); border-radius: 3px; background: var(--color-paper, transparent); color: var(--color-ink); cursor: text; }   /* the number and "%" together, centered */
   #handicap .hc-hurdle input { box-sizing: content-box; width: 2.6ch; height: 28px; padding: 0; border: 0; background: none; text-align: right; font: inherit; color: inherit; -moz-appearance: textfield; appearance: textfield; outline: none; }
   #handicap .hc-hurdle input::-webkit-inner-spin-button, #handicap .hc-hurdle input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   #handicap .hc-fit { box-sizing: border-box; height: 40px; padding: 0 14px; border: 0; border-radius: 5px; background: var(--color-green-51); color: var(--color-green-10); font: inherit; font-size: calc(var(--slate-fs, 16px) * 1.25); font-weight: 700; line-height: 1; vertical-align: middle; cursor: pointer; }   /* Fit: taller, a brighter green (the user, Nov 4 2026) */
   #handicap td.hc-game .hc-fit { margin-left: 30px; font-weight: 400; }   /* each row's, at the game's right, left of the rule; plain, Fit all games keeps the bold (the user, Nov 4 2026) */
   #handicap .hc-fit:hover { background: var(--color-green-59); }
   #handicap .hc-root { display: inline-flex; align-items: flex-start; }   /* the root sign: the radical, and a bar over the word */
-  #handicap .hc-rad { font-size: 1.2em; line-height: 1; margin-right: -1px; }
-  #handicap .hc-rw { border-top: 2px solid currentColor; padding: 2px 2px 0; margin-top: 2px; line-height: 1; }
+  #handicap .hc-root-sign { font-size: 1.2em; line-height: 1; margin-right: -1px; }
+  #handicap .hc-root-word { border-top: 2px solid currentColor; padding: 2px 2px 0; margin-top: 2px; line-height: 1; }
   #handicap tr.hc-starts th.hc-fit-all-cell { position: relative; text-align: right; padding: 2px 24px 2px 0; }   /* Fit all games over the rows' Fit, its right edge on theirs, reaching left */
   #handicap .hc-fit-all { height: 32px; }   /* the default values row kept short (the user, Nov 4 2026) */
   #handicap td.hc-prev { padding: 0 0 0 4px; }   /* the game preview's icon at the row's left end; the game's own gap follows it */
@@ -1394,43 +1392,43 @@
   /* each game as the info line's byes show teams, at their size (the user, Nov 4 2026): the badge in team colors, its helmet over the left edge; your spread after the visitor */
   /* the game (the user, Nov 4 2026): moneylines outside each helmet, yours over the market's; the badges the row's height; your spread over the market's and "@" in the middle */
   #handicap td.hc-game { white-space: nowrap; padding-inline: 30px 24px; }   /* the game's parts 30px apart, from the preview's icon to Fit; each column as wide as what it holds, a wider number spilling left into the gap */
-  #handicap .hc-gm { display: inline-grid; vertical-align: middle; grid-template-columns: 54px 124px 56px 16px 124px 54px; column-gap: 30px; grid-template-rows: auto auto; align-items: center; line-height: 1.15; font-size: calc(var(--slate-fs, 16px) * 1.25); font-variant-numeric: tabular-nums; }
-  #handicap .hc-gm > .hc-gv, #handicap .hc-gm > .hc-gh, #handicap .hc-gm > .hc-at { grid-row: 1 / span 2; }
-  #handicap .hc-gv { justify-self: end; }
-  #handicap .hc-gh { justify-self: start; padding-left: 20px; }   /* room for its helmet, left of the badge */
+  #handicap .hc-game-grid { display: inline-grid; vertical-align: middle; grid-template-columns: 54px 124px 56px 16px 124px 54px; column-gap: 30px; grid-template-rows: auto auto; align-items: center; line-height: 1.15; font-size: calc(var(--slate-fs, 16px) * 1.25); font-variant-numeric: tabular-nums; }
+  #handicap .hc-game-grid > .hc-visitor, #handicap .hc-game-grid > .hc-home, #handicap .hc-game-grid > .hc-at { grid-row: 1 / span 2; }
+  #handicap .hc-visitor { justify-self: end; }
+  #handicap .hc-home { justify-self: start; padding-left: 20px; }   /* room for its helmet, left of the badge */
   #handicap .hc-at { justify-self: center; font-weight: 700; color: var(--color-ink); font-size: 1.3em; position: relative; left: -10px; }   /* bigger, and moved left toward the spreads (the user, Nov 5 2026) */
-  #handicap .hc-gs { justify-self: end; }
+  #handicap .hc-spread { justify-self: end; }
   #handicap .hc-ml { color: var(--color-ink); padding-inline: 3px; }   /* yours padded as the market's, so both end together */
-  #handicap .hc-mlv { justify-self: end; }   /* the visitor's, outside its helmet */
-  #handicap .hc-mlh { justify-self: end; }   /* the home team's, outside its badge, right-justified so yours and the market's end together */
-  #handicap .hc-mml { color: var(--color-ink-dim); }   /* the market's, under yours */
-  #handicap .hc-gm > .hc-ml:nth-child(1) { grid-column: 1; } #handicap .hc-gm > .hc-mml.hc-mlv { grid-column: 1; grid-row: 2; }
-  #handicap .hc-gm > .hc-gs-low { grid-column: 3; grid-row: 2; } #handicap .hc-gm > .hc-mml.hc-mlh { grid-column: 6; grid-row: 2; }
-  #handicap .hc-mkt, #handicap .hc-mml { padding-inline: 3px; border-radius: 3px; color: var(--color-ink-dim); }
+  #handicap .hc-ml-visitor { justify-self: end; }   /* the visitor's, outside its helmet */
+  #handicap .hc-ml-home { justify-self: end; }   /* the home team's, outside its badge, right-justified so yours and the market's end together */
+  #handicap .hc-ml-market { color: var(--color-ink-dim); }   /* the market's, under yours */
+  #handicap .hc-game-grid > .hc-ml:nth-child(1) { grid-column: 1; } #handicap .hc-game-grid > .hc-ml-market.hc-ml-visitor { grid-column: 1; grid-row: 2; }
+  #handicap .hc-game-grid > .hc-spread-market { grid-column: 3; grid-row: 2; } #handicap .hc-game-grid > .hc-ml-market.hc-ml-home { grid-column: 6; grid-row: 2; }
+  #handicap .hc-mkt, #handicap .hc-ml-market { padding-inline: 3px; border-radius: 3px; color: var(--color-ink-dim); }
   #handicap .hc-mkt:empty { display: none; }
   #handicap .hc-mkt.hc-fade { background: var(--color-red-41); color: var(--color-white); font-weight: 700; }   /* a deeper red (the user, Nov 4 2026): the home team's spread clears the hurdle */
-  #handicap .hc-mkt.hc-take, #handicap .hc-mml.hc-take { background: var(--color-accent); color: var(--color-accent-ink); font-weight: 700; }   /* the market's price worth taking at yours */
+  #handicap .hc-mkt.hc-take, #handicap .hc-ml-market.hc-take { background: var(--color-accent); color: var(--color-accent-ink); font-weight: 700; }   /* the market's price worth taking at yours */
   #handicap .hc-theo { font-weight: 700; color: var(--color-ink); }
-  #handicap .hc-pi { display: inline-block; text-align: right; }   /* a spread's sign and points, as wide as they are: the right-aligned column and the point's fixed box keep every point at one x, and a highlight hugs the number */
-  #handicap .hc-pd { display: inline-block; width: 26px; text-align: left; }   /* the point and its digit: every spread's point at the same x */
-  #handicap .hc-gs > span { display: inline-flex; padding-inline: 3px; }
+  #handicap .hc-points-whole { display: inline-block; text-align: right; }   /* a spread's sign and points, as wide as they are: the right-aligned column and the point's fixed box keep every point at one x, and a highlight hugs the number */
+  #handicap .hc-points-fraction { display: inline-block; width: 26px; text-align: left; }   /* the point and its digit: every spread's point at the same x */
+  #handicap .hc-spread > span { display: inline-flex; padding-inline: 3px; }
   #handicap .hc-chip { margin-left: 0; vertical-align: middle; height: 50px; padding: 0 12px 0 52px; }   /* the row's height, two lines */
   #handicap .hc-chip .bye-helm { left: -20px; height: 52px; }   /* clear of the code: about 67px wide, 47 of it over the badge */
   #handicap tr.hc-starts th { padding: 0 6px 2px; line-height: 1; font-family: var(--font-mono); font-weight: 400; font-size: calc(var(--slate-fs, 16px) * 1.25); letter-spacing: 0; text-transform: none; color: var(--color-ink-dim); text-align: center; white-space: nowrap; }   /* the numbers a game starts at, condensed under the column names (the user, Nov 4 2026) */
-  #handicap tr.hc-starts .hc-sv { display: inline-block; box-sizing: border-box; width: 80px; padding: 0 5px; text-align: center; vertical-align: middle; }   /* a field's width, so a start sits over the field it starts */
+  #handicap tr.hc-starts .hc-start-value { display: inline-block; box-sizing: border-box; width: 80px; padding: 0 5px; text-align: center; vertical-align: middle; }   /* a field's width, so a start sits over the field it starts */
   #handicap tr.hc-starts .hc-op { color: inherit; }
-  #handicap .hc-dec, #handicap .hc-rows .hc-stack .hc-val { display: inline-flex; width: 56px; padding: 0; }   /* a number split at its point: */
-  #handicap .hc-di { flex: none; width: 22px; text-align: right; white-space: nowrap; }   /* the part before the point, ending where the column's point starts (mono: a coefficient field's point) */
-  #handicap .hc-df { flex: 1 1 0; min-width: 0; text-align: left; white-space: nowrap; }
-  #handicap tr.hc-starts .hc-sv.hc-dec { display: inline-flex; width: 56px; padding: 0; text-align: left; }
-  #handicap .hc-dec2 .hc-di { width: 15px; }   /* HFA's start, on HFA's point */
-  #handicap .hc-rows .hc-stack .hc-val .hc-di { width: 26px; }   /* the values, in the names' type: its narrower point centered on the same line */
+  #handicap .hc-decimal, #handicap .hc-rows .hc-stack .hc-val { display: inline-flex; width: 56px; padding: 0; }   /* a number split at its point: */
+  #handicap .hc-whole { flex: none; width: 22px; text-align: right; white-space: nowrap; }   /* the part before the point, ending where the column's point starts (mono: a coefficient field's point) */
+  #handicap .hc-fraction { flex: 1 1 0; min-width: 0; text-align: left; white-space: nowrap; }
+  #handicap tr.hc-starts .hc-start-value.hc-decimal { display: inline-flex; width: 56px; padding: 0; text-align: left; }
+  #handicap .hc-decimal-hfa .hc-whole { width: 15px; }   /* HFA's start, on HFA's point */
+  #handicap .hc-rows .hc-stack .hc-val .hc-whole { width: 26px; }   /* the values, in the names' type: its narrower point centered on the same line */
   #handicap .hc-stack .hc-low { position: relative; }
   #handicap .hc-stack .hc-low .hc-op { position: absolute; right: 100%; top: 50%; transform: translateY(-50%); margin-right: 2px; }   /* "×" just left of the value, out of its way */
   #handicap .hc-how { margin-bottom: 12px; max-width: 1040px; }   /* How to's explanation, over the games */
-  #handicap .hc-how-s { margin: 8px 0 0; }
-  #handicap .hc-how-s h3 { margin: 0 0 2px; font: 700 20px var(--font-label); color: var(--color-ink); }
-  #handicap .hc-how-s p { margin: 0; font: 400 16px/1.45 system-ui, "Segoe UI", sans-serif; color: var(--color-ink); }   /* plain reading type, not the table's mono */
+  #handicap .hc-how-part { margin: 8px 0 0; }
+  #handicap .hc-how-part h3 { margin: 0 0 2px; font: 700 20px var(--font-label); color: var(--color-ink); }
+  #handicap .hc-how-part p { margin: 0; font: 400 16px/1.45 system-ui, "Segoe UI", sans-serif; color: var(--color-ink); }   /* plain reading type, not the table's mono */
   #handicap .hc-how-btn { height: 32px; }
   #handicap .hc-how-btn[aria-pressed=true] { background: var(--color-green-37); color: var(--color-white); }
   /* ===== Season stats and its Trends (the old Playbook) ===== */
@@ -1444,22 +1442,22 @@
   .trends table { max-width: none; font-size: 13px; }
   .trends th, .trends td { padding: 4px 8px; }
   .trends .trends-g { text-align: center; border-left: 1px solid var(--color-paper-edge); color: var(--color-ink); }
-  .trends .trends-l { border-left: 1px solid var(--color-paper-edge); }
-  .trends tbody tr.trends-s { cursor: pointer; }
-  .trends tbody tr.trends-s:hover { background: var(--color-white-a4-2); }
+  .trends .trends-divider { border-left: 1px solid var(--color-paper-edge); }
+  .trends tbody tr.trends-situation { cursor: pointer; }
+  .trends tbody tr.trends-situation:hover { background: var(--color-white-a4-2); }
   .trends tr.trends-y td { color: var(--color-ink-dim); font-size: 12px; padding-block: 2px; }
   .trends td small { display: inline; color: var(--color-ink-dim); font-size: 11px; margin-left: 8px; }
   .trends .trends-note { margin: 0 0 8px; font-size: 12px; color: var(--color-ink-dim); }
-  .pg-stub { justify-self: start; text-align: left; font: 400 22px/1.2 var(--font-league); letter-spacing: .04em; color: var(--color-ink); padding: 16px 12px 4px; }
-  .pg-stub-t { margin: 0; padding: 0 12px 16px; font-size: 15px; color: var(--color-ink-dim); }
+  .page-stub { justify-self: start; text-align: left; font: 400 22px/1.2 var(--font-league); letter-spacing: .04em; color: var(--color-ink); padding: 16px 12px 4px; }
+  .page-stub-text { margin: 0; padding: 0 12px 16px; font-size: 15px; color: var(--color-ink-dim); }
 
   /* ===== Across components: one rule for several of the above ===== */
   option, optgroup { background: var(--color-paper); color: var(--color-ink); }
   .rk-num small { color: var(--color-ink-dim); font-size: 9px; line-height: 1.2; letter-spacing: .12em; text-transform: uppercase; }
-  .section-page th, .sum th, .board th, .lbl, .gh, .g-st, .game-picker-list .day, .rk-num small, .graphs text.ax { font-family: var(--font-label); font-weight: 700; }
-  .sec-title h2, fan-info-line h2, .totals h2, .graphs-cell .cap, .games.kickoff-windows .slot-h { font-family: var(--font-label); font-weight: 700; }
-  .section-page th, .sum th, .board th, .lbl, .gh, .g-st, .game-picker-list .day, .graphs text.ax { font-size: 15px; }
-  .sec-title h2, fan-info-line h2, .totals h2, .graphs-cell .cap, .games.kickoff-windows .slot-h { font-size: 16px; }
+  .section-page th, .sum th, .board th, .lbl, .grid-head, .g-st, .game-picker-list .day, .rk-num small, .graphs text.ax { font-family: var(--font-label); font-weight: 700; }
+  .sec-title h2, fan-info-line h2, .totals h2, .graphs-cell .cap, .games.kickoff-windows .slot-head { font-family: var(--font-label); font-weight: 700; }
+  .section-page th, .sum th, .board th, .lbl, .grid-head, .g-st, .game-picker-list .day, .graphs text.ax { font-size: 15px; }
+  .sec-title h2, fan-info-line h2, .totals h2, .graphs-cell .cap, .games.kickoff-windows .slot-head { font-size: 16px; }
   .rk-num small { font-size: 14px; }
 
   /* ===== Bet tracking off ===== */
@@ -1469,7 +1467,7 @@
   .prices-off #tab-graphs, .prices-off #slateNote { display: none !important; }
   .tracking-off .top { grid-template-columns: minmax(0, 1fr) !important; }   /* the game cards run to the right edge */
   .tracking-off .top.gd-open .games.gd { width: 100%; }
-  .tracking-off .g-bot { visibility: hidden; }   /* a fully enabled card is the layout in every mode: what's off leaves its space blank */
+  .tracking-off .g-bottom { visibility: hidden; }   /* a fully enabled card is the layout in every mode: what's off leaves its space blank */
 
   /* No prices: the moneyline, spread and total columns would stand empty, so the badge takes the card, centered in the room left of the icons. */
 
@@ -1487,8 +1485,8 @@
     .strip:not(.bottom) .strip-tabs.pinned.wk2 button { flex: none; width: auto !important; position: relative !important; top: 0; left: auto !important; height: 41px; font-size: 16px; padding-inline: 10px; }
     .strip.bottom { position: relative; inset: auto; margin-top: 46px; }   /* the info line rides on its top edge here too, in the room above it (static, it sat above the page's top) */
     .strip.bottom:has(fan-info-line.folded) { margin-top: 80px; }
-    .strip.bottom :is(#tab-graphs, #tab-season, #tab-handicap, #tab-ledger, #sectiontabs1 button) { font-size: 16px; padding-inline: 10px; }
-    .strip.bottom #sectiontabs1 { grid-auto-columns: auto; }
+    .strip.bottom :is(#tab-graphs, #tab-season, #tab-handicap, #tab-ledger, #bottomSectionTabs button) { font-size: 16px; padding-inline: 10px; }
+    .strip.bottom #bottomSectionTabs { grid-auto-columns: auto; }
     .strip.bottom .strip-left { overflow-x: auto; scrollbar-width: none; }   /* a section's buttons scroll sideways when they don't fit their row */
     .game-arrow { display: none !important; }
     .settings-about { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 6px; }   /* one column, row by row, with no wires: what the connector and the services do hangs indented under each card */
@@ -1504,7 +1502,7 @@
     .games.kickoff-windows .slot { margin-bottom: 12px; }
     .games.kickoff-windows .slot-cards { display: grid; grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto; grid-auto-columns: auto; }
     .games.kickoff-windows .slot-cards .game { grid-row: auto !important; min-height: var(--card-h, 150px); }
-    .games.kickoff-windows .slot-cards .sun-h { grid-row: auto !important; }
+    .games.kickoff-windows .slot-cards .sunday-head { grid-row: auto !important; }
     .flat-cards { grid-template-columns: minmax(0, 1fr) !important; zoom: 1 !important; }
     .games.gd, .gd-wrap { height: auto !important; overflow: visible !important; }
     .top.gd-open .games.gd { width: 100% !important; }
@@ -1512,8 +1510,8 @@
     .gd-team { zoom: .6; min-width: 0; }
     .gd-low { display: block !important; }
     .gd-half { display: block !important; width: auto !important; height: auto !important; margin-bottom: 16px; }
-    .gd-sgrid { flex: 1; grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .gd-sgrid .gd-sc:nth-child(n) { border-left: 0; }
+    .gd-season-grid { flex: 1; grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .gd-season-grid .gd-sc:nth-child(n) { border-left: 0; }
     .gd-col { width: auto !important; margin-bottom: 8px; }
   }
 
@@ -1528,14 +1526,14 @@
     .wager-ticket .amt-row .money input { padding-inline: 18px 4px; }
     .wager-ticket .amt-row .money b { left: 7px; }
     .totals { padding-inline: 8px; }
-    .totals .tt-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .totals .totals-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
     .totals .stat .lbl { font-size: 10px; letter-spacing: 0; white-space: normal; line-height: 1.1; }
     .totals .stat b { font-size: 14px; }
     .saved { --cols: minmax(0, 68fr) minmax(0, 44fr) minmax(0, 34fr) minmax(0, 36fr) minmax(0, 40fr) minmax(0, 40fr) 14px; }
     .saved-heads, .saved li.row { column-gap: 3px; }
-    .saved li.row .r2 { font-size: 10px; }
+    .saved li.row .row-two { font-size: 10px; }
     .saved-heads { padding-inline: 6px; }
-    .gh { font-size: 12px; letter-spacing: 0; }
+    .grid-head { font-size: 12px; letter-spacing: 0; }
     .saved li { padding-inline: 6px; overflow-wrap: normal; }
     .saved li.row { font-size: 10px; }
     .sum { padding-inline: 6px; }

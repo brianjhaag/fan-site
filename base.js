@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw33ju01";
-import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw33ju01";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw33ju01";
-import { Calc } from "./calc.js?v=mw33ju01";
-import { Fan } from "./hosts.js?v=mw33ju01";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw3s4vr0";
+import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw3s4vr0";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw3s4vr0";
+import { Calc } from "./calc.js?v=mw3s4vr0";
+import { Fan } from "./hosts.js?v=mw3s4vr0";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -80,13 +80,13 @@ import { Fan } from "./hosts.js?v=mw33ju01";
   // NCAA FB isn't a full league yet: today's games involving a top 25 team, this browser's own read of ESPN, as a read-only list.
   async function drawNcaafb() {
     const box = $("ncaafb");
-    if (!box.firstChild) box.replaceChildren(el("div", "pg-stub", "NCAA FB"), el("p", "pg-stub-t", "Asking ESPN…"));
+    if (!box.firstChild) box.replaceChildren(el("div", "page-stub", "NCAA FB"), el("p", "page-stub-text", "Asking ESPN…"));
     let slate;
-    try { slate = await pullNcaafb(); } catch (e) { box.replaceChildren(el("div", "pg-stub", "NCAA FB"), el("p", "pg-stub-t", "Couldn't reach ESPN.")); return; }
+    try { slate = await pullNcaafb(); } catch (e) { box.replaceChildren(el("div", "page-stub", "NCAA FB"), el("p", "page-stub-text", "Couldn't reach ESPN.")); return; }
     const team = s => { const c = el("td", "cfb-team"); if (s.rank) c.append(el("small", null, "#" + s.rank + " ")); c.append(s.name); return c; };
     const rows = slate.games.map(g => {
       const tr = el("tr"), started = g.state !== "pre", net = el("td", "cfb-net"), tvBtn = el("button");
-      tvBtn.type = "button"; tvBtn.title = "Live telecast"; tvBtn.setAttribute("aria-label", "Live telecast"); tvBtn.innerHTML = CARD_ACTIONS.find(([name]) => name === "Live telecast")[1];
+      tvBtn.type = "button"; tvBtn.title = "Live telecast"; tvBtn.setAttribute("aria-label", "Live telecast"); tvBtn.innerHTML = GAME_CARD_ACTIONS.find(([name]) => name === "Live telecast")[1];
       tvBtn.addEventListener("click", () => { later.watchGame(g); });   // always on here: a list read once can't say what's live now
       net.append(g.tv, tvBtn);
       tr.append(el("td", null, timeZoned(new Date(g.t))), team(g.away), el("td", "cfb-num", started ? String(g.away.score) : ""), team(g.home), el("td", "cfb-num", started ? String(g.home.score) : ""), el("td", null, started ? g.detail : ""), net);
@@ -95,17 +95,17 @@ import { Fan } from "./hosts.js?v=mw33ju01";
     const table = el("table", "cfb-list"), head = el("tr");
     ["Kickoff", "Away", "", "Home", "", "Status", "Network"].forEach(h => head.append(el("th", null, h)));
     const thead = el("thead"), tbody = el("tbody"); thead.append(head); tbody.append(...rows); table.append(thead, tbody);
-    box.replaceChildren(el("div", "pg-stub", "NCAA FB"), el("p", "pg-stub-t", `Top 25 teams today. ESPN as of ${timeZoned(new Date(slate.asOf))}: reopen the page to read it again.`), table);
+    box.replaceChildren(el("div", "page-stub", "NCAA FB"), el("p", "page-stub-text", `Top 25 teams today. ESPN as of ${timeZoned(new Date(slate.asOf))}: reopen the page to read it again.`), table);
   }
   // A stub view draws itself and answers true; the section's first view answers false and draws as usual.
   function drawStub(v) {
     if (v === "ncaafb") { drawNcaafb(); return true; }
-    if (v === "handicap" && !LG().handicap) { $(v).replaceChildren(el("div", "pg-stub", `${LG().code} handicap`), el("p", "pg-stub-t", "Not built yet: the NFL first.")); return true; }
+    if (v === "handicap" && !LG().handicap) { $(v).replaceChildren(el("div", "page-stub", `${LG().code} handicap`), el("p", "page-stub-text", "Not built yet: the NFL first.")); return true; }
     if (v === "season" && !LG().stats && LG().season) return false;   // a league with only Margins built (the NBA, the NHL) draws it, whatever view the NFL left picked
-    if (!LG().stats && v === "season") { $(v).replaceChildren(el("div", "pg-stub", `${LG().code} season stats`), el("p", "pg-stub-t", "Not built yet.")); return true; }
+    if (!LG().stats && v === "season") { $(v).replaceChildren(el("div", "page-stub", `${LG().code} season stats`), el("p", "page-stub-text", "Not built yet.")); return true; }
     const s = SECTIONS[v].find(x => x.k === subView[v]);
     if (!s.stub) return false;
-    $(v).replaceChildren(el("div", "pg-stub", s.h), el("p", "pg-stub-t", s.stub));
+    $(v).replaceChildren(el("div", "page-stub", s.h), el("p", "page-stub-text", s.stub));
     return true;
   }
   const LEAGUES = [];   // the league picker's leagues that are stubs: none now. NCAA FB's list (drawNcaafb) is off, on the user's word: adding "ncaafb" here and to leagues.js brings it back
@@ -115,7 +115,7 @@ import { Fan } from "./hosts.js?v=mw33ju01";
   const ALL_GAMES = Object.keys(WEEK_GAMES).map(Number).sort((p, q) => p - q).flatMap(w => WEEK_GAMES[w]);
   // The calculations live in calc.js; here they are bound to the page's games and tickets.
   const calc = Calc.make({ games: ALL_GAMES, now: () => Date.now(), abbr: n => abbr(n) });
-  const { RULES, leagueId, leagueOf, outcomes, last, nick, gameLabel, gameKey, pts, profitOf, riskOf, decimalOf, ticketPrice, legResult, ticketPL, marginModel, lineOk, FAN_CLASSES, betClass, odds, contractsFor, kalshiCalc, centsOf, americanOf, fillSide, fillAmounts, kalshiMarket, freshPrices, evMoneyline, evPoints, pairFlagged, pairStakes, pbStats, replyFill } = Calc;
+  const { RULES, leagueId, leagueOf, outcomes, last, nick, gameLabel, gameKey, pts, profitOf, riskOf, decimalOf, ticketPrice, legResult, ticketPL, marginModel, lineOk, FAN_CLASSES, betClass, odds, contractsFor, kalshiCalc, centsOf, americanOf, fillSide, fillAmounts, kalshiMarket, freshPrices, evMoneyline, evPoints, pairFlagged, pairStakes, trendsStats, replyFill } = Calc;
   const { status, settleOf, vigOf, projectedPL, deadFor, shareRisk, shareTerm, extremes, hedgeFor, readTicker, ticketFromFill, kalshiCheck, ledgerRows } = calc;
   // These take the selected week's tickets.
   const gameBets = g => calc.gameBets(g, tickets), parlayShares = g => calc.parlayShares(g, tickets), spentShares = g => calc.spentShares(g, tickets), gameSettledPL = g => calc.gameSettledPL(g, tickets);
@@ -128,7 +128,7 @@ import { Fan } from "./hosts.js?v=mw33ju01";
   const brighterOf = (g, side) => { const { bg, fg } = teamOf(g, side); return lumOf(bg) >= lumOf(fg) ? bg : fg; };
   // A team name as a chip in the team's colors.
   function teamChip(g, side, text, cls) {
-    const k = teamLook(g, side), c = el("span", "tchip" + (cls ? " " + cls : ""), text);
+    const k = teamLook(g, side), c = el("span", "team-chip" + (cls ? " " + cls : ""), text);
     c.style.background = k.bg; c.style.color = k.fg;
     if (k.outline) c.style.borderColor = k.outline;
     return c;
@@ -140,8 +140,8 @@ import { Fan } from "./hosts.js?v=mw33ju01";
     const [r_, g_, b_] = [1, 3, 5].map(i => { const v = parseInt(look.bg.slice(i, i + 2), 16); return Math.round(v + (255 - v) * .33); }), paper = [26, 31, 38];
     badge.style.background = `rgb(${Math.round((r_ + paper[0]) / 2)} ${Math.round((g_ + paper[1]) / 2)} ${Math.round((b_ + paper[2]) / 2)})`;
     badge.style.color = look.fg;
-    if (hasArt(nk)) badge.append(helmImg(nk, "gd-bhelm"));
-    badge.append(el("span", "gd-bname", label || last(g[side]).toUpperCase()));
+    if (hasArt(nk)) badge.append(helmImg(nk, "gd-badge-helm"));
+    badge.append(el("span", "gd-badge-name", label || last(g[side]).toUpperCase()));
     return badge;
   }
 
@@ -151,14 +151,14 @@ import { Fan } from "./hosts.js?v=mw33ju01";
   const sportsbookAbbr = name => SPORTSBOOK_ABBR[name] || name;
   // A sportsbook's icon followed by its name (the short name with short); icon only with iconOnly; just the name when it has no icon.
   function sportsbookTag(name, iconOnly, short) {
-    const tag = el("span", "bk"), src = SPORTSBOOK_ICONS[name];
-    if (src) { const i = document.createElement("img"); i.className = "bico"; i.src = src; i.alt = ""; i.width = i.height = 16; tag.append(i); }
+    const tag = el("span", "sportsbook-tag"), src = SPORTSBOOK_ICONS[name];
+    if (src) { const i = document.createElement("img"); i.className = "sportsbook-icon"; i.src = src; i.alt = ""; i.width = i.height = 16; tag.append(i); }
     if (!(iconOnly && src)) tag.append(document.createTextNode(short ? sportsbookAbbr(name) : name));
     if (short || iconOnly) tag.title = name;
     return tag;
   }
 
-  const APP_VERSION = "0.58.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.58.2";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -322,7 +322,7 @@ import { Fan } from "./hosts.js?v=mw33ju01";
   const hasArt = n => !!(TEAM[n] && TEAM[n].art);
 
   // The game card's gutter: one button per thing a game can open, always all five. Game preview, Live telecast before a game ends and, with tracking on, Risk detail work; the rest are dim. Which are dim when is Claude's guess, for now.
-  const CARD_ACTIONS = [
+  const GAME_CARD_ACTIONS = [
     ["Game preview", '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3.500l5 5M8 3.500l-5 5"/><circle cx="5.500" cy="18" r="3"/><circle cx="18.500" cy="18.500" r="2.500"/><path d="M10.500 6c5 0 8 2.500 8 8"/><path d="M15.500 12l3 2.500 2.500-3"/></svg>'],
     ["Box score", '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.500" width="18" height="15" rx="1.500"/><path d="M3 9.500h18M3 14.500h18M9.500 4.500v15M15.250 4.500v15"/></svg>'],
     ["Live telecast", '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7.500" width="18" height="12.500" rx="2"/><path d="M8.500 3l3.500 4.500L15.500 3"/></svg>'],
@@ -344,7 +344,7 @@ import { Fan } from "./hosts.js?v=mw33ju01";
   function resultCell(t) {
     const s = settleOf(t), c = el("span", "rk-num res");
     c.append(el("small", null, "Result"),
-      el("b", s.state === "won" ? "pos" : s.state === "lost" ? "neg" : "dim", s.state === "pending" ? "Pending" : `${s.state[0].toUpperCase() + s.state.slice(1)} ${money(s.payout)}`),
+      el("b", s.state === "won" ? "profit" : s.state === "lost" ? "loss" : "dim", s.state === "pending" ? "Pending" : `${s.state[0].toUpperCase() + s.state.slice(1)} ${money(s.payout)}`),
       el("small", null, s.state === "pending" ? " " : `net ${signedMoney(s.net)}`));
     return c;
   }
@@ -513,10 +513,10 @@ import { Fan } from "./hosts.js?v=mw33ju01";
     riskByWeek[curWeek] = riskKey; riskGame = null; clearRiskQuietly();
     riskKey = riskByWeek[w] || "";
     selectSlate(w);
-    $("slate").setAttribute("aria-labelledby", "tab-w" + w);
+    $("slate").setAttribute("aria-labelledby", "tab-week-" + w);
     $("slateTitle").textContent = slateTitleOf(w); later.drawByes();
     later.weekChanged();
     applySlate(); showView("week");
   }
   document.querySelectorAll(".strip-tabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { closePreview, nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, newestFor, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, $, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, gdBadge, betClass, sportsbookAbbr, sportsbookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, startLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, view, vigOf, weekNow, setRiskKey, CARD_ACTIONS, teamChip, hasArt, brighterOf, fitSlateLine, graphsOK, SECTIONS, isPhone, mq };
+export { closePreview, nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, newestFor, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, $, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, gdBadge, betClass, sportsbookAbbr, sportsbookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, startLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, trendsStats, profitOf, projectedPL, pts, readTicker, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, view, vigOf, weekNow, setRiskKey, GAME_CARD_ACTIONS, teamChip, hasArt, brighterOf, fitSlateLine, graphsOK, SECTIONS, isPhone, mq };

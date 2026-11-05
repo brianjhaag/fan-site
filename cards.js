@@ -1,11 +1,11 @@
 // The game cards (the refactor, Nov 3 2026, from base.js): each card's badges, lines and gutter, the strip of cards in kickoff windows, a finished week's grid, and the byes.
-import { Calc } from "./calc.js?v=mw33ju01";
-import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw33ju01";
-import { closePreview, CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw33ju01";
-import { drawSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw33ju01";
-import { drawGameDetail } from "./panels.js?v=mw33ju01";
-import { enterMoneyline, enterSpread, enterTotal, showSaved } from "./tracker.js?v=mw33ju01";
-import { telecastFor, watchGame } from "./telecasts.js?v=mw33ju01";
+import { Calc } from "./calc.js?v=mw3s4vr0";
+import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw3s4vr0";
+import { closePreview, GAME_CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw3s4vr0";
+import { drawSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw3s4vr0";
+import { drawGameDetail } from "./panels.js?v=mw3s4vr0";
+import { enterMoneyline, enterSpread, enterTotal, showSaved } from "./tracker.js?v=mw3s4vr0";
+import { telecastFor, watchGame } from "./telecasts.js?v=mw3s4vr0";
 // base.js draws the byes as a league or week changes
 Object.assign(later, { drawByes });
 
@@ -18,7 +18,7 @@ function cardGutter(g) {
   const box = el("div", "g-gut");
   box.addEventListener("click", e => e.stopPropagation());   // a click here isn't a click on the card
   const st = status(g)[1];
-  CARD_ACTIONS.forEach(([name, icon]) => {
+  GAME_CARD_ACTIONS.forEach(([name, icon]) => {
     const b = el("button"), live = name === "Game preview" ? leagueOf(g).gameDetails : name === "Live telecast" ? st !== "final" && !!telecastFor(g) : name === "Tape" ? st === "final" && (!leagueOf(g).daily || !!g.eid) : name === "Box score" ? (st === "live" || st === "final") && !!g.eid : name === "Risk detail" && trackingOn;
     b.type = "button"; b.disabled = !live; b.title = name; b.setAttribute("aria-label", name); b.innerHTML = icon;
     if (name === "Live telecast" && st === "live") b.classList.add("on-air");
@@ -39,10 +39,10 @@ const BADGE_STYLES = {
     const k = teamLook(g, side), nk = nick(g, side);
     chip.classList.add("plate");
     chip.style.backgroundColor = k.bg; chip.style.borderColor = k.fg;
-    const code = el("b", "pl-no", abbr(nk)), box = el("span", "tn-txt");
+    const code = el("b", "pl-no", abbr(nk)), box = el("span", "team-name-text");
     const state = PLATE_STATES[TEAM[nk] && TEAM[nk].state] || "";
     box.append(el("small", "pl-st" + (state.length > 11 ? " long" : ""), state), code);
-    const old = chip.querySelector(".tn-txt");
+    const old = chip.querySelector(".team-name-text");
     if (old) old.replaceWith(box); else chip.replaceChildren(box);
   } }
 };
@@ -60,16 +60,16 @@ const scoreOf = g => g.final || null;
 function teamRow(g, side, over) {
   const L = lineOf(g), away = side === "away", n = away ? 0 : 1;
   const tr = el("tr");
-  const name = el("td", "tn");
-  const chip = teamChip(g, side, leagueOf(g).codeChips ? abbr(nick(g, side)) : nick(g, side), "tname");
+  const name = el("td", "team-cell");
+  const chip = teamChip(g, side, leagueOf(g).codeChips ? abbr(nick(g, side)) : nick(g, side), "team-name");
   chip.style.borderColor = "transparent";   // no outline on black badges here (the other views keep it)
   if (hasArt(nick(g, side))) {   // the helmet or logo sits at the left of the badge
     const img = helmImg(nick(g, side), "helm");
-    chip.replaceChildren(img, el("span", "tn-txt", abbr(nick(g, side)))); chip.classList.add("has-helm");
+    chip.replaceChildren(img, el("span", "team-name-text", abbr(nick(g, side)))); chip.classList.add("has-helm");
   }
   BADGE_STYLES[over ? "plain" : badgeStyle].draw(chip, g, side);
   if (!over && showsNow(g)) {   // a black plate holding what a final's card shows: team and score in scoreboard type, the leader lit
-    const box = el("span", "tn-txt live-sc"), old = chip.querySelector(".tn-txt"), s = g.now.score;
+    const box = el("span", "team-name-text live-sc"), old = chip.querySelector(".team-name-text"), s = g.now.score;
     box.append(el("span", null, abbr(nick(g, side))), el("span", null, String(s[n])));
     if (old) old.replaceWith(box); else chip.replaceChildren(box);
     chip.classList.add("live"); if (s[n] > s[1 - n]) chip.classList.add("lead");    }
@@ -83,7 +83,7 @@ function teamRow(g, side, over) {
     chip.append(el("span", "sc", shown ? String(shown[n]) : "–"));
     name.colSpan = 3;
     tr.append(name);   // no moneyline once the game is over
-    if (away) { const f = el("td", "fin", g.final ? "F" : ""); f.rowSpan = 2; if (g.final) f.setAttribute("aria-label", "Final"); tr.append(f); }
+    if (away) { const f = el("td", "final", g.final ? "F" : ""); f.rowSpan = 2; if (g.final) f.setAttribute("aria-label", "Final"); tr.append(f); }
     return tr;
   }
   // The favorite's spread is the underdog's mirrored, so only the underdog's row shows it. The favorite's row shows its chance to win there instead.
@@ -92,12 +92,12 @@ function teamRow(g, side, over) {
   const ml = el("td", "ml", !pricesOn() ? "" : nl ? "—" : odds(L.ml[n]));   // tracking off: no prices anywhere, not dashes
   ml.style.color = brighterOf(g, side);
   if (!nl && pricesOn() && trackingOn) { ml.classList.add("ml-go"); ml.addEventListener("click", e => { e.stopPropagation(); enterMoneyline(g, n); }); }   // a moneyline click fills the wager ticket instead of selecting the card
-  const nsp = !nl && !!L.noSp, favRow = L.ml[n] < L.ml[1 - n] || (L.ml[n] === L.ml[1 - n] && !away);   // no spread market yet: the favorite's row keeps its chance to win, the other a dash
-  const spc = el("td", "sp", !pricesOn() || nl ? "" : nsp ? (favRow ? Calc.winPct(L.ml, away) + "%" : "—") : sp < 0 ? Calc.winPct(L.ml, away) + "%" : pts(sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1)));   // one decimal always: +4.0, +3.5
-  spc.style.color = brighterOf(g, side);
-  if (spc.textContent.endsWith("%")) spc.classList.add("wp");
-  if (!nl && !nsp && sp >= 0 && pricesOn() && trackingOn) { spc.classList.add("ml-go"); spc.addEventListener("click", e => { e.stopPropagation(); enterSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
-  tr.append(ml, name, spc);
+  const noSpread = !nl && !!L.noSp, favRow = L.ml[n] < L.ml[1 - n] || (L.ml[n] === L.ml[1 - n] && !away);   // no spread market yet: the favorite's row keeps its chance to win, the other a dash
+  const spreadCell = el("td", "sp", !pricesOn() || nl ? "" : noSpread ? (favRow ? Calc.winPct(L.ml, away) + "%" : "—") : sp < 0 ? Calc.winPct(L.ml, away) + "%" : pts(sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1)));   // one decimal always: +4.0, +3.5
+  spreadCell.style.color = brighterOf(g, side);
+  if (spreadCell.textContent.endsWith("%")) spreadCell.classList.add("win-percent");
+  if (!nl && !noSpread && sp >= 0 && pricesOn() && trackingOn) { spreadCell.classList.add("ml-go"); spreadCell.addEventListener("click", e => { e.stopPropagation(); enterSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
+  tr.append(ml, name, spreadCell);
   // The total is the same for both teams: one cell on the first row spanning both, centered between them.
   if (away) {
     const tot = el("td", "tot", !pricesOn() ? "" : nl || L.noTot ? "—" : Number(L.tot).toFixed(1)); tot.rowSpan = 2;
@@ -170,12 +170,12 @@ function drawGameCards() {
     mid.append(table);
 
     // Bottom: risk and profit/loss
-    const bot = el("div", "g-bot");
+    const bottomRow = el("div", "g-bottom");
     const wagered = el("div", "stat"), risk = el("div", "stat mid"), pl = el("div", "stat");
     const nd = t => t.split("$").join("");   // the values on game cards carry no dollar signs
     const noBets = !mine.length && !spent.length && !shares.length;   // no bets on this game: dashes instead of zeros
     const hedge = g.final ? null : hedgeFor(g, mine, shares);   // Lock or Hedge when the game's risk detail has a suggested bet
-    const tb = hedge ? el("b", hedge.kind === "lock" ? "dhi tico" : "dhg tico") : null;
+    const tb = hedge ? el("b", hedge.kind === "lock" ? "mark-lock hedge-icon" : "mark-hedge hedge-icon") : null;
     if (hedge) {
       const lock = hedge.kind === "lock", name = lock ? "Locks in a profit" : "Suggested hedge";
       tb.addEventListener("mouseenter", () => showTradeTip(tb, hedge));
@@ -186,25 +186,25 @@ function drawGameCards() {
       tb.setAttribute("aria-label", name);
     }
     const wb = el("b", null, noBets ? "—" : nd(money(staked)));
-    if (bonusStaked) wb.append(el("span", "bsub", " + B" + nd(money(bonusStaked))));
+    if (bonusStaked) wb.append(el("span", "bonus-staked", " + B" + nd(money(bonusStaked))));
     wagered.append(el("span", "lbl", mine.length + spent.length ? `Wagers (${mine.length + spent.length})` : "Wagers"), wb);
     const maxRisk = (mine.length ? extremes(g, mine).maxRisk : 0) + shareRisk(shares);
-    const rv = el("span", "rk-val"); rv.append(el("b", !g.final && maxRisk >= 500 ? "dlo" : null, noBets ? "—" : nd(money(maxRisk))), ...(tb ? [tb] : []));
+    const rv = el("span", "rk-val"); rv.append(el("b", !g.final && maxRisk >= 500 ? "mark-risk" : null, noBets ? "—" : nd(money(maxRisk))), ...(tb ? [tb] : []));
     risk.append(el("span", "lbl", "Risk"), rv);   // red highlight from $500 of risk on a game still to be played
     // A final game with a score is settled: grade every wager against the final margin and total, and double-underline the result.
     let plText = "—", plCls = "dim";
     const settled = gameSettledPL(g);
-    if (settled !== null) { plText = nd(signedMoney(settled)); plCls = "settled " + (settled > 0.004 ? "pos" : settled < -0.004 ? "neg" : "dim"); }
+    if (settled !== null) { plText = nd(signedMoney(settled)); plCls = "settled " + (settled > 0.004 ? "profit" : settled < -0.004 ? "loss" : "dim"); }
     else if (stCls === "live" && g.live && (mine.length || shares.length)) {   // under way with live prices: the expected P/L at the live win chances, in a P/L-coded outline like the network
       const e = mine.reduce((s, t) => s + projectedPL(t), 0) + shares.reduce((s, q) => s + q.f * projectedPL(q.t), 0);
-      plText = nd(signedMoney(e)); plCls = "livepl " + (e > 0.5 ? "pos" : e < -0.5 ? "neg" : "dim");
+      plText = nd(signedMoney(e)); plCls = "live-pl " + (e > 0.5 ? "profit" : e < -0.5 ? "loss" : "dim");
     }
     pl.append(el("span", "lbl", "P/L"), el("b", plCls, plText));
-    if (g.final) { bot.classList.add("done"); bot.append(pl); }   // a final game: the bottom row is just its P/L, in its usual column
-    else bot.append(wagered, risk, pl);
+    if (g.final) { bottomRow.classList.add("done"); bottomRow.append(pl); }   // a final game: the bottom row is just its P/L, in its usual column
+    else bottomRow.append(wagered, risk, pl);
 
     if (!over) card.append(top);   // a final game has no top line: the F on its board says it
-    card.append(mid, bot, cardGutter(g));
+    card.append(mid, bottomRow, cardGutter(g));
     made.push([g, card]);
   });
   windowColumns(box, made);
@@ -219,7 +219,7 @@ function drawGameCards() {
 // Games that kick off within an hour of each other share a column. The column is named by its slot (Eastern time, since the
 // slots are the league's) and carries its day and first kickoff in the viewer's time; six or more games take two card-columns.
 function windowColumns(box, made) {
-  if (!made.length) { box.classList.remove("flat"); box.replaceChildren(el("p", "pg-stub-t", "No games this day.")); return; }
+  if (!made.length) { box.classList.remove("flat"); box.replaceChildren(el("p", "page-stub-text", "No games this day.")); return; }
   const allFinal = made.every(([g]) => g.final);
   box.classList.toggle("flat", allFinal);
   if (allFinal) { flatGrid(box, [...made].sort((a, b) => new Date(a[0].t) - new Date(b[0].t)).map(m => m[1])); return; }
@@ -251,10 +251,10 @@ function windowColumns(box, made) {
     const cols = w.cards.length >= 9 ? 3 : w.cards.length >= 6 ? 2 : 1, slot = el("section", "slot"), grid = el("div", "slot-cards");
     grid.style.setProperty("--rows", Math.ceil(w.cards.length / cols) + (w.sun ? 2 + w.sun.cards.length - 1 : 0));
     grid.style.setProperty("--cols", cols);
-    slot.append(el("h3", "slot-h", slotName(w.t)), grid);
+    slot.append(el("h3", "slot-head", slotName(w.t)), grid);
     grid.append(...w.cards);
     if (w.sun) {
-      const r = w.cards.length + 2, h = el("h3", "slot-h sun-h", slotName(w.sun.t));
+      const r = w.cards.length + 2, h = el("h3", "slot-head sunday-head", slotName(w.sun.t));
       h.style.gridRow = String(r - 1);
       w.sun.cards.forEach((c, i) => { c.style.gridRow = String(r + i); });
       grid.append(h, ...w.sun.cards);

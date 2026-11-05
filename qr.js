@@ -19,15 +19,15 @@ const dataCodewords = v => Math.floor(rawModules(v) / 8) - ECC_PER_BLOCK[v - 1] 
 function alignPositions(v, size) {
   if (v === 1) return [];
   const n = Math.floor(v / 7) + 2, step = Math.floor((v * 8 + n * 3 + 5) / (n * 4 - 4)) * 2, out = [6];
-  for (let pos = size - 7; out.length < n; pos -= step) out.splice(1, 0, pos);
+  for (let spot = size - 7; out.length < n; spot -= step) out.splice(1, 0, spot);
   return out;
 }
 // Data codewords then error correction, interleaved across blocks as the standard lays them out.
 function codewords(data, v) {
   const nb = BLOCKS[v - 1], ecl = ECC_PER_BLOCK[v - 1], raw = Math.floor(rawModules(v) / 8), short = nb - raw % nb, shortLen = Math.floor(raw / nb), div = rsDivisor(ecl), blocks = [];
   for (let i = 0, k = 0; i < nb; i++) {
-    const dat = data.slice(k, k + shortLen - ecl + (i < short ? 0 : 1)); k += dat.length;
-    const b = dat.concat(rsRemainder(dat, div));
+    const dataBlock = data.slice(k, k + shortLen - ecl + (i < short ? 0 : 1)); k += dataBlock.length;
+    const b = dataBlock.concat(rsRemainder(dataBlock, div));
     if (i < short) b.splice(shortLen - ecl, 0, 0);   // a short block gets a placeholder, skipped below
     blocks.push(b);
   }
@@ -56,8 +56,8 @@ function qrMatrix(text) {
   const set = (x, y, dark) => { m[y][x] = dark; fn[y][x] = true; };
   for (let i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
   for (const [cx, cy] of [[3, 3], [size - 4, 3], [3, size - 4]]) for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const x = cx + dx, y = cy + dy, d = Math.max(Math.abs(dx), Math.abs(dy)); if (x >= 0 && x < size && y >= 0 && y < size) set(x, y, d !== 2 && d !== 4); }
-  const al = alignPositions(v, size), alEnd = al.length - 1;
-  al.forEach((ay, i) => al.forEach((ax, j) => { if ((i === 0 && j === 0) || (i === 0 && j === alEnd) || (i === alEnd && j === 0)) return; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1); }));
+  const al = alignPositions(v, size), alignLast = al.length - 1;
+  al.forEach((ay, i) => al.forEach((ax, j) => { if ((i === 0 && j === 0) || (i === 0 && j === alignLast) || (i === alignLast && j === 0)) return; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1); }));
   const format = mask => {
     const d = (0 << 3) | mask; let r = d;   // level M's format bits are 00
     for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
@@ -79,8 +79,8 @@ function qrMatrix(text) {
   let i = 0;
   for (let right = size - 1; right >= 1; right -= 2) {
     if (right === 6) right = 5;
-    for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
-      const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - vert : vert;
+    for (let vertical = 0; vertical < size; vertical++) for (let j = 0; j < 2; j++) {
+      const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - vertical : vertical;
       if (!fn[y][x] && i < all.length * 8) { m[y][x] = ((all[i >>> 3] >>> (7 - (i & 7))) & 1) === 1; i++; }
     }
   }
@@ -96,7 +96,7 @@ function penalty(m) {
     let s = 0, run = 1, seq = [];
     for (let i = 0; i < size; i++) { const c = get(i); seq.push(c); if (i > 0 && c === get(i - 1)) { run++; if (run === 5) s += 3; else if (run > 5) s++; } else run = 1; }
     const str = seq.map(c => (c ? 1 : 0)).join("");
-    for (const pat of ["10111010000", "00001011101"]) for (let k = str.indexOf(pat); k >= 0; k = str.indexOf(pat, k + 1)) s += 40;
+    for (const pattern of ["10111010000", "00001011101"]) for (let k = str.indexOf(pattern); k >= 0; k = str.indexOf(pattern, k + 1)) s += 40;
     return s;
   };
   let s = 0, dark = 0;

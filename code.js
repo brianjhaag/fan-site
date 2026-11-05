@@ -1,9 +1,9 @@
 // The Code section (TRADING.md, Nov 3 2026): the algo grid, the code editor and the console with its prompt, in one page opened by the Code button, as Ledger is.
 // With a connector of 0.38 or later, the algos are the connector's algoRuntime's: kept in its records, checked, run and armed there, with or without a page open; the grid and the console show what it
 // reports, and the prompt runs there. With none, an algo is a draft kept in this browser, every one not approved, and the prompt answers from the page itself, saying so.
-import { Fan } from "./hosts.js?v=mw33ju01";
-import { $, el, changed } from "./base.js?v=mw33ju01";
-import { Calc } from "./calc.js?v=mw33ju01";
+import { Fan } from "./hosts.js?v=mw3s4vr0";
+import { $, el, changed } from "./base.js?v=mw3s4vr0";
+import { Calc } from "./calc.js?v=mw3s4vr0";
 
 const KEPT = "fan.algos";   // the drafts, per browser, when there's no algoRuntime; draftsMoved into the connector the first time one is found
 const STATES = ["not approved", "off", "running", "armed"];   // TRADING.md: an algo's states, in order
@@ -101,14 +101,14 @@ function highlight(src) {
   let out = "", at = 0, m;
   while ((m = re.exec(src))) {
     out += escapeHtml(src.slice(at, m.index));
-    const [t, com, str, scope, num, word] = m;
-    out += com ? `<i class="code-comment">${escapeHtml(com)}</i>` : str ? `<i class="code-string">${escapeHtml(str)}</i>` : scope ? `<i class="code-fan">${escapeHtml(scope)}</i>` : num ? `<i class="code-number">${escapeHtml(num)}</i>` : WORDS.has(word) ? `<i class="code-keyword">${escapeHtml(word)}</i>` : escapeHtml(t);
+    const [t, commentText, str, scope, num, word] = m;
+    out += commentText ? `<i class="code-comment">${escapeHtml(commentText)}</i>` : str ? `<i class="code-string">${escapeHtml(str)}</i>` : scope ? `<i class="code-fan">${escapeHtml(scope)}</i>` : num ? `<i class="code-number">${escapeHtml(num)}</i>` : WORDS.has(word) ? `<i class="code-keyword">${escapeHtml(word)}</i>` : escapeHtml(t);
     at = m.index + t.length;
   }
   return out + escapeHtml(src.slice(at)) + "\n";
 }
 function codeEditor() {
-  const box = el("div", "cd-ed"), nums = el("pre", "cd-nums"), painted = el("pre", "cd-view"), text = el("textarea", "cd-text");
+  const box = el("div", "cd-editor"), nums = el("pre", "cd-nums"), painted = el("pre", "cd-view"), text = el("textarea", "cd-text");
   text.spellcheck = false; text.setAttribute("aria-label", "Algo code"); text.wrap = "off";
   const a = pickedAlgo(), methods = pickedId === METHODS_ID;
   text.value = methods ? methodsText || METHODS_STARTER : a ? a.code : ""; text.disabled = methods ? !Fan.methods : !a; text.placeholder = a || methods ? "" : "Pick Methods or an algo in the grid, or press New.";
@@ -136,7 +136,7 @@ function codeEditor() {
     text.dispatchEvent(new Event("input"));
   });
   draw();
-  box.append(nums, withKids("div", "cd-edwrap", [painted, text]));
+  box.append(nums, withKids("div", "cd-editor-wrap", [painted, text]));
   return box;
 }
 
@@ -174,7 +174,7 @@ function stateButtons(a) {
 }
 function algoGrid() {
   const box = el("div", "cd-grid"), a = pickedAlgo();
-  const bar = el("div", "cd-bar"), add = el("button", "cd-btn", "New"), del = el("button", "cd-btn", "Delete"), name = el("input", "cd-nm");
+  const bar = el("div", "cd-bar"), add = el("button", "cd-btn", "New"), del = el("button", "cd-btn", "Delete"), name = el("input", "cd-name");
   add.type = del.type = "button";
   add.addEventListener("click", async () => {
     const id = "a" + Date.now().toString(36), draft = { id, name: "Algo " + (algos.length + 1), code: STARTER, cols: ["", "", ""], state: STATES[0] };
@@ -206,7 +206,7 @@ function paintConsole(out) {
   const first = algoRuntime() ? "Console: what every algo prints, and the prompt, run in the connector on the global scope. The prompt sends no orders." : "Console. With no connector algoRuntime here, the prompt runs in this page.";
   const line = l => { const n = el("div", "cl-" + l.k); if (l.k === "in") n.textContent = promptMark() + " " + l.t; else { if (l.who && l.who !== "prompt") n.append(el("span", "cd-who", l.who + " ")); n.append(l.t); } return n; };
   const stick = out.scrollTop + out.clientHeight >= out.scrollHeight - 4;
-  out.replaceChildren(el("div", "cl-sys", first), ...conSaid.map(line));
+  out.replaceChildren(el("div", "cl-system", first), ...conSaid.map(line));
   if (stick) out.scrollTop = out.scrollHeight;
 }
 function consoleBox() {

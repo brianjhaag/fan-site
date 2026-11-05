@@ -1,12 +1,12 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw33ju01";
-import { Fan } from "./hosts.js?v=mw33ju01";
-import { Calc } from "./calc.js?v=mw33ju01";
-import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw33ju01";
-import { ABBR, slateDocId } from "./leagues.js?v=mw33ju01";
+import { addTicket, centsOk, clearTicket, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw3s4vr0";
+import { Fan } from "./hosts.js?v=mw3s4vr0";
+import { Calc } from "./calc.js?v=mw3s4vr0";
+import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw3s4vr0";
+import { ABBR, slateDocId } from "./leagues.js?v=mw3s4vr0";
   Object.assign(later, { hedgeControls, execControls, drawKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
-  let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
+  let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), signature, text, cls } so the result survives the card's redraws
   (async () => {
     await Fan.connectTrader();
     showDemo();
@@ -94,12 +94,12 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw33ju01";
       }
     } catch (e) {}
     const done = () => { if (waiting) Fan.store.update("fills", "feed-" + id, { handled: true, ...(x.catchup ? {} : { delayMs }) }).catch(() => {}); };
-    const cid = x.client_order_id || savedClient;
-    if (cid && ownOrders.has(cid)) { ownOrders.get(cid).push(x); return; }   // its ticket comes from the order's reply; its money, from the fills (calc.js's withFills)
+    const clientOrder = x.client_order_id || savedClient;
+    if (clientOrder && ownOrders.has(clientOrder)) { ownOrders.get(clientOrder).push(x); return; }   // its ticket comes from the order's reply; its money, from the fills (calc.js's withFills)
     if (known) return;
     // Another Fan window may have sent this order, and its ticket comes with the order's reply, after the fill. Give it time to arrive before saving one from the fill.
-    if (cid && Date.now() - x.ts_ms < 60000) await new Promise(r => setTimeout(r, OTHER_WINDOW_MS));
-    if (cid && allTickets.some(t => t.fillId === cid && t.id !== `fill-${x.venue}-${x.order_id}`)) return done();
+    if (clientOrder && Date.now() - x.ts_ms < 60000) await new Promise(r => setTimeout(r, OTHER_WINDOW_MS));
+    if (clientOrder && allTickets.some(t => t.fillId === clientOrder && t.id !== `fill-${x.venue}-${x.order_id}`)) return done();
     try { await saveFillTicket(x); done(); } catch (e) {}   // not marked, so it's tried again on the next opening
   }
   async function pendingFills() {
@@ -132,60 +132,60 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw33ju01";
     }
   }
   // The suggested bet's Execute button and its size slider.
-  function execControls(h, sig) {
-    const hx = el("div", "hx"), btn = el("button", "hxbtn"), sl = el("input", "hxsl");
-    const cnt = () => Math.max(1, Math.round(h.n * execPct / 100)), lab = () => { btn.textContent = execBusy ? "Sending…" : `Execute ${execPct}%${Fan.env === "demo" ? " (demo)" : ""}`; btn.title = Fan.trader ? `Buy ${cnt()} ${h.side.toUpperCase()} on ${h.tk} at ${Math.round(h.ask * 100)}¢ or better, immediate-or-cancel` : "Needs the connector (" + (Fan.traderWhy || "still checking") + ")"; };
+  function execControls(h, signature) {
+    const hx = el("div", "exec-controls"), btn = el("button", "exec-button"), sl = el("input", "exec-share");
+    const contractCount = () => Math.max(1, Math.round(h.n * execPct / 100)), labelEl = () => { btn.textContent = execBusy ? "Sending…" : `Execute ${execPct}%${Fan.env === "demo" ? " (demo)" : ""}`; btn.title = Fan.trader ? `Buy ${contractCount()} ${h.side.toUpperCase()} on ${h.tk} at ${Math.round(h.ask * 100)}¢ or better, immediate-or-cancel` : "Needs the connector (" + (Fan.traderWhy || "still checking") + ")"; };
     btn.type = "button"; btn.disabled = execBusy || !Fan.trader;
     sl.type = "range"; sl.min = "10"; sl.max = "100"; sl.step = "10"; sl.value = String(execPct); sl.disabled = execBusy; sl.title = "Share of the suggested size to send";   // the slider scales the suggestion: the label shows the share, the order sends that share of the contracts
-    sl.addEventListener("input", () => { execPct = Number(sl.value); lab(); });
-    lab();
-    btn.addEventListener("click", e => { e.stopPropagation(); runExec({ ...h, n: cnt() }, sig); });
-    hx.append(btn, sl); if (lastExec && lastExec.sig === sig && Date.now() - lastExec.at < 6e5) hx.append(el("span", "hxres " + lastExec.cls, lastExec.text));
+    sl.addEventListener("input", () => { execPct = Number(sl.value); labelEl(); });
+    labelEl();
+    btn.addEventListener("click", e => { e.stopPropagation(); runExec({ ...h, n: contractCount() }, signature); });
+    hx.append(btn, sl); if (lastExec && lastExec.signature === signature && Date.now() - lastExec.at < 6e5) hx.append(el("span", "exec-result " + lastExec.cls, lastExec.text));
     return hx;
   }
-  async function runExec(h, sig) {
+  async function runExec(h, signature) {
     if (execBusy || !Fan.trader) return;
-    execBusy = true; lastExec = { at: Date.now(), sig, text: "Sending to Kalshi…", cls: "" }; changed("exec");
+    execBusy = true; lastExec = { at: Date.now(), signature, text: "Sending to Kalshi…", cls: "" }; changed("exec");
     const id = (crypto.randomUUID ? crypto.randomUUID() : "fan-" + Date.now() + "-" + Math.random().toString(36).slice(2));
     ownOrders.set(id, []);
     try {
       const r = await Fan.trader.call("place_order", { ticker: h.tk, side: h.side, count: h.n, price: h.ask, client_order_id: id });
       const o = r && typeof r === "object" ? r : {}, env = o.env === "demo" ? " (demo)" : "";
-      const fill = replyFill(o, h.side, h.ask), avgPx = fill.avg;
-      if (o.dryRun) lastExec = { at: Date.now(), sig, text: "Dry run: nothing was sent.", cls: "" };
+      const fill = replyFill(o, h.side, h.ask), avgPrice = fill.avg;
+      if (o.dryRun) lastExec = { at: Date.now(), signature, text: "Dry run: nothing was sent.", cls: "" };
       else {
         // Every reply goes into the fills collection (id = the order's client id), filled or not.
         try {
           if (inStore) Fan.store.set("fills", id, {
             at: Date.now(), env: o.env || "prod", game: h.gn || null, key: h.gk || null, bet: h.txt, ticker: h.tk, side: h.side, price: h.ask,
             requested: o.requested != null ? o.requested : h.n, filled: o.filled || 0, unfilled: o.unfilled != null ? o.unfilled : null,
-            averagePrice: avgPx, feePerContract: o.average_fee_paid != null ? o.average_fee_paid : null,
+            averagePrice: avgPrice, feePerContract: o.average_fee_paid != null ? o.average_fee_paid : null,
             reply: JSON.parse(JSON.stringify(o))
           }).catch(() => {});
         } catch (e) {}
         // The fill is known for certain from the order's own reply, so it is saved as a Kalshi ticket at once (contracts filled, total paid fee included).
-        if (o.filled > 0 && h.tkt && o.env !== "demo") {   // a demo order makes no ticket
+        if (o.filled > 0 && h.ticketFields && o.env !== "demo") {   // a demo order makes no ticket
           try {
-            const { contracts: C, amount, american, cents, fee } = fill, ml = h.tkt.type === "Moneyline";
+            const { contracts: C, amount, american, cents, fee } = fill, ml = h.ticketFields.type === "Moneyline";
             addTicket({
               key: h.gk, game: h.gn, kickoff: h.gt, book: "Kalshi", amount, bonus: false, createdAt: Date.now(), fillId: id,
-              type: h.tkt.type, side: h.tkt.side, ...(ml ? { line: american } : { line: h.tkt.line, odds: american }),
+              type: h.ticketFields.type, side: h.ticketFields.side, ...(ml ? { line: american } : { line: h.ticketFields.line, odds: american }),
               kalshi: { cents, contracts: C, fee },
-              pick: `${h.tkt.side}${ml ? "" : " " + lineShown(h.tkt.type, h.tkt.line)} ${cents}¢`,
+              pick: `${h.ticketFields.side}${ml ? "" : " " + lineShown(h.ticketFields.type, h.ticketFields.line)} ${cents}¢`,
               when: dayFmt.format(new Date(h.gt)) + ", " + timeZoned(new Date(h.gt))
             });
           } catch (e) {}
         }
-        const paidUp = h.ticketCents != null && Math.round(h.ask * 100) !== h.ticketCents ? ` (ticket ${h.ticketCents}¢, limit ${Math.round(h.ask * 100)}¢)` : "", px = avgPx != null ? ` at ${(avgPx * 100).toFixed(1)}¢${paidUp}` : "", fee = o.average_fee_paid ? `, fee ${(o.average_fee_paid * 100).toFixed(1)}¢ each` : "";
+        const paidUp = h.ticketCents != null && Math.round(h.ask * 100) !== h.ticketCents ? ` (ticket ${h.ticketCents}¢, limit ${Math.round(h.ask * 100)}¢)` : "", px = avgPrice != null ? ` at ${(avgPrice * 100).toFixed(1)}¢${paidUp}` : "", fee = o.average_fee_paid ? `, fee ${(o.average_fee_paid * 100).toFixed(1)}¢ each` : "";
         const moved = (o.funded || []).map(f => `moved $${f.dollars.toFixed(2)} to shard ${f.to}`).join(", "), movedNote = moved ? `; ${moved}` : "";   // cash the order needed on its market's shard stays there
-        lastExec = { at: Date.now(), sig, cls: o.filled > 0 ? "ok" : "err", text: (o.filled > 0 ? `Filled ${o.filled} of ${o.requested}${px}${fee}${o.unfilled ? `; ${o.unfilled} not filled at ${Math.round(h.ask * 100)}¢ or better (canceled)` : ""}${env}` : `Nothing filled at ${Math.round(h.ask * 100)}¢ or better (canceled)${env}`) + movedNote };
+        lastExec = { at: Date.now(), signature, cls: o.filled > 0 ? "ok" : "err", text: (o.filled > 0 ? `Filled ${o.filled} of ${o.requested}${px}${fee}${o.unfilled ? `; ${o.unfilled} not filled at ${Math.round(h.ask * 100)}¢ or better (canceled)` : ""}${env}` : `Nothing filled at ${Math.round(h.ask * 100)}¢ or better (canceled)${env}`) + movedNote };
       }
     } catch (e) {
       // No reply, so no ticket from it: any fill of this order that reached the feed is saved from the feed, now and later.
       const held = ownOrders.get(id) || []; ownOrders.delete(id);
       held.forEach(x => { try { Promise.resolve(saveFillTicket(x)).catch(() => {}); } catch (err) {} });
       const c = e && e.code, m = e && e.message;
-      lastExec = { at: Date.now(), sig, cls: "err", text: c === "server_not_connected" ? "The connector isn't running."
+      lastExec = { at: Date.now(), signature, cls: "err", text: c === "server_not_connected" ? "The connector isn't running."
         : c === "approval_required" || c === "cancelled" || c === "not_in_manifest" ? "Not approved in the app, nothing was sent."
         : c === "tool_error" ? `Kalshi refused: ${m}`
         : c === "server_unavailable" || c === "upstream_error" ? "No answer: check Kalshi before sending again, the order may have gone through."
@@ -200,13 +200,13 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw33ju01";
   const applyHedgeRules = () => { RULES.hedge.LIFT = hedgeSet.lift; RULES.hedge.CAPITAL = hedgeSet.capital / 100; };
   applyHedgeRules();
   function hedgeControls() {
-    const box = el("div", "rk-tune"), row = el("div", "ar");
+    const box = el("div", "rk-tune"), row = el("div", "rk-tune-row");
     const save = () => { try { localStorage.setItem("fan.arm", JSON.stringify({ ...JSON.parse(localStorage.getItem("fan.arm") || "{}"), ...hedgeSet })); } catch (e) {} };
     const field = (name, key, title) => {
-      const lab = el("label", null, name), c = el("input");
+      const labelEl = el("label", null, name), c = el("input");
       c.type = "number"; c.min = "0"; c.step = "0.5"; c.value = hedgeSet[key]; c.title = title; c.setAttribute("aria-label", title);
       c.addEventListener("change", () => { const v = Number(c.value); if (!(v >= 0)) { c.value = hedgeSet[key]; return; } hedgeSet[key] = v; save(); applyHedgeRules(); changed("lines"); });
-      lab.append(c); return lab;
+      labelEl.append(c); return labelEl;
     };
     row.append(field("Lift $", "lift", "How much a hedge has to raise the worst case"), field("Capital ¢", "capital", "Charge per dollar put down, for hedges"));
     box.append(row);
@@ -216,20 +216,20 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw33ju01";
   let checkRun = 0;
   async function drawKalshiCheck() {
     const box = $("ledger"), run = ++checkRun;
-    box.replaceChildren(el("div", "pg-stub", "Kalshi check"), el("p", "pg-stub-t", Fan.trader || Fan.keyed ? "Reading Kalshi's fills…" : Fan.account ? "Connect Kalshi first: settings, Sportsbooks, Kalshi account." : "Needs the connector."));
+    box.replaceChildren(el("div", "page-stub", "Kalshi check"), el("p", "page-stub-text", Fan.trader || Fan.keyed ? "Reading Kalshi's fills…" : Fan.account ? "Connect Kalshi first: settings, Sportsbooks, Kalshi account." : "Needs the connector."));
     if (!Fan.trader && !Fan.keyed) return;
     let fills;
     try { fills = (await reader().call("run", { venue: "kalshi", name: "fills_list", args: { ms: Date.UTC(2026, 0, 1) } })).fills; }
-    catch (e) { if (run === checkRun) box.replaceChildren(el("div", "pg-stub", "Kalshi check"), el("p", "pg-stub-t", "Could not read Kalshi: " + ((e && (e.message || e.code)) || "error"))); return; }
+    catch (e) { if (run === checkRun) box.replaceChildren(el("div", "page-stub", "Kalshi check"), el("p", "page-stub-text", "Could not read Kalshi: " + ((e && (e.message || e.code)) || "error"))); return; }
     if (run !== checkRun || view !== "ledger" || subView.ledger !== "check") return;
     const r = kalshiCheck(fills, allTickets), cents = v => "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }), count = v => v.toLocaleString("en-US", { maximumFractionDigits: 2 });
     const note = el("p", "trends-note", r.off.length ? `${r.off.length} of ${r.rows.length} bets differ. Fills ${cents(r.fillPaid)}, tickets ${cents(r.ticketPaid)}.` : `All ${r.rows.length} bets match. Fills ${cents(r.fillPaid)}, tickets ${cents(r.ticketPaid)}.`);
-    const table = el("table", "lsheet"), head = el("tr");
+    const table = el("table", "ledger-sheet"), head = el("tr");
     ["Bet", "Fills", "Paid", "Tickets", "Amount", "Difference"].forEach(h => head.append(el("th", null, h)));
     const thead = el("thead"), body = el("tbody"); thead.append(head);
     [...r.off, ...r.rows.filter(x => !r.off.includes(x))].forEach(x => {
       const tr = el("tr"), d = x.ticketPaid - x.fillPaid, bad = r.off.includes(x);
-      tr.append(el("td", null, x.label), el("td", null, count(x.fillN)), el("td", null, cents(x.fillPaid)), el("td", null, count(x.ticketN)), el("td", null, cents(x.ticketPaid)), el("td", bad ? "neg" : "dim", bad ? (d < 0 ? "−" : "+") + cents(Math.abs(d)) : "match"));
+      tr.append(el("td", null, x.label), el("td", null, count(x.fillN)), el("td", null, cents(x.fillPaid)), el("td", null, count(x.ticketN)), el("td", null, cents(x.ticketPaid)), el("td", bad ? "loss" : "dim", bad ? (d < 0 ? "−" : "+") + cents(Math.abs(d)) : "match"));
       body.append(tr);
     });
     table.append(thead, body);
@@ -248,7 +248,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw33ju01";
     const { tk, side } = m, txt = l.type === "Moneyline" ? `${l.side} to win` : `${l.side} ${lineShown(l.type, l.line)}`;
     const n = contractsFor(a, p);
     if (n < 1) return { why: "Not enough for one contract with the fee" };
-    return { h: { tk, side, n, ask: p, ticketCents: l.cents, txt, gk: l.key, gn: l.game, gt: l.kickoff, tkt: { type: l.type, side: l.side, ...(l.type !== "Moneyline" ? { line: l.line } : {}) } } };
+    return { h: { tk, side, n, ask: p, ticketCents: l.cents, txt, gk: l.key, gn: l.game, gt: l.kickoff, ticketFields: { type: l.type, side: l.side, ...(l.type !== "Moneyline" ? { line: l.line } : {}) } } };
   }
   // What Place may pay above the ticket's price, kept per browser. 0 until the user sets it: Claude's default, and the order is as it always was.
   try { const v = localStorage.getItem("fan.payup"); if (v != null) $("payup").value = v; } catch (e) {}
