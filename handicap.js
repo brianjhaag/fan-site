@@ -1,11 +1,11 @@
 // The Handicap section (the NFL first; the user, Nov 4 2026): each game's own numbers to the user's spread and moneylines, against the market's. Moved out of panels.js.
-import { divideX } from "./layout.js?v=mw2tkltu";
-import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw2tkltu";
-import { Fan } from "./hosts.js?v=mw2tkltu";
-import { CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw2tkltu";
-import { TEAM, abbr } from "./leagues.js?v=mw2tkltu";
-import { Calc } from "./calc.js?v=mw2tkltu";
-import { divOf } from "./panels.js?v=mw2tkltu";
+import { divideX } from "./layout.js?v=mw2tx7b1";
+import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw2tx7b1";
+import { Fan } from "./hosts.js?v=mw2tx7b1";
+import { CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw2tx7b1";
+import { TEAM, abbr } from "./leagues.js?v=mw2tx7b1";
+import { Calc } from "./calc.js?v=mw2tx7b1";
+import { divOf } from "./panels.js?v=mw2tx7b1";
 
   /* ==== Handicap (the NFL first; the user, Nov 4 2026): your spread for each game, from numbers you set game by game, against the market's. ==== */
   // A game's visitor margin = −HFA + each term's coefficient × its value (calc.js HC_VARS and hcVisitorMargin): DVOA diff (FTN's, shown, its coefficient yours; times
