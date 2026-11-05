@@ -1216,6 +1216,7 @@
   #handicap .hc-stack .hc-low { display: inline-flex; align-items: baseline; color: var(--ink-dim); }
   #handicap .hc-stack .hc-low .hc-op { margin: 0 3px 0 0; font-size: 14px; }
   #handicap .hc-rows .hc-stack .hc-val { height: auto; line-height: 1.1; padding: 0; color: var(--ink); }
+  #handicap td.hc-vsfit { text-align: right; white-space: nowrap; font-family: "Chivo Mono", ui-monospace, Consolas, monospace; font-size: 20px; color: var(--ink); padding-inline: 12px 24px; }   /* the fields' type; right-aligned, so the points line up */   /* vs fit: each game's gap in points from the season's fit */
   #handicap td.hc-div { text-align: center; }   /* the Divisional box, centered under its name; with the coefficients stacked over their values the columns are narrow enough for the name to set the width */
   #handicap td.hc-div input { width: 22px; height: 22px; margin: 0; vertical-align: middle; accent-color: var(--accent); cursor: pointer; }
   #handicap .hc-hurdle { position: absolute; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 8px; color: var(--ink-dim); }   /* the EV hurdle, its number over the spreads (fitHcTable places it) */

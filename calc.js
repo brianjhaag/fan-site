@@ -419,6 +419,13 @@ const Calc = (() => {
     xs.forEach((x, i) => { sxy += x * ys[i]; sxx += x * x; });
     return xs.map((x, i) => { const a = sxx - x * x; return a > 1e-9 ? (sxy - x * ys[i]) / a : null; });
   }
+  // Each game's gap from the season's fit, in points (the user, Nov 4 2026: per-game fits show "which games are the market pricing that are very different than this
+  // season's performance"; points rank the same thing without blowing up near a DVOA difference of 0): the market's visitor spread minus the one the fit gives the game,
+  // its coefficient fitted on the other games (hcFitLeaveOut, else all), so c x - y. Plus: the market gives the visitor more than the season says. null where no fit.
+  function hcFitGaps(xs, ys) {
+    const out = hcFitLeaveOut(xs, ys), all = hcFitCoef(xs, ys);
+    return xs.map((x, i) => { const c = out[i] !== null ? out[i] : all; return c === null ? null : c * x - ys[i]; });
+  }
   function hcFitCoef(xs, ys) {
     let sxy = 0, sxx = 0;
     xs.forEach((x, i) => { if (Number.isFinite(x) && Number.isFinite(ys[i])) { sxy += x * ys[i]; sxx += x * x; } });
@@ -745,6 +752,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, hcFitLeaveOut, hcFitOne, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcGap, hcDivCoef };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, hcFitLeaveOut, hcFitGaps, hcFitOne, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcGap, hcDivCoef };
 })();
 export { Calc };
