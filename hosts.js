@@ -208,6 +208,14 @@ Fan.connectTrader = async () => {
     if (hi.orders) Fan.trader = Fan.reads;   // until then Place and Execute stay off
     Fan.keyed = !!hi.env;
     Fan.env = hi.env || "";
+    // The live and demo keys, each with its own ledger (the user, Nov 4 2026: "hot swap between demo and live keys... switch ledgers and everything"): which are saved, and the switch.
+    Fan.keys = hi.keys || null;
+    if (hi.keys) Fan.useKey = async env => {
+      const r = await (await window.fetch("/connector/key/use", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ env }) })).json();
+      if (r.error) throw new Error(r.error);
+      if (window.BroadcastChannel) new window.BroadcastChannel("fan-connector").postMessage("key");   // other open pages reload too
+      window.location.reload();
+    };
     Fan.setBet = async on => {   // Bet's checkbox. The connector holds the rule, so off refuses orders whatever the page does
       const r = await (await window.fetch("/connector/bet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
       if (!r.ok) throw new Error(r.error);

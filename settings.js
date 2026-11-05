@@ -1,12 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw2tx7b1";
-import { Fan } from "./hosts.js?v=mw2tx7b1";
-import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw2tx7b1";
-import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw2tx7b1";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw2tx7b1";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw2tx7b1";
-import { demoAway, setBet } from "./trade.js?v=mw2tx7b1";
-import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw2tx7b1";
+import { espnState } from "./espn.js?v=mw2v483y";
+import { Fan } from "./hosts.js?v=mw2v483y";
+import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw2v483y";
+import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw2v483y";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw2v483y";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw2v483y";
+import { demoAway, setBet } from "./trade.js?v=mw2v483y";
+import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw2v483y";
   // Fan's button opens the settings window.
   let fillSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -97,6 +97,18 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     };
     const firstHere = () => { try { return localStorage.getItem("fan.connector") !== "yes"; } catch (e) { return true; } };   // this browser has never pressed Start or Download, so the page doesn't look for one
     const getOrStart = () => { const box = el("div", "fan-get"), get = el("button", null, "Get the connector"); get.type = "button"; get.addEventListener("click", () => { tab = "connector"; fill(); }); box.append(startItem(), get); if (firstHere()) box.append(el("small", "fan-first", "This looks like this browser's first visit. If the connector already runs on this computer, press Start to reach it.")); return box; };
+    // Live / Demo: the key in use, and a press switches to the other with its ledger, the page reloading on it. One with no key saved opens the key screen to connect one.
+    const keySwitch = () => {
+      const d = el("div", "fan-keyswitch");
+      [["prod", "Live"], ["demo", "Demo"]].forEach(([env, name]) => {
+        const on = Fan.env === env, has = !!(Fan.keys && Fan.keys[env]), b = el("button", on ? "on" : null, name);
+        b.type = "button";
+        b.title = on ? `The ${name.toLowerCase()} key is in use, with its own ledger` : has ? `Switch to the ${name.toLowerCase()} key, its ledger and everything with it` : `No ${name.toLowerCase()} key saved: connect one`;
+        b.addEventListener("click", async () => { if (on) return; if (!has) { open(false); Fan.account(); return; } try { await Fan.useKey(env); } catch (e) { b.title = e.message; b.classList.add("err"); } });
+        d.append(b);
+      });
+      return d;
+    };
     const keysItem = () => { const b = el("button", null, "Connect Kalshi"); b.type = "button"; b.addEventListener("click", () => { open(false); Fan.account(); }); return b; };
     // The layout: Auto, or one the user picks (base.js's LAYOUTS).
     const layoutItem = () => { const lab = el("label", "fan-layout"), s = el("select", "fan-pick"); LAYOUTS.forEach(([k, name]) => { const o = el("option", null, name); o.value = k; s.append(o); }); s.value = layoutPref; s.setAttribute("aria-label", "Layout"); s.addEventListener("change", () => setLayoutPref(s.value)); lab.append("Layout", s); return lab; };
@@ -261,7 +273,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
         at(con, 6, 3),   // the box's bottom section: its badge, Stop or Update, Start at login
         card("track", 3), Fan.lines ? wire("your bets", trackingOn && here && Fan.lines === Fan.store, true, 3, 2) : at(el("span"), 3, 2), job(Fan.lines ? "Keeps your records, with daily backups." : "Without it, your records stay in this browser.", "Records", 3),
         card("price", 4), wire("lines", here && pricesWanted, false, 4, 2), job("Pulls lines on a timer, over your own connection.", "Prices", 4), wire("prices", here && pricesWanted, false, 4, 4), service("Kalshi, Polymarket US", 4, here && pricesWanted, routeBox("prices")),
-        card("bet", 5), wire("orders, fills", here && !!Fan.trader, true, 5, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 5), wire("orders, fills", here && !!Fan.keyed, true, 5, 4), service("Kalshi", 5, here && !!Fan.keyed, slot("Kalshi", true), routeBox("orders"), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))
+        card("bet", 5), wire("orders, fills", here && !!Fan.trader, true, 5, 2), job("Holds your key. Sends orders, hears fills, and runs triggers and responses, with or without this page.", "Fill feed", 5), wire("orders, fills", here && !!Fan.keyed, true, 5, 4), service("Kalshi", 5, here && !!Fan.keyed, slot("Kalshi", true), routeBox("orders"), ...(Fan.useKey && Fan.keys && (Fan.keys.prod || Fan.keys.demo) ? [keySwitch()] : []), ...(Fan.account && !Fan.keyed ? [keysItem()] : []))
       );
       box.append(at(gearNote(), 7, 3));
       box.querySelector("[data-part=watch]").append(slot("Leagues"));
