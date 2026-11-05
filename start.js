@@ -1,27 +1,27 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mw2vzjro";
-import "./layout.js?v=mw2vzjro";
-import "./risk.js?v=mw2vzjro";
-import "./panels.js?v=mw2vzjro";
-import "./handicap.js?v=mw2vzjro";
-import "./tracker.js?v=mw2vzjro";
-import "./trade.js?v=mw2vzjro";
-import "./telecasts.js?v=mw2vzjro";
-import "./cards.js?v=mw2vzjro";
-import "./settings.js?v=mw2vzjro";
-import { renderCode } from "./code.js?v=mw2vzjro";
-import { Fan } from "./hosts.js?v=mw2vzjro";
-import { WEEK_GAMES } from "./espn.js?v=mw2vzjro";
-import { sendManifest, useWallLinks } from "./telecasts.js?v=mw2vzjro";
-import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, switchWeek, view, weekNow } from "./base.js?v=mw2vzjro";
-import { renderSectionTabs } from "./layout.js?v=mw2vzjro";
-import { renderByes, renderGames } from "./cards.js?v=mw2vzjro";
-import { LEAGUES_READY } from "./leagues.js?v=mw2vzjro";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw2vzjro";
-import { renderSeason, renderXY } from "./panels.js?v=mw2vzjro";
-import { renderHandicap } from "./handicap.js?v=mw2vzjro";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw2vzjro";
-import { fillSettings, findConnector } from "./settings.js?v=mw2vzjro";
+import "./base.js?v=mw2y0dvv";
+import "./layout.js?v=mw2y0dvv";
+import "./risk.js?v=mw2y0dvv";
+import "./panels.js?v=mw2y0dvv";
+import "./handicap.js?v=mw2y0dvv";
+import "./tracker.js?v=mw2y0dvv";
+import "./trade.js?v=mw2y0dvv";
+import "./telecasts.js?v=mw2y0dvv";
+import "./cards.js?v=mw2y0dvv";
+import "./settings.js?v=mw2y0dvv";
+import { renderCode, useOwnMethods } from "./code.js?v=mw2y0dvv";
+import { Fan } from "./hosts.js?v=mw2y0dvv";
+import { WEEK_GAMES } from "./espn.js?v=mw2y0dvv";
+import { sendManifest, useWallLinks } from "./telecasts.js?v=mw2y0dvv";
+import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, switchWeek, view, weekNow } from "./base.js?v=mw2y0dvv";
+import { renderSectionTabs } from "./layout.js?v=mw2y0dvv";
+import { renderByes, renderGames } from "./cards.js?v=mw2y0dvv";
+import { LEAGUES_READY } from "./leagues.js?v=mw2y0dvv";
+import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw2y0dvv";
+import { renderSeason, renderXY } from "./panels.js?v=mw2y0dvv";
+import { renderHandicap } from "./handicap.js?v=mw2y0dvv";
+import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw2y0dvv";
+import { fillSettings, findConnector } from "./settings.js?v=mw2y0dvv";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };
@@ -52,6 +52,7 @@ import { fillSettings, findConnector } from "./settings.js?v=mw2vzjro";
   (async () => {
     // The connector first: it doesn't wait on ESPN, so the Application tab shows it at once, however long the daily leagues' pulls take (Nov 3 2026).
     try { await Fan.connectStore(); } catch (e) {}
+    await useOwnMethods();   // the user's own methods, from the connector, in Fan's place before anything decides on them (PLAN.md E)
     if (Fan.door && Fan.door.here) { setTrackingOn(false); document.documentElement.classList.add("remote"); }   // a remote is Watch and the wall only (the user's, Nov 3 2026): no Track, Price, Bet or Code
     if (Fan.door && Fan.door.here) {   // a remote takes the wall computer's links and leagues (its manifest)
       try { const w = await Fan.wall.get(), m = (w && w.manifest) || {}; useWallLinks(m.links); for (const k of m.leagues || []) if (LEAGUES_READY.includes(k) && !leaguesOn.has(k)) await setLeagueOn(k, true); } catch (e) {}

@@ -1,8 +1,9 @@
 // The Code section (TRADING.md, Nov 3 2026): the algo grid, the code editor and the console with its prompt, in one page opened by the Code button, as Ledger is.
 // With a connector of 0.38 or later, the algos are the connector's algoRuntime's: kept in its records, checked, run and armed there, with or without a page open; the grid and the console show what it
 // reports, and the prompt runs there. With none, an algo is a draft kept in this browser, every one not approved, and the prompt answers from the page itself, saying so.
-import { Fan } from "./hosts.js?v=mw2vzjro";
-import { $, el } from "./base.js?v=mw2vzjro";
+import { Fan } from "./hosts.js?v=mw2y0dvv";
+import { $, el, changed } from "./base.js?v=mw2y0dvv";
+import { Calc } from "./calc.js?v=mw2y0dvv";
 
 const KEPT = "fan.algos";   // the drafts, per browser, when there's no algoRuntime; draftsMoved into the connector the first time one is found
 const STATES = ["not approved", "off", "running", "armed"];   // TRADING.md: an algo's states, in order
@@ -13,6 +14,44 @@ try { algos = JSON.parse(localStorage.getItem(KEPT) || "[]"); } catch (e) {}
 const keepAlgos = () => { if (algoRuntime()) return; try { localStorage.setItem(KEPT, JSON.stringify(algos)); } catch (e) {} };
 const withKids = (tag, cls, kids) => { const n = el(tag, cls); n.append(...kids); return n; };
 const pickedAlgo = () => algos.find(a => a.id === pickedId) || null;
+
+// ---- The user's own methods (PLAN.md E, replaceable methods; the user, Nov 4 2026: "I might want a user to just be able to replace it"): one file, kept by the connector
+// (methods/user.js), in the grid's first row. It sets UserMethods to the methods it replaces; Fan's own stay for the rest, and are Calc.fan.<name> to wrap. The page and the
+// connector's engine both put it in Fan's place, each checking it against calc.js's contract; the report says what was replaced, refused and why.
+const METHODS_ID = "__methods";
+let methodsText = null, methodsReport = null;
+const METHODS_STARTER = `// Your own methods, in Fan's place. Set UserMethods to the ones you replace; the rest stay Fan's.
+// Fan's own are Calc.fan.<name>, to wrap or compare with. Saved, it's checked against Fan's contract,
+// then this page and the connector both use it. Empty is back to Fan's own.
+// The methods: ${Calc.METHOD_NAMES.join(", ")}
+var UserMethods = {
+  // noVig: (ml, away) => Calc.fan.noVig(ml, away),
+};
+`;
+// Puts the user's file in Fan's place in this page and draws the board again on it. With no text given, it reads the connector's.
+async function useOwnMethods(text) {
+  if (text === undefined) { if (!Fan.methods) return null; try { text = await Fan.methods.get(); } catch (e) { return null; } }
+  methodsText = text || null;
+  let user = null, error = null;
+  if (text && text.trim()) { try { user = new Function("Calc", text + "\n;return typeof UserMethods === \"undefined\" ? null : UserMethods;")(Calc); } catch (e) { error = String((e && e.message) || e); } }
+  methodsReport = Calc.useMethods(user, error);
+  changed("tickets"); changed("lines");
+  return methodsReport;
+}
+const methodsState = () => {
+  const r = methodsReport;
+  if (!Fan.methods) return ["Fan's own", "Your own methods need the Fan connector, 0.58 or later"];
+  if (!r || (!methodsText && !r.error)) return ["Fan's own", "No methods file: Fan's own throughout"];
+  if (r.error) return ["error", "Your file failed, so Fan's own are in use: " + r.error];
+  const said = [r.replaced.length ? "Yours: " + r.replaced.join(", ") : "", ...r.refused.map(x => `Refused, Fan's kept: ${x.name}: ${x.why}`), r.unknown.length ? "Not methods: " + r.unknown.join(", ") : ""].filter(Boolean).join("\n");
+  return [r.refused.length ? "refused " + r.refused.length : r.replaced.length + " yours", said || "Nothing replaced: Fan's own throughout"];
+};
+function sayMethods(r) {
+  if (r.error) { sayHere("err", "methods: your file failed, so Fan's own are in use: " + r.error); return; }
+  sayHere("out", "methods: " + (r.replaced.length ? "yours in use: " + r.replaced.join(", ") : "none of yours in use"));
+  r.refused.forEach(x => sayHere("err", `methods: ${x.name} refused, Fan's kept: ${x.why}`));
+  if (r.unknown.length) sayHere("err", "methods: not a method: " + r.unknown.join(", "));
+}
 const algoRuntime = () => Fan.algos || null;
 const STARTER = "// An algo: plain JavaScript, run by the connector on its global scope, fan, which it reads and never writes.\n// fan.on(event, fn) says what wakes it: start, tick, move, fill or order. fan.order({ ticker, side, count, price }) sends one when armed.\n\nfan.on(\"tick\", () => {\n});\n";
 
@@ -71,12 +110,18 @@ function highlight(src) {
 function codeEditor() {
   const box = el("div", "cd-ed"), nums = el("pre", "cd-nums"), painted = el("pre", "cd-view"), text = el("textarea", "cd-text");
   text.spellcheck = false; text.setAttribute("aria-label", "Algo code"); text.wrap = "off";
-  const a = pickedAlgo();
-  text.value = a ? a.code : ""; text.disabled = !a; text.placeholder = a ? "" : "Pick an algo in the grid, or press New.";
+  const a = pickedAlgo(), methods = pickedId === METHODS_ID;
+  text.value = methods ? methodsText || METHODS_STARTER : a ? a.code : ""; text.disabled = methods ? !Fan.methods : !a; text.placeholder = a || methods ? "" : "Pick Methods or an algo in the grid, or press New.";
+  if (methods) text.setAttribute("aria-label", "Your methods file");
   const draw = () => { painted.innerHTML = highlight(text.value); nums.textContent = text.value.split("\n").map((_, i) => i + 1).join("\n"); };
   let saving;
   text.addEventListener("input", () => {
     draw();
+    if (pickedId === METHODS_ID) {   // saved a moment after typing stops: to the connector, which reloads its engine on it, and into this page
+      const v = text.value; clearTimeout(saving);
+      saving = setTimeout(async () => { try { await Fan.methods.set(v); sayMethods(await useOwnMethods(v)); } catch (e) { sayHere("err", "methods: not saved: " + ((e && e.message) || e)); } const out = document.querySelector("#code .cd-out"); if (out) paintConsole(out); gridShown = ""; redrawLive(); }, 800);
+      return;
+    }
     const p = pickedAlgo(); if (!p) return;
     p.code = text.value; clearTimeout(saving);
     saving = setTimeout(() => { if (algoRuntime()) askRuntime({ op: "save", id: p.id, code: p.code }); else keepAlgos(); }, algoRuntime() ? 600 : 300);   // saved, the algoRuntime takes it back to not approved
@@ -102,6 +147,14 @@ function gridTable() {
   heads.forEach(h => head.append(el("th", null, h)));
   table.append(withKids("thead", null, [head]));
   const body = el("tbody");
+  {   // the user's methods, the first row
+    const [st, why] = methodsState(), tr = el("tr", "cd-methods" + (pickedId === METHODS_ID ? " on" : "")), state = el("td", "cd-state" + (/error|refused/.test(st) ? " cd-err" : ""), st);
+    state.title = why;
+    const name = el("td", "cd-name", "Methods"); name.title = "Your own methods, in Fan's place: de-vigging, the margin model, the Handicap's fit and more";
+    tr.append(name, state, ...Array.from({ length: SHARED_COLS }, () => el("td", "cd-cell")));
+    tr.addEventListener("click", () => { pickedId = pickedId === METHODS_ID ? null : METHODS_ID; drawCode(); });
+    body.append(tr);
+  }
   if (!algos.length) { const tr = el("tr", "cd-none"), td = el("td", null, "No algos yet: press New."); td.colSpan = heads.length; tr.append(td); body.append(tr); }
   algos.forEach(x => {
     const tr = el("tr", x.id === pickedId ? "on" : null), state = el("td", "cd-state st-" + STATES.indexOf(x.state || STATES[0]), x.state || STATES[0]);
@@ -175,7 +228,7 @@ let gridShown = "";
 function redrawLive() {
   const page = $("code");
   if (!page || page.hidden) return;
-  const grid = page.querySelector(".cd-grid"), out = page.querySelector(".cd-out"), rows = JSON.stringify([pickedId, algos.map(a => [a.name, a.state, a.cols, a.cells, a.error])]);
+  const grid = page.querySelector(".cd-grid"), out = page.querySelector(".cd-out"), rows = JSON.stringify([pickedId, methodsState(), algos.map(a => [a.name, a.state, a.cols, a.cells, a.error])]);
   if (grid && rows !== gridShown && !grid.contains(document.activeElement) && !grid.querySelector(".sure")) { gridShown = rows; grid.replaceWith(algoGrid()); }
   if (out) paintConsole(out);
 }
@@ -187,4 +240,4 @@ function drawCode() {
   page.replaceChildren(algoGrid(), withKids("div", "cd-low", [codeEditor(), consoleBox()]));
 }
 const renderCode = () => { drawCode(); if (algoRuntime()) { readRuntime(); startPolling(); } };
-export { renderCode };
+export { renderCode, useOwnMethods };

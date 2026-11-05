@@ -2,6 +2,27 @@
 // Calc.make(deps) binds what depends on the schedule and the clock: deps = { games: every game, now(): the clock, abbr(nickname): the team's code }. Tickets are always passed in.
 // RULES is the one home for tunable numbers: userSet is the user's (change only on the user's say-so), defaults are Claude's. SPEC.md section 13 explains each.
 const Calc = (() => {
+  // The methods (PLAN.md E, replaceable methods; the user, Nov 4 2026: "Everything all the way down to dvigging could be claimed as a proprietary thing"): judgment, as opposed
+  // to the market's facts. Each name below calls through M, which holds Fan's own (fanX, below) until useMethods puts the user's in its place.
+  const M = {};
+  const noVig = (...a) => M.noVig(...a);
+  const spreadFromMl = (...a) => M.spreadFromMl(...a);
+  const marginModel = (...a) => M.marginModel(...a);
+  const coverChances = (...a) => M.coverChances(...a);
+  const fairLeg = (...a) => M.fairLeg(...a);
+  const evMoneyline = (...a) => M.evMoneyline(...a);
+  const evPoints = (...a) => M.evPoints(...a);
+  const showsML = (...a) => M.showsML(...a);
+  const pairFlagged = (...a) => M.pairFlagged(...a);
+  const hcVisitorMargin = (...a) => M.hcVisitorMargin(...a);
+  const olsFit = (...a) => M.olsFit(...a);
+  const hcByeEffect = (...a) => M.hcByeEffect(...a);
+  const hcFitOne = (...a) => M.hcFitOne(...a);
+  const hcFitLeaveOut = (...a) => M.hcFitLeaveOut(...a);
+  const hcFitGaps = (...a) => M.hcFitGaps(...a);
+  const hcFitCoef = (...a) => M.hcFitCoef(...a);
+  const hcGap = (...a) => M.hcGap(...a);
+  const hcTheo = (...a) => M.hcTheo(...a);
   const RULES = {
     userSet: { capital: 0.05, theoCash: 10 / 220, theoBonus: 0.45, pairBase: 1000, hcHurdle: 0.03, hcDivDvoa: 0.67 },   // hcHurdle: the Handicap's hurdle, the percentage gap a market price needs, its starting value (the user, Nov 4 2026: "start with 3"); hcDivDvoa: the DVOA difference's share in a divisional game ("0.67")
     defaults: {
@@ -44,7 +65,7 @@ const Calc = (() => {
   const quoteOf = p => (p > 0.5 ? -Math.round(100 * p / (1 - p)) : Math.round(100 * (1 - p) / p));
   const centsOf = am => Math.min(99, Math.max(1, Math.round(100 / decimalOf(am))));
   // A side's chance from a two-way moneyline, the vig taken out.
-  const noVig = (ml, away) => {
+  const fanNoVig = (ml, away) => {
     const [fa, fh] = ml.map(atFull);
     if (fa !== fh) return (away ? fa : fh) ? 1 : 0;   // one side at 100¢: that's the market's whole say, not something to take vig out of
     const qa = 1 / decimalOf(ml[0]), qh = 1 / decimalOf(ml[1]);
@@ -68,7 +89,7 @@ const Calc = (() => {
     const q = p - 0.5, r = q * q;
     return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
   };
-  const spreadFromMl = (ml, sigma) => { const v = Math.round(sigma * invNorm(Math.min(0.999, Math.max(0.001, noVig(ml, false)))) * 2) / 2; return v === 0 ? 0 : v; };
+  const fanSpreadFromMl = (ml, sigma) => { const v = Math.round(sigma * invNorm(Math.min(0.999, Math.max(0.001, noVig(ml, false)))) * 2) / 2; return v === 0 ? 0 : v; };
 
   /* ==== Bonus bets ==== */
   // A bonus bet risks none of your cash, but spending it forfeits its value: what a hedge at fair odds would lock in,
@@ -226,7 +247,7 @@ const Calc = (() => {
   // marginModel(sigma) returns win(d): the chance a team wins outright when its spread-implied expected margin is d points (a team getting 3.5 has
   // d = -3.5). Signed final margins m (not 0) have weight MARGIN_W(|m|) * normal(m; mu, sigma); mu is solved so that the line d is the median
   // (as much weight above d as below it; a margin equal to d is a push and counts on neither side). win(d) = weight above 0 over all weight.
-  function marginModel(sigma, flat) {   // flat: no key numbers (NBA)
+  function fanMarginModel(sigma, flat) {   // flat: no key numbers (NBA)
     const MM = 70, memo = new Map();
     const detail = d => {
       if (d === 0) return { win: 0.5, over: 0.5, push: 0, P: () => 0 };
@@ -262,11 +283,12 @@ const Calc = (() => {
     return f;
   }
   // A league whose margins don't bunch on key numbers gets a plain normal curve.
-  const liveModel = (() => { const m = {}; return g => { const k = leagueId(g), r = leagueOf(g); return m[k] || (m[k] = marginModel(r.sigma, !r.keyNumbers)); }; })();
+  let liveCache = {};
+  const liveModel = (() => { return g => { const m = liveCache; const k = leagueId(g), r = leagueOf(g); return m[k] || (m[k] = marginModel(r.sigma, !r.keyNumbers)); }; })();
   const totalSd = g => leagueOf(g).totalSd;
   const normCdf = z => { const t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2), p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
   // A spread bet's chances at its own number, on a market where the side's spread is sTeam.
-  function coverChances(g, sTeam, line) {
+  function fanCoverChances(g, sTeam, line) {
     const q = liveModel(g).detail(sTeam === 0 ? -0.001 : -sTeam);   // the side's expected margin is minus its spread
     let win = 0, push = 0;
     for (let m = -70; m <= 70; m++) { if (m === 0) continue; const x = q.P(m); if (m > -line) win += x; else if (m === -line) push += x; }
@@ -275,7 +297,7 @@ const Calc = (() => {
   // VIG PAID on a ticket: stake x (1 - fair chance x decimal odds - push chance), so a price better than fair (an odds boost) is a negative cost, a rebate.
   // Fair chances come from the game's saved pre-game line (the closing line once it starts): moneyline = its no-vig chance, spread = the key-number margin
   // model at the ticket's own number, total = a normal curve around the market total. No market (no game, no line yet) = 50%, a -110 bet's fair chance.
-  function fairLeg(l, g) {
+  function fanFairLeg(l, g) {
     const L = g && !g.noLine && g.line;
     if (!L) return { win: 0.5, push: 0 };
     const awaySide = l.side === nick(g, "away");
@@ -307,12 +329,12 @@ const Calc = (() => {
 
   /* ==== The flagged pair (Graphs) ==== */
   // Each team's two ways to be backed, as expected return per $1 at the actual prices (so the vig is in them). p = { g, side, sp, ml }; winProb from marginModel.
-  const evMoneyline = (winProb, p) => winProb(-p.sp) * decimalOf(p.ml) - 1;
-  const evPoints = (winProb, p) => { const q = winProb.detail(-p.sp), dec = decimalOf(p.g.line.spj[p.side === "home" ? 1 : 0]); return q.over * (dec - 1) - (1 - q.over - q.push); };
-  const showsML = (winProb, p) => evMoneyline(winProb, p) >= evPoints(winProb, p);
+  const fanEvMoneyline = (winProb, p) => winProb(-p.sp) * decimalOf(p.ml) - 1;
+  const fanEvPoints = (winProb, p) => { const q = winProb.detail(-p.sp), dec = decimalOf(p.g.line.spj[p.side === "home" ? 1 : 0]); return q.over * (dec - 1) - (1 - q.over - q.push); };
+  const fanShowsML = (winProb, p) => evMoneyline(winProb, p) >= evPoints(winProb, p);
   // A game is flagged when the favorite's better price is the moneyline and the underdog's the points. The two differ by a percent or so of return, which a one-cent move can flip,
   // so the favorite's moneyline may trail its points, and the underdog's points its moneyline, by a combined tolPerPoint of return per $1 for every point of spread.
-  const pairFlagged = (winProb, fav, dog) => Math.max(0, evPoints(winProb, fav) - evMoneyline(winProb, fav)) + Math.max(0, evMoneyline(winProb, dog) - evPoints(winProb, dog)) <= D.tolPerPoint * Math.abs(dog.sp);
+  const fanPairFlagged = (winProb, fav, dog) => Math.max(0, evPoints(winProb, fav) - evMoneyline(winProb, fav)) + Math.max(0, evMoneyline(winProb, dog) - evPoints(winProb, dog)) <= D.tolPerPoint * Math.abs(dog.sp);
   // The popup's stakes, from the existing position's worst in each region (E_*) and each leg's profit per $1 (r*). Blowout worst = 0; the just-past-spread band worst = bandKeep of the
   // moneyline's profit on the base; small-upset worst = (1 - narrow) x big-upset worst. A stake that comes out negative is dropped: the position already has enough of it.
   function pairStakes({ aNew, rML, rD, rB, rN, Eblow, Eband, Enar, Ebig }) {
@@ -372,10 +394,10 @@ const Calc = (() => {
   // The visitor's margin from the user's equation: -HFA, then each term's coefficient times its variable. eq = { hfa, terms: [{ v, coef }] }; row = { h, a } from hcStates;
   // x as HC_VARS takes it. null when a term's variable has no value for this game (no DVOA for a team, say); a variable no longer offered counts for nothing.
   // A term's val, when a number, is the user's own value for this game, typed by hand (the user, Nov 4 2026), used instead of the variable's.
-  const hcVisitorMargin = (eq, row, x) => eq.terms.reduce((s, t) => { const v = HC_VARS.find(y => y.k === t.v); if (s === null || !v) return s; const val = Number.isFinite(t.val) ? t.val : v.f(row.h, row.a, x); return val === null ? null : s + t.coef * val; }, -eq.hfa);
+  const fanHcVisitorMargin = (eq, row, x) => eq.terms.reduce((s, t) => { const v = HC_VARS.find(y => y.k === t.v); if (s === null || !v) return s; const val = Number.isFinite(t.val) ? t.val : v.f(row.h, row.a, x); return val === null ? null : s + t.coef * val; }, -eq.hfa);
   // Least squares with an intercept, the variables centered on their means, so the intercept is the average result: the home team's average margin (home field
   // advantage). X: rows of numbers, y: results. Out: { b0, b, means, se, r2, rmse, n }, or null when it can't be solved.
-  function olsFit(X, y) {
+  function fanOlsFit(X, y) {
     const n = y.length, p = n ? X[0].length : 0;
     if (n < p + 2) return null;
     const means = Array.from({ length: p }, (_, j) => X.reduce((s, r) => s + r[j], 0) / n), ybar = y.reduce((s, v) => s + v, 0) / n;
@@ -400,7 +422,7 @@ const Calc = (() => {
   // the visitor's margin beyond -HFA on two flags, the visitor off a bye and the home team off a bye (hcBye), so each side's effect is measured on its own. rows: hcStates
   // rows with finals. Out: { v (points to the visitor when it's off a bye), h (points to the visitor when the home team is, so a home team's gain is negative), seV, seH,
   // n, onV, onH }, or null when it can't be fitted.
-  function hcByeEffect(rows, hfa) {
+  function fanHcByeEffect(rows, hfa) {
     const f = olsFit(rows.map(r => [hcBye(r.a), hcBye(r.h)]), rows.map(r => r.g.final[0] - r.g.final[1] + hfa));
     if (!f) return null;
     return { v: f.b[0], h: f.b[1], seV: f.se[0], seH: f.se[1], n: f.n, onV: rows.filter(r => hcBye(r.a)).length, onH: rows.filter(r => hcBye(r.h)).length };
@@ -411,10 +433,10 @@ const Calc = (() => {
   // the caller. null without a point that moves.
   // The coefficient that makes one game's line land on its market (the user, Nov 4 2026: "just fit the DVOA against this game", knowing it only copies the market):
   // y / x, what the market leaves for DVOA over the game's DVOA difference. null when the difference is 0.
-  const hcFitOne = (x, y) => (Number.isFinite(x) && Number.isFinite(y) && Math.abs(x) > 1e-9 ? y / x : null);
+  const fanHcFitOne = (x, y) => (Number.isFinite(x) && Number.isFinite(y) && Math.abs(x) > 1e-9 ? y / x : null);
   // Each point's coefficient fitted on the others alone (the user, Nov 4 2026: a game's own market line never feeds its own coefficient): hcFitCoef with point i
   // left out, for every i. null where the others don't move.
-  function hcFitLeaveOut(xs, ys) {
+  function fanHcFitLeaveOut(xs, ys) {
     let sxy = 0, sxx = 0;
     xs.forEach((x, i) => { sxy += x * ys[i]; sxx += x * x; });
     return xs.map((x, i) => { const a = sxx - x * x; return a > 1e-9 ? (sxy - x * ys[i]) / a : null; });
@@ -422,11 +444,11 @@ const Calc = (() => {
   // Each game's gap from the season's fit, in points (the user, Nov 4 2026: per-game fits show "which games are the market pricing that are very different than this
   // season's performance"; points rank the same thing without blowing up near a DVOA difference of 0): the market's visitor spread minus the one the fit gives the game,
   // its coefficient fitted on the other games (hcFitLeaveOut, else all), so c x - y. Plus: the market gives the visitor more than the season says. null where no fit.
-  function hcFitGaps(xs, ys) {
+  function fanHcFitGaps(xs, ys) {
     const out = hcFitLeaveOut(xs, ys), all = hcFitCoef(xs, ys);
     return xs.map((x, i) => { const c = out[i] !== null ? out[i] : all; return c === null ? null : c * x - ys[i]; });
   }
-  function hcFitCoef(xs, ys) {
+  function fanHcFitCoef(xs, ys) {
     let sxy = 0, sxx = 0;
     xs.forEach((x, i) => { if (Number.isFinite(x) && Number.isFinite(ys[i])) { sxy += x * ys[i]; sxx += x * x; } });
     return sxx > 0 ? sxy / sxx : null;
@@ -436,7 +458,7 @@ const Calc = (() => {
   // market gives the visitor more (the visitor's side to take), minus when less (the home team's). Moneyline: each side's market payout (decimal odds) over your price's,
   // less 1, plus when the market pays that side more. mine: { sp, ml } your visitor spread and [visitor, home] moneylines; line: { sp, ml } the market's, the same form.
   // Out: { sp: number | null, ml: { v, h } | null }. Your pick'em against any other market spread is an infinite gap.
-  function hcGap(mine, line) {
+  function fanHcGap(mine, line) {
     const out = { sp: null, ml: null };
     if (mine && line && Number.isFinite(mine.sp) && Number.isFinite(line.sp)) { const d = line.sp - mine.sp; out.sp = d === 0 ? 0 : mine.sp === 0 ? Math.sign(d) * Infinity : d / Math.abs(mine.sp); }
     const ok = a => Array.isArray(a) && Number.isFinite(a[0]) && Number.isFinite(a[1]);
@@ -448,7 +470,7 @@ const Calc = (() => {
   const hcDivCoef = (coef, divisional) => (divisional ? coef * RULES.userSet.hcDivDvoa : coef);
   // The theo from the projected result, the home team's margin: its spread (the home line, minus when favored) and each side's moneyline, rounded the way a quote is,
   // from the key number model (winProb = marginModel(sigma)).
-  function hcTheo(margin, winProb) {
+  function fanHcTheo(margin, winProb) {
     const pHome = margin === 0 ? 0.5 : margin > 0 ? winProb(margin) : 1 - winProb(-margin);
     return { spread: -margin, pHome, ml: [quoteOf(1 - pHome), quoteOf(pHome)] };
   }
@@ -468,6 +490,43 @@ const Calc = (() => {
     if (t.line === 0 || (t.type === "Moneyline" && Math.abs(t.line) === 100)) return "Pick'em";
     return t.line < 0 ? "Favorite" : "Underdog";
   }
+
+  /* ==== Methods: Fan's own, the contract and the user's ==== */
+  const FAN = { noVig: fanNoVig, spreadFromMl: fanSpreadFromMl, marginModel: fanMarginModel, coverChances: fanCoverChances, fairLeg: fanFairLeg, evMoneyline: fanEvMoneyline, evPoints: fanEvPoints, showsML: fanShowsML, pairFlagged: fanPairFlagged, hcVisitorMargin: fanHcVisitorMargin, olsFit: fanOlsFit, hcByeEffect: fanHcByeEffect, hcFitOne: fanHcFitOne, hcFitLeaveOut: fanHcFitLeaveOut, hcFitGaps: fanHcFitGaps, hcFitCoef: fanHcFitCoef, hcGap: fanHcGap, hcTheo: fanHcTheo };
+  Object.assign(M, FAN);
+  // The contract: what a method must give back, tried on a sample before the user's replaces Fan's. null passes; a reason refuses it, and Fan's stays. A method with no check here
+  // is taken as it is: it differs from Fan's by the user's choice.
+  const p01 = x => Number.isFinite(x) && x >= 0 && x <= 1;
+  const num = x => Number.isFinite(x);
+  const CONTRACT = {
+    noVig: f => (p01(f([-150, 130], false)) && p01(f([-150, 130], true)) ? null : "a team's chance must be a number from 0 to 1"),
+    spreadFromMl: f => (num(f([-150, 130], 12.25)) ? null : "a spread must be a number"),
+    marginModel: f => { const w = f(12.25, false); if (typeof w !== "function" || !p01(w(3))) return "it must give a function of the margin, a chance from 0 to 1"; if (typeof w.detail !== "function" || !p01(w.detail(3).win)) return "its detail(d) must give { win, over, push, P }"; if (typeof w.mean !== "function" || !p01(w.mean(3.2).win)) return "its mean(e) must give { win, P }"; return typeof w.band === "function" ? null : "it must have band(d, a, b)"; },
+    hcFitOne: f => (num(f(2, 4)) && f(0, 4) === null ? null : "a coefficient, or null with no difference"),
+    hcFitCoef: f => (num(f([1, 2, 3], [2, 4, 6])) ? null : "a coefficient must be a number"),
+    hcFitLeaveOut: f => { const r = f([1, 2, 3], [2, 4, 6]); return Array.isArray(r) && r.length === 3 ? null : "one coefficient per game"; },
+    hcFitGaps: f => { const r = f([1, 2, 3], [2, 4, 6]); return Array.isArray(r) && r.length === 3 ? null : "one gap per game"; },
+    hcTheo: f => { const r = f(3, FAN.marginModel(12.25)); return r && num(r.spread) && p01(r.pHome) && Array.isArray(r.ml) && r.ml.length === 2 ? null : "it must give { spread, pHome, ml: [visitor, home] }"; },
+    hcGap: f => { const r = f({ sp: -3, ml: [130, -150] }, { sp: -3.5, ml: [135, -155] }); return r && "sp" in r && "ml" in r ? null : "it must give { sp, ml }"; },
+  };
+  // Puts a user's methods in Fan's place: an object of functions by these names (the user's methods file, methods/user.js, sets UserMethods). Starts from Fan's own each time,
+  // so null is back to Fan's. Gives back what it did: { replaced, refused: [{ name, why }], unknown, error } (error: the file itself failed, so nothing of it was used).
+  function useMethods(user, error) {
+    Object.assign(M, FAN);
+    liveCache = {};
+    const report = { replaced: [], refused: [], unknown: [], error: error || null };
+    if (!user || typeof user !== "object") return report;
+    for (const [k, f] of Object.entries(user)) {
+      if (!(k in FAN)) { report.unknown.push(k); continue; }
+      if (typeof f !== "function") { report.refused.push({ name: k, why: "not a function" }); continue; }
+      let why;
+      try { why = CONTRACT[k] ? CONTRACT[k](f) : null; } catch (e) { why = "it failed on the contract's sample: " + ((e && e.message) || e); }
+      if (why) report.refused.push({ name: k, why }); else { M[k] = f; report.replaced.push(k); }
+    }
+    liveCache = {};
+    return report;
+  }
+  const METHOD_NAMES = Object.keys(FAN);
 
   const shared = { leagueId, leagueOf, outcomes, last, nick, gameLabel, gameKey, pts, profitOf, bonusFactor, riskOf, decimalOf, ticketPrice, winChance, legResult, ticketPL, marginModel, liveModel, totalSd, normCdf, fairLeg, lineOk, FAN_CLASSES, betClass };
 
@@ -752,6 +811,6 @@ const Calc = (() => {
     }
     return { ...shared, status, settleOf, liveChances, vigOf, projectedPL, deadFor, parlayShares, spentShares, shareRisk, gameBets, gameSettledPL, shareTerm, extremes, slateTotals, hedgeFor, readTicker, ticketFromFill, withFills, kalshiCheck, ledgerRows };
   }
-  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, hcFitLeaveOut, hcFitGaps, hcFitOne, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcGap, hcDivCoef };
+  return { RULES, make, ...shared, odds, winPct, feedState, noVigHome, spreadFromMl, kalshiFee, contractsFor, placeLimit, kalshiCalc, centsOf, americanOf, quoteOf, fillSide, fillAmounts, kalshiMarket, freshPrices, replyFill, reconcile, evMoneyline, evPoints, showsML, pairFlagged, pairStakes, pbStats, hcStates, HC_VARS, hcVisitorMargin, hcFitCoef, hcFitLeaveOut, hcFitGaps, hcFitOne, olsFit, hcTheo, hcByeEffect, hcByeAdjust, hcGap, hcDivCoef, useMethods, METHOD_NAMES, fan: FAN };
 })();
 export { Calc };

@@ -210,6 +210,11 @@ Fan.connectTrader = async () => {
     Fan.env = hi.env || "";
     // The live and demo keys, each with its own ledger (the user, Nov 4 2026: "hot swap between demo and live keys... switch ledgers and everything"): which are saved, and the switch.
     Fan.keys = hi.keys || null;
+    // The user's own methods file (PLAN.md E, replaceable methods): read and saved through the connector, so this page and its engine run the same one.
+    if (hi.methods) Fan.methods = {
+      get: async () => (await (await window.fetch("/connector/methods")).json()).text || null,
+      set: async text => { const r = await (await window.fetch("/connector/methods", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) })).json(); if (!r.ok) throw new Error(r.error); },
+    };
     if (hi.keys) Fan.useKey = async env => {
       const r = await (await window.fetch("/connector/key/use", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ env }) })).json();
       if (r.error) throw new Error(r.error);
