@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw46i2a7";
-import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw46i2a7";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw46i2a7";
-import { Calc } from "./calc.js?v=mw46i2a7";
-import { Fan } from "./hosts.js?v=mw46i2a7";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw47fl4w";
+import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw47fl4w";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw47fl4w";
+import { Calc } from "./calc.js?v=mw47fl4w";
+import { Fan } from "./hosts.js?v=mw47fl4w";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js?v=mw46i2a7";
     return tag;
   }
 
-  const APP_VERSION = "0.60.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.61.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -171,14 +171,20 @@ import { Fan } from "./hosts.js?v=mw46i2a7";
   const programBehind = (v, os) => { const minor = s => s.split(".").slice(0, 2).map(Number); if (!v) return true; const [a, b] = minor(v), [c, d] = minor(newestFor(os)); return a < c || (a === c && b < d); };
   // The info line's version, highlighted with an upgrade mark while the connector's program is behind (the user's, Nov 2 2026); a press opens the settings window, where Update is.
   // DEV beside it while the connector serves the working copy (dev mode, its page-dev.txt; the user, Nov 4 2026), so a dev page is never taken for a release.
-  function showVersion(v, dev, os) {
+  // ENGINE beside it while this page is another release than the one the connector's engine runs (several releases may be open at once, the user, Nov 5 2026: "i build for smart
+  // users"): this page's risk and Place come from its own calc.js, the engine's algos and checks from that release's.
+  const pageRelease = (location.pathname.match(/^\/r\/([^/]+)\//) || [])[1] || "";
+  function showVersion(v, dev, os, page) {
     const ver = $("infoVer"), behind = !!v && programBehind(v, os), devOn = !!dev;
-    if (behind === ver.classList.contains("behind") && devOn === ver.classList.contains("dev")) return;
+    const engine = page && page.releases && page.version && pageRelease && pageRelease !== "dev" && page.version !== pageRelease ? page.version : "";
+    if (behind === ver.classList.contains("behind") && devOn === ver.classList.contains("dev") && engine === (ver.dataset.engine || "")) return;
+    ver.dataset.engine = engine;
     ver.classList.toggle("behind", behind);
     ver.classList.toggle("dev", devOn);
-    ver.title = behind ? `The Fan connector is ${v}: update it on the Application tab` : devOn ? `Dev mode: the connector serves the working copy in ${dev}, not the site's page. The next release turns it off.` : "";
+    ver.title = engine ? `This page is release ${pageRelease}; the connector's engine runs ${engine}. This page's risk and Place use ${pageRelease}'s math, the engine's algos and checks ${engine}'s. Open Fan from its root for ${engine}.` : behind ? `The Fan connector is ${v}: update it on the Application tab` : devOn ? `Dev mode: the connector serves the working copy in ${dev}, not the site's page. The next release turns it off.` : "";
     ver.replaceChildren(APP_VERSION);
     if (devOn) ver.append(el("span", "dev-mark", "DEV"));
+    if (engine) ver.append(el("span", "engine-mark", "ENGINE " + engine));
     if (behind) { const up = el("span", "up-mark"); up.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 17V7M7.5 11.5 12 7l4.5 4.5"/></svg>'; ver.append(up); }
     fitSlateLine();
   }
@@ -236,7 +242,7 @@ import { Fan } from "./hosts.js?v=mw46i2a7";
   // nothing can loop.
   const servedDev = [...document.scripts].some(s => s.textContent.includes("/connector/saves"));
   const devFollow = dev => { if (location.origin + "/" !== Fan.localFan || !!dev === servedDev) return; let last = null; try { last = sessionStorage.getItem("fan.devReload"); sessionStorage.setItem("fan.devReload", String(!!dev)); } catch (e) {} if (last !== String(!!dev)) location.replace("/" + location.search); };   // the root: the connector sends it to /r/dev/ or the release served
-  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version, hi.pageDev, hi.os); devFollow(hi.pageDev); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
+  const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version, hi.pageDev, hi.os, hi.page); devFollow(hi.pageDev); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
   setTimeout(askHost, 3000); setInterval(askHost, 10000);
   // the update text turns amber when the lines are more than an hour old (checked every minute)
   let slateAt = 0, linesAt = 0;   // the slate on screen's lines, and the newest refresh of any league's, for the Prices row (the user, Nov 3 2026)
