@@ -1,30 +1,30 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw2y0dvv";
-import { Fan } from "./hosts.js?v=mw2y0dvv";
-import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, bdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw2y0dvv";
-import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw2y0dvv";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw2y0dvv";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw2y0dvv";
-import { demoAway, setBet } from "./trade.js?v=mw2y0dvv";
-import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw2y0dvv";
+import { espnState } from "./espn.js?v=mw33ju01";
+import { Fan } from "./hosts.js?v=mw33ju01";
+import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, gdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw33ju01";
+import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw33ju01";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw33ju01";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw33ju01";
+import { demoAway, setBet } from "./trade.js?v=mw33ju01";
+import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw33ju01";
   // Fan's button opens the settings window.
-  let fillSettings;
+  let drawSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
   const findConnector = () => {
     try { if (Fan.hostHello || !Fan.startLink || localStorage.getItem("fan.connector") !== "yes" || location.search.includes("stay")) return; } catch (e) { return; }
     Fan.connectorUp().then(() => { $("slateNote").textContent = "Found your connector. Moving to it…"; location.href = Fan.localFan; }, () => {});
   };
-  { const list = $("fanList"), btn = $("fanBtn"), win = $("fanWindow");
+  { const list = $("settingsList"), btn = $("fanBtn"), win = $("settingsWindow");
     let firstClose = true;   // closing the window that opens on load shows the current week [U, Nov 2 2026]
     const toNow = () => { if (firstClose) { firstClose = false; switchWeek(weekNow()); } };
     const open = on => { if (on && !win.open) win.showModal(); else if (!on && win.open) { win.close(); toNow(); } };
     // The open tab fits the window (the user's layout rules, Nov 2 2026): laid out wider and scaled down until it doesn't run over, to 60% at most; past that #fanList scrolls.
     const overflows = () => list.scrollHeight > list.clientHeight + 1 || list.scrollWidth > list.clientWidth + 1;
     const fitList = () => {
-      const p = list.querySelector(".fan-list:not([hidden])");
+      const p = list.querySelector(".settings-list:not([hidden])");
       if (!p || !win.open) return;
       p.style.zoom = "";
-      if (p.querySelector(".fan-telecasts")) return;   // the Telecasts tab keeps its large type and scrolls (the user's, Nov 3 2026)
+      if (p.querySelector(".settings-telecasts")) return;   // the Telecasts tab keeps its large type and scrolls (the user's, Nov 3 2026)
       for (let z = 1; z > .6 && overflows(); ) { z = Math.round((z - .05) * 100) / 100; p.style.zoom = String(z); }
     };
     // Fitted again when the window changes size (it follows the strips, layout.js fitBand), when its text changes (the statuses update in place) and when fonts arrive. Its own zoom is a style change, which neither watcher hears.
@@ -33,22 +33,22 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     if (document.fonts) document.fonts.addEventListener("loadingdone", () => fitList());
     let tab = "about";
     const leagueRows = () => Object.entries(leagueNames()).map(([k, h]) => {
-      const row = el("label", "fan-lg" + (LEAGUES_LATER.includes(k) ? " later" : "")), c = el("input");
+      const row = el("label", "settings-lg" + (LEAGUES_LATER.includes(k) ? " later" : "")), c = el("input");
       c.type = "checkbox"; c.checked = leaguesOn.has(k); c.disabled = !LEAGUES_READY.includes(k) || (c.checked && leaguesOn.size === 1); c.setAttribute("aria-label", "Use " + h);
       c.addEventListener("change", () => { if (c.checked) { c.disabled = true; row.append(el("small", null, "getting its games from ESPN…")); } setLeagueOn(k, c.checked).then(fill, fill); });   // a league's first turn-on pulls its season from ESPN, which takes a few seconds: it says so
       row.append(c, h);
       if (LEAGUES_LATER.includes(k)) { const when = LEAGUE_DEFS[k].listedAs || "next year"; row.title = when[0].toUpperCase() + when.slice(1); row.append(el("small", null, when)); }
       return row;
     });
-    const trackItem = () => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = trackingOn; c.addEventListener("change", () => { setTracking(c.checked); fill(); }); lab.append(c, "Track"); return lab; };
+    const trackItem = () => { const lab = el("label", "settings-check"), c = el("input"); c.type = "checkbox"; c.checked = trackingOn; c.addEventListener("change", () => { setTracking(c.checked); fill(); }); lab.append(c, "Track"); return lab; };
     const pricesItem = () => {
-      if (!Fan.lines) return [el("p", "fan-note", (trackingOn ? "Your bets stay in this browser. " : "") + "Prices need the Fan connector on this computer.")];
-      const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = pricesWanted; c.addEventListener("change", () => setPrices(c.checked)); lab.append(c, "Price"); return [lab];
+      if (!Fan.lines) return [el("p", "settings-note", (trackingOn ? "Your bets stay in this browser. " : "") + "Prices need the Fan connector on this computer.")];
+      const lab = el("label", "settings-check"), c = el("input"); c.type = "checkbox"; c.checked = pricesWanted; c.addEventListener("change", () => setPrices(c.checked)); lab.append(c, "Price"); return [lab];
     };
     // Starting the connector from the page. This tab then goes to the connector's own address, or reloads if it's already there. Nothing answering after a while says so, and it can be pressed again.
     const knowConnector = () => { try { localStorage.setItem("fan.connector", "yes"); } catch (e) {} };
     const startItem = () => {
-      const a = el("a", "fan-start", "Start connector"), box = el("div", "fan-starting");
+      const a = el("a", "settings-start", "Start connector"), box = el("div", "settings-starting");
       a.href = Fan.startLink;
       a.addEventListener("click", () => {
         knowConnector();
@@ -66,15 +66,15 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     };
     // What a first-time user does, on a page with no connector.
     const connectorRows = () => {
-      const box = el("div", "fan-connector"), steps = el("ol"), step = (...parts) => { const li = el("li"); li.append(...parts); steps.append(li); };
-      const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, cros = /CrOS/.test(navigator.userAgent), get = el("a", "fan-start", (mac ? "Download for Mac " : "Download for Windows ") + APP_VERSION);
+      const box = el("div", "settings-connector"), steps = el("ol"), step = (...parts) => { const li = el("li"); li.append(...parts); steps.append(li); };
+      const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, cros = /CrOS/.test(navigator.userAgent), get = el("a", "settings-start", (mac ? "Download for Mac " : "Download for Windows ") + APP_VERSION);
       get.href = mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe"; get.setAttribute("download", mac ? `fan-connector-mac-${APP_VERSION}.zip` : `fan-connector-setup-${APP_VERSION}.exe`);   // one number for Fan. The Windows file still starts fan-connector-setup, which is how it knows to install itself
       get.addEventListener("click", knowConnector);
       box.append(el("h3", null, "Why it's needed"), el("p", null, "Watch and Track work right here. Price and Bet need the Fan connector: a small program on your computer that pulls prices over your own connection and holds your own Kalshi key. Nothing about your bets or your key leaves your computer for this site."));
       // A Chromebook (Nov 4 2026): the connector runs in ChromeOS's Linux, whose localhost ports reach Chrome, so the page finds it like anywhere else. One line in its Terminal installs it.
       if (cros) {
         const line = "curl -fLo fan-connector-setup " + new URL("fan-connector-chromebook", location.href).href + " && chmod +x fan-connector-setup && ./fan-connector-setup";
-        const code = el("code", "fan-cmd", line), copy = el("button", "fan-start", "Copy");
+        const code = el("code", "settings-cmd", line), copy = el("button", "settings-start", "Copy");
         copy.type = "button"; copy.addEventListener("click", () => { navigator.clipboard?.writeText(line).then(() => { copy.textContent = "Copied"; }, () => {}); knowConnector(); });
         step(el("b", null, "Turn on Linux. "), "Once: Settings, About ChromeOS, Developers, Linux development environment, Set up. It takes a few minutes.");
         step(el("b", null, "Run one line. "), "Open the Terminal app, paste this and press Enter. Linux doesn't ask about unsigned programs. ", copy, code);
@@ -85,7 +85,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
       if (!windows && !mac) { box.append(el("h3", null, "Getting it"), el("p", null, "The connector runs on a Windows or Mac computer, or a Chromebook.")); return [box]; }
       step(el("b", null, "Download it. "), get, el("small", null, "It's new and isn't signed yet, so your browser may call it suspicious. To keep it, open the browser's downloads list and choose Keep."));
       if (mac) {
-        const set = el("a", "fan-start", "Open Settings");
+        const set = el("a", "settings-start", "Open Settings");
         set.href = "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension";
         step(el("b", null, "Open it. "), "Open the zip and double-click Fan Connector Setup. Apple hasn't checked it yet, so the Mac refuses the first time. That's expected, and it unlocks the next step.");
         step(el("b", null, "Allow it. "), set, " In Privacy & Security, scroll down to Security and choose Open Anyway. Your browser asks before it opens Settings. It needs no admin password.");
@@ -96,10 +96,10 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
       return [box];
     };
     const firstHere = () => { try { return localStorage.getItem("fan.connector") !== "yes"; } catch (e) { return true; } };   // this browser has never pressed Start or Download, so the page doesn't look for one
-    const getOrStart = () => { const box = el("div", "fan-get"), get = el("button", null, "Get the connector"); get.type = "button"; get.addEventListener("click", () => { tab = "connector"; fill(); }); box.append(startItem(), get); if (firstHere()) box.append(el("small", "fan-first", "This looks like this browser's first visit. If the connector already runs on this computer, press Start to reach it.")); return box; };
+    const getOrStart = () => { const box = el("div", "settings-get"), get = el("button", null, "Get the connector"); get.type = "button"; get.addEventListener("click", () => { tab = "connector"; fill(); }); box.append(startItem(), get); if (firstHere()) box.append(el("small", "settings-first", "This looks like this browser's first visit. If the connector already runs on this computer, press Start to reach it.")); return box; };
     // Live / Demo: the key in use, and a press switches to the other with its ledger, the page reloading on it. One with no key saved opens the key screen to connect one.
     const keySwitch = () => {
-      const d = el("div", "fan-keyswitch");
+      const d = el("div", "settings-keyswitch");
       [["prod", "Live"], ["demo", "Demo"]].forEach(([env, name]) => {
         const on = Fan.env === env, has = !!(Fan.keys && Fan.keys[env]), b = el("button", on ? "on" : null, name);
         b.type = "button";
@@ -111,10 +111,10 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     };
     const keysItem = () => { const b = el("button", null, "Connect Kalshi"); b.type = "button"; b.addEventListener("click", () => { open(false); Fan.account(); }); return b; };
     // The layout: Auto, or one the user picks (base.js's LAYOUTS).
-    const layoutItem = () => { const lab = el("label", "fan-layout"), s = el("select", "fan-pick"); LAYOUTS.forEach(([k, name]) => { const o = el("option", null, name); o.value = k; s.append(o); }); s.value = layoutPref; s.setAttribute("aria-label", "Layout"); s.addEventListener("change", () => setLayoutPref(s.value)); lab.append("Layout", s); return lab; };
+    const layoutItem = () => { const lab = el("label", "settings-layout"), s = el("select", "settings-pick"); LAYOUTS.forEach(([k, name]) => { const o = el("option", null, name); o.value = k; s.append(o); }); s.value = layoutPref; s.setAttribute("aria-label", "Layout"); s.addEventListener("change", () => setLayoutPref(s.value)); lab.append("Layout", s); return lab; };
     const badgeItem = () => { const b = el("button", null, "Badges: " + BADGE_STYLES[badgeStyle].label), names = Object.keys(BADGE_STYLES); b.type = "button"; b.addEventListener("click", () => { setBadgeStyle(names[(names.indexOf(badgeStyle) + 1) % names.length]); b.textContent = "Badges: " + BADGE_STYLES[badgeStyle].label; }); return b; };
     // The Application tab: a diagram of what runs where, left the page, then the connector, then the outside services. A card's checkbox is its part's own switch, and greyed where the part can't be changed from here.
-    const partCheck = (name, on, change) => { const lab = el("label", "fan-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.disabled = !change; if (change) c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, name); return lab; };
+    const partCheck = (name, on, change) => { const lab = el("label", "settings-check"), c = el("input"); c.type = "checkbox"; c.checked = on; c.disabled = !change; if (change) c.addEventListener("change", () => { change(c.checked); fill(); }); lab.append(c, name); return lab; };
     const ABOUT = () => ({
       watch: [partCheck("Watch", true), "See the slate, scores, previews, telecasts, and tape.", ", no install."],
       track: [partCheck("Track", trackingOn, Fan.door && Fan.door.here ? null : on => setTracking(on)), "Enter bets and see scenario risk.", ", no install."],
@@ -125,7 +125,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     let stopPressed = false;   // pressed Stop on this page, so its silence is expected
     let connectorAway = false;   // this page's connector isn't answering: Price and Bet keep their ticks, greyed
     const stopItem = box => {
-      const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Stop");
+      const wrap = el("div", "settings-starting"), b = el("button", "settings-start", "Stop");
       b.type = "button";
       b.addEventListener("click", () => {
         stopPressed = true; b.hidden = true;
@@ -140,7 +140,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     const programName = v => v.split(".").slice(0, 2).join("."), newestProgram = os => programName(newestFor(os));
     // The Update button: the connector replaces itself, and this page reloads when the new one answers. A failure says why, and it can be pressed again.
     const updateItem = (from, os) => {
-      const wrap = el("div", "fan-starting"), b = el("button", "fan-start", "Update to " + newestProgram(os));
+      const wrap = el("div", "settings-starting"), b = el("button", "settings-start", "Update to " + newestProgram(os));
       b.type = "button";
       b.addEventListener("click", () => {
         b.hidden = true;
@@ -178,10 +178,10 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     };
     const drawStatus = async box => {
       const { hi, away, rows } = await statusRows();
-      const ctl = document.querySelector(".fan-con-ctl");   // the connector's own controls sit on it, in the diagram
-      if (!ctl || ctl.querySelector(".fan-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
+      const ctl = document.querySelector(".settings-con-ctl");   // the connector's own controls sit on it, in the diagram
+      if (!ctl || ctl.querySelector(".settings-starting small")) return;   // a press of Start is under way: its note stays until the page reloads
       if (away !== connectorAway) { connectorAway = away; demoAway(away); fill(); return; }   // the diagram above changes too, and this list is drawn again with it
-      rows.forEach(([name, [state, text, checked]]) => { const at = box.querySelector(`[data-st="${name}"]`), r = el("div", "fan-st " + state + (checked ? " checked" : "")); r.append(el("i")); if (!at.dataset.plain) r.append(el("b", null, name)); r.append(el("span", null, text)); at.replaceChildren(r); });
+      rows.forEach(([name, [state, text, checked]]) => { const at = box.querySelector(`[data-st="${name}"]`), r = el("div", "settings-st " + state + (checked ? " checked" : "")); r.append(el("i")); if (!at.dataset.plain) r.append(el("b", null, name)); r.append(el("span", null, text)); at.replaceChildren(r); });
       showStates(box, new Map(rows.map(([name, [state, , checked]]) => [name, [state, checked]])));
       box.classList.toggle("healthy", !!hi && !away && rows.every(([name, [state]]) => state === "ok" || state === "live" || state === "off" || (name === "Connector" && programBehind(hi.version, hi.os))));   // a part turned off isn't a problem; amber, red or waiting is, but not an older program: it runs fine as it is, and updating is the user's choice (Nov 2 2026)
       ctl.replaceChildren();
@@ -189,7 +189,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
       if (hi && hi.update && programBehind(hi.version, hi.os)) ctl.append(updateItem(hi.version, hi.os));   // in Stop's place: there's room on the line for one
       else if (hi && hi.stop) ctl.append(stopItem(box));
       if (hi && hi.login != null) {   // an installed connector's own checkbox
-        const lab = el("label", "fan-check"), c = el("input");
+        const lab = el("label", "settings-check"), c = el("input");
         c.type = "checkbox"; c.checked = hi.login;
         c.addEventListener("change", () => { Fan.setLogin(c.checked).catch(() => {}).then(() => drawStatus(box)); });
         lab.append(c, "Start at login");
@@ -200,17 +200,17 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     };
     // Each venue's switches, on the user's word (Nov 2 2026): prices from Kalshi and Polymarket US, and where orders may go. A venue the connector can't send orders to yet says why. They're the connector's to keep, so they show only with one that knows them.
     const VENUES = [["kalshi", "Kalshi"], ["polymarket", "Polymarket US"]];
-    const routeBox = kind => { const d = el("div", "fan-routes"); d.dataset.kind = kind; return d; };
+    const routeBox = kind => { const d = el("div", "settings-routes"); d.dataset.kind = kind; return d; };
     const drawRoutes = hi => {
       const r = hi && hi.routes;
-      document.querySelectorAll(".fan-routes").forEach(box => {
+      document.querySelectorAll(".settings-routes").forEach(box => {
         if (box.dataset.busy) return;
         box.replaceChildren();
         if (!r || !Fan.setRoutes) return;
         const kind = box.dataset.kind, on = new Set(r[kind] || []);
         box.append(el("small", null, kind === "prices" ? "Prices from" : "Orders to"));
         VENUES.forEach(([v, name]) => {
-          const cannot = kind === "orders" && !(r.canOrder || []).includes(v), lab = el("label", "fan-check"), c = el("input");
+          const cannot = kind === "orders" && !(r.canOrder || []).includes(v), lab = el("label", "settings-check"), c = el("input");
           c.type = "checkbox"; c.checked = on.has(v) && !cannot; c.disabled = cannot || connectorAway;
           c.addEventListener("change", () => {
             if (c.checked) on.add(v); else on.delete(v);
@@ -230,42 +230,42 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     // Holding page updates is gone, on the user's word (Nov 2 2026): every copy follows the site. A connector still holding is let go once, which reloads the page.
     let released = false;
     const releaseHeld = hi => { if (released || !(hi && hi.page && hi.page.held) || !Fan.pageChoice) return; released = true; Fan.pageChoice("release").then(() => location.reload(), () => {}); };
-    setInterval(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
-    new MutationObserver(() => { const box = document.querySelector(".fan-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }).observe($("feedNote"), { attributes: true, childList: true, characterData: true, subtree: true });   // the fill feed's dot changes when the feed does
+    setInterval(() => { const box = document.querySelector(".settings-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
+    new MutationObserver(() => { const box = document.querySelector(".settings-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }).observe($("feedNote"), { attributes: true, childList: true, characterData: true, subtree: true });   // the fill feed's dot changes when the feed does
     // The connector, one box in four sections, its three jobs and its program, with a small gear outside it, level with the bottom section, on the user's word (Nov 2 2026). The gear turns, green, while the whole system is healthy (drawStatus): the user knows it's all well if it's turning.
     const GEAR = (() => { const teeth = 10, R = 50, r = 41, w = 0.18, corners = []; for (let i = 0; i < teeth; i++) { const a = (i / teeth) * 2 * Math.PI; [[a - w * 1.4, r], [a - w, R], [a + w, R], [a + w * 1.4, r]].forEach(([t, d]) => corners.push(`${(50 + d * Math.cos(t)).toFixed(2)},${(50 + d * Math.sin(t)).toFixed(2)}`)); } return `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill-rule="evenodd" d="M${corners.join("L")}Z M50,34 a16,16 0 1,0 0.01,0 Z"/></svg>`; })();
-    const conFrame = here => el("div", "fan-frame" + (here ? "" : " away"));
-    const conGear = () => { const g = el("div", "fan-gear"); g.innerHTML = GEAR; return g; };   // outside the box, level with its bottom section
+    const conFrame = here => el("div", "settings-frame" + (here ? "" : " away"));
+    const conGear = () => { const g = el("div", "settings-gear"); g.innerHTML = GEAR; return g; };   // outside the box, level with its bottom section
     // Under the box, on the user's word (Nov 2 2026): what the gear means, with a curved arrow up and to the left, at the gear.
-    const gearNote = () => { const n = el("p", "fan-gear-note"); n.innerHTML = '<svg viewBox="0 0 28 34" aria-hidden="true"><path d="M24 32C24 20 12 12 5 5"/><path d="M6.8 11.8 5 5l6.8 1.8"/></svg>'; n.append("If this gear is rotating, all systems are go as configured."); return n; };
+    const gearNote = () => { const n = el("p", "settings-gear-note"); n.innerHTML = '<svg viewBox="0 0 28 34" aria-hidden="true"><path d="M24 32C24 20 12 12 5 5"/><path d="M6.8 11.8 5 5l6.8 1.8"/></svg>'; n.append("If this gear is rotating, all systems are go as configured."); return n; };
     // Each part card's mockup of an element of the page it brings, named under it, on the user's word (Nov 2 2026). Made-up figures, no game data.
     const MOCK = { watch: "Game card badge", track: "Wager ticket", price: "Line", bet: "Place button" };
     const partMock = k => {
-      const m = el("div", "fan-mock"), art = el("div", "fan-mock-art");
-      if (k === "watch") art.append(bdBadge({ away: "Chicago Bears", home: "Seattle Seahawks" }, "home"));
-      else if (k === "track") art.append(el("span", "fan-mock-book", "KAL"), el("span", null, "SEA -3.5"), el("span", "fan-mock-num", "$100"));
-      else if (k === "price") art.append(el("span", null, "-3.5"), el("span", "fan-mock-num", "-110"), el("span", "fan-mock-num", "+150"));
-      else art.append(el("span", "fan-mock-place", "Place"), el("span", "fan-mock-num", "100 @ 52¢"));
+      const m = el("div", "settings-mock"), art = el("div", "settings-mock-art");
+      if (k === "watch") art.append(gdBadge({ away: "Chicago Bears", home: "Seattle Seahawks" }, "home"));
+      else if (k === "track") art.append(el("span", "settings-mock-book", "KAL"), el("span", null, "SEA -3.5"), el("span", "settings-mock-num", "$100"));
+      else if (k === "price") art.append(el("span", null, "-3.5"), el("span", "settings-mock-num", "-110"), el("span", "settings-mock-num", "+150"));
+      else art.append(el("span", "settings-mock-place", "Place"), el("span", "settings-mock-num", "100 @ 52¢"));
       m.dataset.mock = k; m.append(art, el("small", null, MOCK[k]));
       return m;
     };
     const aboutRows = () => {
-      const box = el("div", "fan-about"), parts = ABOUT();
+      const box = el("div", "settings-about"), parts = ABOUT();
       const here = !!Fan.lines && !connectorAway;   // the connector is on this page and answering
       const at = (node, row, col) => { node.style.setProperty("--r", row); node.style.setProperty("--c", col); return node; };
       // Where a status indicator goes. A plain one sits under its own name, so it doesn't repeat it.
-      const slot = (name, plain) => { const s = el("div", "fan-slot"); s.dataset.st = name; if (plain) s.dataset.plain = "1"; return s; };
-      const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "fan-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("span", "fan-cost"), head = el("div", "fan-part-head"); cost.append(el("b", "fan-free", "Free"), needs); head.append(toggle, cost); d.append(head, el("p", null, what), partMock(k)); return at(d, row, 1); };
+      const slot = (name, plain) => { const s = el("div", "settings-slot"); s.dataset.st = name; if (plain) s.dataset.plain = "1"; return s; };
+      const card = (k, row) => { const [toggle, what, needs] = parts[k], d = el("div", "settings-part" + (toggle.querySelector("input").checked ? "" : " off")); d.dataset.part = k; const cost = el("span", "settings-cost"), head = el("div", "settings-part-head"); cost.append(el("b", "settings-free", "Free"), needs); head.append(toggle, cost); d.append(head, el("p", null, what), partMock(k)); return at(d, row, 1); };
       // A wire is lit while what it carries is flowing. Its arrow points at the page, or both ways.
-      const wire = (label, lit, both, row, col) => { const w = el("div", "fan-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
-      const job = (text, status, row) => { const d = el("div", "fan-job" + (row === 3 ? " first" : "")); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
-      const outBox = (name, on, ...rest) => { const d = el("div", "fan-out" + (on ? " on" : "")); d.append(el("b", null, name), ...rest); return d; };
+      const wire = (label, lit, both, row, col) => { const w = el("div", "settings-wire" + (lit ? " lit" : "")), line = el("div"); line.append(el("i", "l")); if (both) line.append(el("i", "r")); w.append(el("span", null, label), line); return at(w, row, col); };
+      const job = (text, status, row) => { const d = el("div", "settings-job" + (row === 3 ? " first" : "")); d.append(el("p", null, text), slot(status)); return at(d, row, 3); };
+      const outBox = (name, on, ...rest) => { const d = el("div", "settings-out" + (on ? " on" : "")); d.append(el("b", null, name), ...rest); return d; };
       const service = (name, row, on, ...rest) => at(outBox(name, on, ...rest), row, 5);
-      const stack = (...boxes) => { const s = el("div", "fan-outs"); s.append(...boxes); return s; };
-      const con = el("div", "fan-con");
+      const stack = (...boxes) => { const s = el("div", "settings-outs"); s.append(...boxes); return s; };
+      const con = el("div", "settings-con");
       con.append(el("b", null, "Fan connector"), slot("Connector", true));
       if (!Fan.lines && Fan.startLink) con.append(getOrStart());   // on the name's line where it fits, like the controls below
-      con.append(el("div", "fan-con-ctl"), conGear());
+      con.append(el("div", "settings-con-ctl"), conGear());
       box.append(
         at(el("h3", null, "In your browser"), 1, 1), at(el("h3", null, "On this computer"), 1, 3), at(el("h3", null, "Everywhere else"), 1, 5),
         at(conFrame(here), "3 / 7", 3),   // the box around the connector's three jobs and its program
@@ -278,7 +278,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
       box.append(at(gearNote(), 7, 3));
       box.querySelector("[data-part=watch]").append(slot("Leagues"));
       drawStatus(box);
-      return [box, el("p", "fan-yours", "Fan sends your data nowhere. What you enter, and what your own accounts report, stays on this computer. Public information you look up is stored here too, for speed.")];
+      return [box, el("p", "settings-yours", "Fan sends your data nowhere. What you enter, and what your own accounts report, stays on this computer. Public information you look up is stored here too, for speed.")];
     };
     const SETTINGS_TABS = [
       ["about", "Application", aboutRows],
@@ -292,19 +292,19 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     const fill = () => {
       const tabs = SETTINGS_TABS.filter(([k]) => k === "connector" ? !Fan.lines && Fan.startLink : k !== "records" || (trackingOn && Fan.store && Fan.store.dump));   // the connector's tab is for a page without one. Only a browser's own records need Records, and only with Bet tracking on
       if (!tabs.some(([k]) => k === tab)) tab = "leagues";
-      $("fanTabs").replaceChildren(...tabs.map(([k, h]) => {
+      $("settingsTabs").replaceChildren(...tabs.map(([k, h]) => {
         const b = el("button", null, h);
         b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(k === tab));
         b.addEventListener("click", () => { tab = k; fill(); });
         return b;
       }));
-      list.replaceChildren(...tabs.map(([k, , rows]) => { const p = el("div", "fan-list"); p.setAttribute("role", "tabpanel"); p.hidden = k !== tab; p.append(...rows()); return p; }));
+      list.replaceChildren(...tabs.map(([k, , rows]) => { const p = el("div", "settings-list"); p.setAttribute("role", "tabpanel"); p.hidden = k !== tab; p.append(...rows()); return p; }));
       fitList();
     };
     btn.addEventListener("click", () => { fill(); open(!win.open); });
-    $("fanClose").addEventListener("click", () => open(false));
+    $("settingsClose").addEventListener("click", () => open(false));
     win.addEventListener("close", toNow);   // Escape closes it too
     setTimeout(() => { fill(); open(true); }, 0);
     let remoteTab = false;   // a remote opens on Telecasts, the wall: that's its whole job
-    fillSettings = () => { if (Fan.door && Fan.door.here && !remoteTab) { remoteTab = true; tab = "telecasts"; } if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
-export { fillSettings, findConnector };
+    drawSettings = () => { if (Fan.door && Fan.door.here && !remoteTab) { remoteTab = true; tab = "telecasts"; } if (win.open) fill(); }; }   // what the connector offers arrives after the window opens
+export { drawSettings, findConnector };

@@ -1,11 +1,11 @@
 // Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { Fan } from "./hosts.js?v=mw2y0dvv";
-import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, bookAbbr, bookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw2y0dvv";
-import { setAcc } from "./layout.js?v=mw2y0dvv";
-import { TEAM, abbr } from "./leagues.js?v=mw2y0dvv";
-import { setPlaybook } from "./panels.js?v=mw2y0dvv";
-  Object.assign(later, { syncPrices, bookReport, fillMoneyline, fillSpread, fillTotal, showSaved, weekChanged });
-  const BOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
+import { Fan } from "./hosts.js?v=mw33ju01";
+import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, sportsbookAbbr, sportsbookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw33ju01";
+import { setFold } from "./layout.js?v=mw33ju01";
+import { TEAM, abbr } from "./leagues.js?v=mw33ju01";
+import { setTrends } from "./panels.js?v=mw33ju01";
+  Object.assign(later, { syncPrices, sportsbookReport, enterMoneyline, enterSpread, enterTotal, showSaved, weekChanged });
+  const SPORTSBOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))}${g.line.noSp ? "" : " " + pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };   // no spread market yet: no spread named
   const vigText = v => v < -0.5 ? "−" + money(-v) : money(Math.max(0, v));
   // One-time copy of this browser's saved wagers into the database, then the database becomes the source.
@@ -67,9 +67,9 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     backupDue();
   }
   function recordsItems() {
-    const box = el("div", "fan-records"), s = backupStore();
+    const box = el("div", "settings-records"), s = backupStore();
     const button = (text, act) => { const b = el("button", null, text); b.type = "button"; b.addEventListener("click", act); return b; };
-    const note = el("p", "fan-note", ""), said = el("p", "fan-note", ""), input = el("input");
+    const note = el("p", "settings-note", ""), said = el("p", "settings-note", ""), input = el("input");
     input.type = "file"; input.accept = ".json,application/json"; input.hidden = true;
     input.addEventListener("change", async () => {
       const f = input.files[0];
@@ -97,7 +97,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     const stopAuto = async () => { if (autoStop) autoStop(); autoStop = null; clearTimeout(autoTimer); autoOn = false; autoFile = null; await s.keep("autoFile", null); backupDue(); draw(); };
     const draw = () => {
       note.textContent = "Your records are kept only in this browser. " + (backupAt ? "Last backup: " + new Date(backupAt).toLocaleString() + "." : "No backup yet.");
-      const auto = !window.showSaveFilePicker ? [] : autoOn ? [el("p", "fan-note", "Saving automatically to " + autoFile.name + "."), button("Stop saving automatically", stopAuto)] : autoFile ? [button("Keep saving to " + autoFile.name, reconnect), button("Stop saving automatically", stopAuto)] : [button("Save automatically to a file", pickFile)];
+      const auto = !window.showSaveFilePicker ? [] : autoOn ? [el("p", "settings-note", "Saving automatically to " + autoFile.name + "."), button("Stop saving automatically", stopAuto)] : autoFile ? [button("Keep saving to " + autoFile.name, reconnect), button("Stop saving automatically", stopAuto)] : [button("Save automatically to a file", pickFile)];
       box.replaceChildren(note, button("Export", exportNow), button("Import", () => input.click()), input, ...auto, said);
     };
     backupDrawn = () => { if (box.isConnected) draw(); };
@@ -106,15 +106,15 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
   }
 
   // Game dropdown grouped by day, in the viewer's time
-  const gameSel = $("game"), gameBtn = $("gameBtn"), gameList = $("gameList");
+  const gameSelect = $("game"), gameBtn = $("gameBtn"), gameList = $("gameList");
   function buildGameSelect() {
-  gameSel.replaceChildren();
-  gameSel.add(new Option("Select a game", ""));
+  gameSelect.replaceChildren();
+  gameSelect.add(new Option("Select a game", ""));
   const groups = new Map();
   const optWidth = 8 + 3 + Math.max(...GAMES.map(g => gameSpread(g).length));
   GAMES.forEach((g, i) => {
     const day = dayFmt.format(new Date(g.t));
-    if (!groups.has(day)) { const og = document.createElement("optgroup"); og.label = day; groups.set(day, og); gameSel.append(og); }
+    if (!groups.has(day)) { const og = document.createElement("optgroup"); og.label = day; groups.set(day, og); gameSelect.append(og); }
     // Time on the left, matchup pushed to the right with non-breaking spaces (the select uses a monospace font).
     const left = g.final ? "Final" : timeFmt.format(new Date(g.t));
     const gap = Math.max(2, optWidth - left.length - gameSpread(g).length);
@@ -123,9 +123,9 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
   }
   buildGameSelect();
 
-  const bookSel = $("book");
-  bookSel.add(new Option("Select a sportsbook", ""));
-  BOOKS.forEach(b => bookSel.add(new Option(b, b)));
+  const sportsbookSelect = $("sportsbook");
+  sportsbookSelect.add(new Option("Select a sportsbook", ""));
+  SPORTSBOOKS.forEach(b => sportsbookSelect.add(new Option(b, b)));
 
   try { setTickets(JSON.parse(localStorage.getItem("fan.tickets") || "[]")); } catch (e) {}
   const persist = () => { try { localStorage.setItem("fan.tickets", JSON.stringify(allTickets)); } catch (e) {} };
@@ -150,14 +150,14 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     { k: "amount", h: "Wager", at: [1, 5], num: true, edit: () => true, n: t => t.amount, v: t => (t.bonus ? "B" : "") + money(t.amount) },
     { k: "win", h: "To win", at: [1, 6], num: true, n: t => { const o = ticketOdds(t); return o == null ? null : profitOf(t.amount, o); }, v: t => { const o = ticketOdds(t); return o == null ? "—" : money(profitOf(t.amount, o)); } },
     { k: "time", h: "Saved", at: [2, 1], n: t => t.createdAt, v: t => t.createdAt ? stampFmt.format(new Date(t.createdAt)).replace(",", "") : "—" },
-    { k: "book", h: "Book", at: [2, 2], edit: t => !t.kalshi, v: t => bookAbbr(t.book) },
+    { k: "book", h: "Book", at: [2, 2], edit: t => !t.kalshi, v: t => sportsbookAbbr(t.book) },
     { k: "type", h: "Type", at: [2, 3], ctr: true, v: t => ({ Moneyline: "ML", Spread: "SPD", Total: "TOT", Parlay: "PAR" })[t.type] || t.type || "" },
     { k: "vig", h: "Vig", at: [2, 6], num: true, n: t => vigOf(t), v: t => (pricesOn() || t.kalshi ? vigText(vigOf(t)) : "—") }
   ];
   const ticketOdds = t => t.type === "Moneyline" ? t.line : t.odds != null ? t.odds : null;
   let sortCol = null, sortDir = 1;
 
-  function renderHeads() {
+  function drawSavedHeads() {
     const heads = $("heads");
     heads.replaceChildren();
     COLS.forEach(c => {
@@ -165,7 +165,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
       b.type = "button"; b.style.gridArea = `${c.at[0]} / ${c.at[1]}`;
       b.addEventListener("click", () => {
         if (sortCol === c.k) sortDir = -sortDir; else { sortCol = c.k; sortDir = 1; }
-        renderHeads(); renderTickets();
+        drawSavedHeads(); drawSavedTickets();
       });
       heads.append(b);
     });
@@ -187,7 +187,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     Object.assign(t, patch);
     if (inStore && t.id) Fan.store.update("wagers", t.id, patch).catch(() => {}); else persist();
   }
-  function kalshiPatch(t, cents, spent) {
+  function kalshiUpdate(t, cents, spent) {
     const kc = kalshiCalc(cents, spent);
     if (kc.C < 1) return null;
     const kalshi = { cents, contracts: kc.C, fee: kc.fee };
@@ -196,7 +196,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
   function applyEdit(t, k, text) {      // returns an error message, or null once saved
     text = text.trim();
     if (k === "book") {
-      if (!BOOKS.includes(text) || text === "Kalshi" || t.kalshi) return "Pick one of the listed sportsbooks.";
+      if (!SPORTSBOOKS.includes(text) || text === "Kalshi" || t.kalshi) return "Pick one of the listed sportsbooks.";
       if (text !== t.book) updateTicket(t, { book: text });
       return null;
     }
@@ -204,7 +204,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
       const m = /^(b)?\s*\$?\s*([\d,]*\.?\d+)$/i.exec(text), amt = m ? parseFloat(m[2].replace(/,/g, "")) : NaN;
       if (!(amt > 0)) return "Enter an amount like 200, or B200 for a bonus wager.";
       const bonus = !!m[1];
-      if (t.kalshi) { const p = kalshiPatch(t, t.kalshi.cents, amt); if (!p) return "That is less than one contract at this price."; updateTicket(t, { ...p, bonus }); }
+      if (t.kalshi) { const p = kalshiUpdate(t, t.kalshi.cents, amt); if (!p) return "That is less than one contract at this price."; updateTicket(t, { ...p, bonus }); }
       else updateTicket(t, { amount: amt, bonus });
       return null;
     }
@@ -217,7 +217,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     if (k === "price") {
       if (t.kalshi) {
         if (!centsOk(n)) return "Enter the price in cents, 1 to 99.";
-        const p = kalshiPatch(t, n, kalshiSpent(t));
+        const p = kalshiUpdate(t, n, kalshiSpent(t));
         if (!p) return "That is less than one contract at this price.";
         updateTicket(t, p); return null;
       }
@@ -245,7 +245,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     let field;
     if (col.k === "book") {
       field = el("select", "ced");
-      BOOKS.filter(b => b !== "Kalshi").forEach(b => field.add(new Option(b, b)));
+      SPORTSBOOKS.filter(b => b !== "Kalshi").forEach(b => field.add(new Option(b, b)));
       field.value = raw;
     } else { field = el("input", "ced"); field.type = "text"; field.value = raw; field.autocomplete = "off"; }
     field.setAttribute("aria-label", col.h);
@@ -264,7 +264,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     if (col.k === "book") field.addEventListener("blur", () => finish(false));
   }
 
-  function renderTickets() {
+  function drawSavedTickets() {
     const shown = ticketsInView();
     const ul = $("list");
     ul.replaceChildren();
@@ -304,8 +304,8 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
       ul.append(li);
     });
   }
-  renderHeads();
-  $("search").addEventListener("input", renderTickets);
+  drawSavedHeads();
+  $("search").addEventListener("input", drawSavedTickets);
   // The saved tickets card has two tabs, the ticket list and the by-sportsbook summary.
   function showSaved(tab) {
     document.querySelector(".saved").classList.toggle("show-sum", tab === "summary");
@@ -317,7 +317,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
 
   // Summary tab of the saved tickets card: this week's bets by sportsbook. Wagered amounts are shown for every bet; returns and net cash only
   // count bets that are decided (every leg final, or a parlay already lost on a leg), so the report fills in as games finish.
-  function bookReport(tickets) {
+  function sportsbookReport(tickets) {
     const books = new Map();
     tickets.forEach(t => {
       const b = books.get(t.book) || { n: 0, cash: 0, bonus: 0, open: 0, won: 0, lost: 0, push: 0, ret: 0, net: 0, done: 0, vig: 0 };
@@ -337,7 +337,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     table.append(head);
     const line = (name, b, foot) => {
       const tr = el("tr", foot ? "foot" : null), name$ = el("td");
-      if (foot) name$.textContent = name; else name$.append(bookTag(name));
+      if (foot) name$.textContent = name; else name$.append(sportsbookTag(name));
       const done = b.done > 0;
       tr.append(name$, el("td", null, String(b.n)), el("td", null, b.cash || !b.bonus ? money(b.cash) + (b.bonus ? " + B" + money(b.bonus) : "") : "B" + money(b.bonus)),
         el("td", pricesOn() && b.vig < -0.5 ? "pos" : null, pricesOn() ? vigText(b.vig) : "—"),
@@ -365,9 +365,9 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     card.append(el("h2", null, title), sub, table);
     return card;
   }
-  function renderLedger() {
+  function drawLedger() {
     if (drawStub("ledger")) return;
-    if (subView.ledger === "check") { later.renderKalshiCheck(); return; }
+    if (subView.ledger === "check") { later.drawKalshiCheck(); return; }
     const box = $("ledger");
     box.replaceChildren();
     const empty = () => ({ n: 0, cash: 0, bonus: 0, won: 0, lost: 0, push: 0, pend: 0, openCash: 0, openBonus: 0, net: 0 });
@@ -400,7 +400,7 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
       body.append(tr);
     };
     section("By sportsbook");
-    rows.forEach(([name, b]) => line(bookTag(name), b, true));
+    rows.forEach(([name, b]) => line(sportsbookTag(name), b, true));
     line("All books", all, true, "ltotal");
     section("By bet type");
     FAN_CLASSES.filter(c => byClass.has(c)).forEach(c => line(c, byClass.get(c), false));
@@ -418,21 +418,21 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
   // Kalshi is an exchange: a contract costs 1-99 cents and pays $1 if it wins, so its price is the market's win chance in percent.
   // Moneyline is "team wins", spread is "team wins by over X", total is "over X points"; the other side buys the opposite contract.
   // Wagers are stored at the equivalent American odds, so the rest of the accounting works unchanged.
-  const isKalshi = () => bookSel.value === "Kalshi";
+  const isKalshi = () => sportsbookSelect.value === "Kalshi";
   const centsOk = c => Number.isFinite(c) && c >= 1 && c <= 99;
 
-  function renderPick() {
-    $("type").hidden = gameSel.value === "";   // no bet type until a game is picked
+  function drawPick() {
+    $("type").hidden = gameSelect.value === "";   // no bet type until a game is picked
     syncGame();
     const box = $("pick");
     box.replaceChildren();
     box.classList.remove("invalid"); $("pickErr").hidden = true;
     const type = document.querySelector("input[name=btype]:checked");
-    if (!type || gameSel.value === "") {
-      if (gameSel.value !== "") box.append(el("div", "hint", "Select a bet type to see the sides."));
+    if (!type || gameSelect.value === "") {
+      if (gameSelect.value !== "") box.append(el("div", "hint", "Select a bet type to see the sides."));
       return;
     }
-    const g = GAMES[gameSel.value];
+    const g = GAMES[gameSelect.value];
     const names = type.value === "Total" ? ["Over", "Under"] : [nick(g, "away"), nick(g, "home")];
     // A parlay has one price for the whole ticket, so its legs carry no price (and a moneyline leg has nothing to enter).
     const parlay = mode === "parlay", kal = isKalshi() && !parlay;
@@ -496,35 +496,35 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     box.classList.toggle("no-line", !line);
   }
   // Fills the wager ticket from a game card's moneyline: Kalshi, $100, that side at Kalshi's own ask (live price once under way).
-  function fillMoneyline(g, n) {
+  function enterMoneyline(g, n) {
     const lad = g.lad && g.lad.v === 2 && g.lad.ml && g.lad.ml[n ? "home" : "away"], ask = status(g)[1] !== "live" && lad && lad.k > 0 ? lad.k : null;
-    fillTicket(g, "Moneyline", n, null, ask ? Math.round(ask * 100) : centsOf(lineOf(g).ml[n]));
+    enterTicket(g, "Moneyline", n, null, ask ? Math.round(ask * 100) : centsOf(lineOf(g).ml[n]));
   }
   // The same from the card's spread: the underdog at the number shown, at Kalshi's ask for that strike when the ladder has it.
-  function fillSpread(g, n) {
+  function enterSpread(g, n) {
     const L = lineOf(g), sp = n ? -L.sp : L.sp, fav = n ? "away" : "home";
     const row = g.lad && g.lad.v === 2 && status(g)[1] !== "live" && (g.lad.sp || []).find(r => r[0] === fav && r[1] === Math.abs(sp) && r[3] > 0);
-    fillTicket(g, "Spread", n, sp, row ? Math.round(row[3] * 100) : centsOf(L.spj[n]));
+    enterTicket(g, "Spread", n, sp, row ? Math.round(row[3] * 100) : centsOf(L.spj[n]));
   }
   // The same from the card's total: n = 0 over, 1 under, at Kalshi's ask for that strike when the ladder has it.
-  function fillTotal(g, n) {
+  function enterTotal(g, n) {
     const L = lineOf(g), row = g.lad && g.lad.v === 2 && status(g)[1] !== "live" && (g.lad.tot || []).find(r => r[0] === L.tot && r[n + 1] > 0);
-    fillTicket(g, "Total", n, L.tot, row ? Math.round(row[n + 1] * 100) : centsOf(L.toj[n]));
+    enterTicket(g, "Total", n, L.tot, row ? Math.round(row[n + 1] * 100) : centsOf(L.toj[n]));
   }
-  function fillTicket(g, type, n, line, cents) {
-    setAcc("ticket");   // the narrow layout's accordion shows the ticket being filled
+  function enterTicket(g, type, n, line, cents) {
+    setFold("ticket");   // the narrow layout's accordion shows the ticket being filled
     if (riskGame) setRiskGame(null);   // the risk detail covers the ticket while a game is selected
     if (mode !== "straight") setMode("straight");
-    bookSel.value = "Kalshi"; bookSel.dispatchEvent(new Event("input", { bubbles: true }));
-    gameSel.value = String(GAMES.indexOf(g)); gameSel.dispatchEvent(new Event("input", { bubbles: true }));
-    document.querySelector(`input[name=btype][value="${type}"]`).checked = true; renderPick();
+    sportsbookSelect.value = "Kalshi"; sportsbookSelect.dispatchEvent(new Event("input", { bubbles: true }));
+    gameSelect.value = String(GAMES.indexOf(g)); gameSelect.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector(`input[name=btype][value="${type}"]`).checked = true; drawPick();
     document.querySelectorAll("input[name=pick]")[n].checked = true;
     if (line != null) $("line").value = lineText(type, line);
     $("price").value = String(cents);
     $("amount").value = "100";
-    ["pick", "type", "game", "book", "amount"].forEach(k => { $(k).classList.remove("invalid"); $(k + "Err").hidden = true; });
+    ["pick", "type", "game", "sportsbook", "amount"].forEach(k => { $(k).classList.remove("invalid"); $(k + "Err").hidden = true; });
     placeNote("");
-    renderLegs();
+    drawLegs();
   }
   // The amount selects its content on focus, so typing replaces it. A mouse press would drop the selection, so the press only focuses.
   $("amount").addEventListener("focus", e => e.target.select());
@@ -532,13 +532,13 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
   // The chosen game sticks after saving and across reloads.
   try {
     const i = GAMES.findIndex(g => gameKey(g) === localStorage.getItem("fan.game"));
-    if (i >= 0) gameSel.value = String(i);
+    if (i >= 0) gameSelect.value = String(i);
   } catch (e) {}
-  gameSel.addEventListener("input", () => {
-    try { localStorage.setItem("fan.game", gameSel.value === "" ? "" : gameKey(GAMES[gameSel.value])); } catch (e) {}
+  gameSelect.addEventListener("input", () => {
+    try { localStorage.setItem("fan.game", gameSelect.value === "" ? "" : gameKey(GAMES[gameSelect.value])); } catch (e) {}
   });
-  gameSel.addEventListener("input", renderPick);
-  $("type").addEventListener("input", renderPick);
+  gameSelect.addEventListener("input", drawPick);
+  $("type").addEventListener("input", drawPick);
 
   const placeNote = (text, cls) => { const m = $("placeMsg"); m.textContent = text; m.className = cls || ""; };
   // Parlay: the legs added so far; the form holds the next leg. A leg is one pick (game, type, side, line, price).
@@ -550,14 +550,14 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     const type = document.querySelector("input[name=btype]:checked");
     if (!type) return null;
     const side = document.querySelector("input[name=pick]:checked"), line = $("line"), price = $("price"), parlay = mode === "parlay", kal = isKalshi() && !parlay;
-    if (gameSel.value === "" || !side) return false;
+    if (gameSelect.value === "" || !side) return false;
     if (line && !lineOk(type.value, parseLine(line.value))) return false;
     if (!line && !((parlay || kal) && type.value === "Moneyline")) return false;
     if (!parlay) {
       if (kal) { if (!(price && centsOk(parseLine(price.value)))) return false; }
       else if (type.value !== "Moneyline" && !(price && lineOk("Moneyline", parseLine(price.value)))) return false;
     }
-    const g = GAMES[gameSel.value];
+    const g = GAMES[gameSelect.value];
     return { key: gameKey(g), game: gameLabel(g), kickoff: g.t, type: type.value, side: side.value, ...(line ? { line: parseLine(line.value) } : {}), ...(!parlay && !kal && type.value !== "Moneyline" ? { odds: parseLine(price.value) } : {}), ...(kal ? { cents: parseLine(price.value) } : {}) };
   }
   // The wager card is modal: a straight ticket takes one leg; a parlay collects two or more.
@@ -568,20 +568,20 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     $("tabStraight").setAttribute("aria-selected", String(m === "straight"));
     $("tabParlay").setAttribute("aria-selected", String(m === "parlay"));
     $("addLeg").hidden = m !== "parlay";
-    gameSel.setAttribute("aria-label", (m === "parlay" ? "Game for this leg" : "Game") + ` · ${LG().daily ? LG().code : LG().code + " Week " + curWeek} · local time`);
+    gameSelect.setAttribute("aria-label", (m === "parlay" ? "Game for this leg" : "Game") + ` · ${LG().daily ? LG().code : LG().code + " Week " + curWeek} · local time`);
     ["pick", "type", "parlayRow"].forEach(k => { $(k).classList.remove("invalid"); $(k + "Err").hidden = true; });
-    renderPick(); renderLegs();
+    drawPick(); drawLegs();
   }
   $("tabStraight").addEventListener("click", () => setMode("straight"));
   $("tabParlay").addEventListener("click", () => setMode("parlay"));
 
-  function renderLegs() {
+  function drawLegs() {
     const box = $("legs");
     box.replaceChildren();
     pendingLegs.forEach((l, i) => {
       const row = el("div", "leg"), x = el("button", "leg-x", "×");
       x.type = "button"; x.setAttribute("aria-label", "Remove leg " + (i + 1));
-      x.addEventListener("click", () => { pendingLegs.splice(i, 1); parlayEdited = false; renderLegs(); });
+      x.addEventListener("click", () => { pendingLegs.splice(i, 1); parlayEdited = false; drawLegs(); });
       row.append(el("span", null, `${i + 1}. ${legText(l)}`), x);
       box.append(row);
     });
@@ -615,8 +615,8 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     $("amountErr").textContent = a > 0 ? "Not enough for one contract at that price." : "Enter an amount greater than zero.";
     const rules = [
       ["pick", cur ? true : cur === null],
-      ["game", gameSel.value !== "" || (cur === null && more)],
-      ["book", bookSel.value !== ""],
+      ["game", gameSelect.value !== "" || (cur === null && more)],
+      ["sportsbook", sportsbookSelect.value !== ""],
       ["amount", a > 0 && oneContract],
       ["type", !!type || more],
       ["parlayRow", mode !== "parlay" || (total >= 2 && (kal ? centsOk(po) : lineOk("Moneyline", po)))]
@@ -634,19 +634,19 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     const cur = readLeg();
     if (!cur) {
       const type = document.querySelector("input[name=btype]:checked");
-      [["game", gameSel.value !== ""], ["type", !!type], ["pick", cur !== false && !!type]].forEach(([k, good]) => {
+      [["game", gameSelect.value !== ""], ["type", !!type], ["pick", cur !== false && !!type]].forEach(([k, good]) => {
         $(k).classList.toggle("invalid", !good); $(k + "Err").hidden = good;
       });
       return;
     }
     pendingLegs.push(cur);
     parlayEdited = false;
-    gameSel.value = "";   // each parlay leg picks its own game
+    gameSelect.value = "";   // each parlay leg picks its own game
     document.querySelectorAll("input[name=btype]").forEach(r => r.checked = false);
-    renderPick(); renderLegs();
+    drawPick(); drawLegs();
   });
 
-  ["game", "book", "amount", "type", "pick", "parlayRow"].forEach(id => $(id).addEventListener("input", () => {
+  ["game", "sportsbook", "amount", "type", "pick", "parlayRow"].forEach(id => $(id).addEventListener("input", () => {
     if ($(id).classList.contains("invalid")) check();
   }));
   // Choosing or leaving Kalshi changes how the price is entered (cents instead of American odds).
@@ -659,11 +659,11 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     return f;
   }
   function syncGame() {
-    gameBtn.replaceChildren(gameSel.value === "" ? el("span", "ph", "Select game") : gameFace(GAMES[gameSel.value]));
-    [...gameList.querySelectorAll(".g")].forEach(li => li.setAttribute("aria-selected", String(li.dataset.i === gameSel.value)));
+    gameBtn.replaceChildren(gameSelect.value === "" ? el("span", "ph", "Select game") : gameFace(GAMES[gameSelect.value]));
+    [...gameList.querySelectorAll(".g")].forEach(li => li.setAttribute("aria-selected", String(li.dataset.i === gameSelect.value)));
   }
   const closeGames = () => { gameList.hidden = true; gameBtn.setAttribute("aria-expanded", "false"); };
-  function pickGame(i) { gameSel.value = String(i); gameSel.dispatchEvent(new Event("input", { bubbles: true })); closeGames(); gameBtn.focus(); }
+  function pickGame(i) { gameSelect.value = String(i); gameSelect.dispatchEvent(new Event("input", { bubbles: true })); closeGames(); gameBtn.focus(); }
   function openGames() {
     gameList.replaceChildren();
     const head = el("li", "gh", "Select game"); head.addEventListener("click", closeGames); gameList.append(head);
@@ -682,50 +682,50 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
   }
   gameBtn.addEventListener("click", () => { if (gameList.hidden) openGames(); else closeGames(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !gameList.hidden) { closeGames(); gameBtn.focus(); } });
-  document.addEventListener("click", e => { if (!gameList.hidden && e.target !== gameSel && !e.composedPath().includes($("gameBox"))) closeGames(); });   // composedPath, not contains(target): opening rebuilds the button's children, so a click on its text arrives from a node that is already detached   // a click on the list's non-row space is forwarded by the wrapping label to the hidden select: that is not an outside click
+  document.addEventListener("click", e => { if (!gameList.hidden && e.target !== gameSelect && !e.composedPath().includes($("gameBox"))) closeGames(); });   // composedPath, not contains(target): opening rebuilds the button's children, so a click on its text arrives from a node that is already detached   // a click on the list's non-row space is forwarded by the wrapping label to the hidden select: that is not an outside click
   // The custom sportsbook list drives the hidden select and fires its input event, so the rest of the form works as before.
-  const bookBtn = $("bookBtn"), bookList = $("bookList");
-  const syncBook = () => {
-    bookBtn.replaceChildren(bookSel.value ? bookTag(bookSel.value) : el("span", "ph", "Select sportsbook"));
-    [...bookList.children].filter(li => li.dataset.v).forEach(li => li.setAttribute("aria-selected", String(li.dataset.v === bookSel.value)));
+  const sportsbookBtn = $("sportsbookBtn"), sportsbookList = $("sportsbookList");
+  const syncSportsbook = () => {
+    sportsbookBtn.replaceChildren(sportsbookSelect.value ? sportsbookTag(sportsbookSelect.value) : el("span", "ph", "Select sportsbook"));
+    [...sportsbookList.children].filter(li => li.dataset.v).forEach(li => li.setAttribute("aria-selected", String(li.dataset.v === sportsbookSelect.value)));
   };
-  const closeBooks = () => { bookList.hidden = true; bookBtn.setAttribute("aria-expanded", "false"); };
-  const pickBook = v => { bookSel.value = v; bookSel.dispatchEvent(new Event("input", { bubbles: true })); closeBooks(); bookBtn.focus(); };
-  { const head = el("li", "gh", "Select sportsbook"); head.addEventListener("click", closeBooks); bookList.append(head); }
-  BOOKS.forEach(b => { const li = el("li"); li.setAttribute("role", "option"); li.dataset.v = b; li.append(bookTag(b)); li.addEventListener("click", () => pickBook(b)); bookList.append(li); });
-  bookBtn.addEventListener("click", () => {
-    const open = bookList.hidden;
-    bookList.hidden = !open; bookBtn.setAttribute("aria-expanded", String(open));
-    if (open) bookList.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
+  const closeSportsbooks = () => { sportsbookList.hidden = true; sportsbookBtn.setAttribute("aria-expanded", "false"); };
+  const pickSportsbook = v => { sportsbookSelect.value = v; sportsbookSelect.dispatchEvent(new Event("input", { bubbles: true })); closeSportsbooks(); sportsbookBtn.focus(); };
+  { const head = el("li", "gh", "Select sportsbook"); head.addEventListener("click", closeSportsbooks); sportsbookList.append(head); }
+  SPORTSBOOKS.forEach(b => { const li = el("li"); li.setAttribute("role", "option"); li.dataset.v = b; li.append(sportsbookTag(b)); li.addEventListener("click", () => pickSportsbook(b)); sportsbookList.append(li); });
+  sportsbookBtn.addEventListener("click", () => {
+    const open = sportsbookList.hidden;
+    sportsbookList.hidden = !open; sportsbookBtn.setAttribute("aria-expanded", String(open));
+    if (open) sportsbookList.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
   });
-  bookBtn.dataset.keys = "arrows";   // it handles its own keys, past the page's key layer (base.js)
-  bookBtn.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeBooks();
+  sportsbookBtn.dataset.keys = "arrows";   // it handles its own keys, past the page's key layer (base.js)
+  sportsbookBtn.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeSportsbooks();
     else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      const i = BOOKS.indexOf(bookSel.value) + (e.key === "ArrowDown" ? 1 : -1);
-      if (i >= 0 && i < BOOKS.length) pickBook(BOOKS[i]);
+      const i = SPORTSBOOKS.indexOf(sportsbookSelect.value) + (e.key === "ArrowDown" ? 1 : -1);
+      if (i >= 0 && i < SPORTSBOOKS.length) pickSportsbook(SPORTSBOOKS[i]);
     }
   });
-  document.addEventListener("click", e => { if (e.target !== bookSel && !e.composedPath().includes($("bookBox"))) closeBooks(); });   // same label forwarding as the game picker
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !bookList.hidden) { closeBooks(); bookBtn.focus(); } });
-  syncBook();
-  bookSel.addEventListener("input", () => {
-    syncBook();
+  document.addEventListener("click", e => { if (e.target !== sportsbookSelect && !e.composedPath().includes($("sportsbookBox"))) closeSportsbooks(); });   // same label forwarding as the game picker
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !sportsbookList.hidden) { closeSportsbooks(); sportsbookBtn.focus(); } });
+  syncSportsbook();
+  sportsbookSelect.addEventListener("input", () => {
+    syncSportsbook();
     const k = isKalshi();
-    if (k !== wasKalshi) { wasKalshi = k; renderPick(); }
-    renderLegs();
+    if (k !== wasKalshi) { wasKalshi = k; drawPick(); }
+    drawLegs();
   });
-  ["input", "change"].forEach(ev => $("ticket").addEventListener(ev, e => {
+  ["input", "change"].forEach(ev => $("wagerTicket").addEventListener(ev, e => {
     placeNote("");
-    renderLegs();
+    drawLegs();
   }));
 
-  $("ticket").addEventListener("submit", e => {
+  $("wagerTicket").addEventListener("submit", e => {
     e.preventDefault();
     if (!check()) return;
     const legs = allLegs();
-    const base = { book: bookSel.value, amount: parseFloat($("amount").value), bonus: $("bonus").checked, createdAt: Date.now() };
+    const base = { book: sportsbookSelect.value, amount: parseFloat($("amount").value), bonus: $("bonus").checked, createdAt: Date.now() };
     const whenOf = l => { const g = legGame(l); return dayFmt.format(new Date(g.t)) + ", " + timeZoned(new Date(g.t)); };
     const kal = isKalshi();
     // A Kalshi order is stored at its total cost (contracts plus fee) and the equivalent American odds, plus the cents price it was bought at.
@@ -751,23 +751,23 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
   function weekChanged() {
     pendingLegs = []; parlayEdited = false; $("parlayOdds").value = "";
     document.querySelectorAll("input[name=btype]").forEach(r => r.checked = false);
-    buildGameSelect(); gameSel.value = "";
+    buildGameSelect(); gameSelect.value = "";
     setMode(mode);
   }
   function clearTicket() {
     pendingLegs = []; parlayEdited = false; $("parlayOdds").value = "";
-    bookSel.value = ""; syncBook(); wasKalshi = false; $("amount").value = ""; $("bonus").checked = false; document.querySelectorAll("input[name=btype]").forEach(r => r.checked = false); renderPick();
-    ["game", "book", "amount", "type", "pick", "parlayRow"].forEach(k => { $(k).classList.remove("invalid"); $(k + "Err").hidden = true; });
-    renderLegs(); changed("tickets");
+    sportsbookSelect.value = ""; syncSportsbook(); wasKalshi = false; $("amount").value = ""; $("bonus").checked = false; document.querySelectorAll("input[name=btype]").forEach(r => r.checked = false); drawPick();
+    ["game", "sportsbook", "amount", "type", "pick", "parlayRow"].forEach(k => { $(k).classList.remove("invalid"); $(k + "Err").hidden = true; });
+    drawLegs(); changed("tickets");
   }
   // Prices follow Bet tracking and their own checkbox, and need a source. Off, the page holds no prices, and Graphs and Season stats' Trends, which are drawn from them, go.
   function syncPrices() {
     const on = pricesOn();
     document.documentElement.classList.toggle("prices-off", !on);
     Fan.setMarket(marketWanted());
-    if (!on) { clearPrices(); setPlaybook(null); }
+    if (!on) { clearPrices(); setTrends(null); }
     if (Fan.lines) applySlate(); else changed("lines");
-    if (!on && view === "xy") switchWeek(weekNow());
+    if (!on && view === "graphs") switchWeek(weekNow());
     drawNow();
     window.dispatchEvent(new Event("resize"));
   }
@@ -789,4 +789,4 @@ import { setPlaybook } from "./panels.js?v=mw2y0dvv";
     drawNow();
     window.dispatchEvent(new Event("resize"));   // the page refits as it does for a new window size
   }
-export { addTicket, balances, bookReport, centsOk, clearTicket, fillMoneyline, fillSpread, fillTotal, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, recordsItems, renderLedger, renderPick, renderTickets, setBalances, setPrices, setTracking, showSaved, startRecords, ticketsReady, updateTicket, weekChanged };
+export { addTicket, balances, sportsbookReport, centsOk, clearTicket, enterMoneyline, enterSpread, enterTotal, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, recordsItems, drawLedger, drawPick, drawSavedTickets, setBalances, setPrices, setTracking, showSaved, startRecords, ticketsReady, updateTicket, weekChanged };

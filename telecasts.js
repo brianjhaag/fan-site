@@ -1,9 +1,9 @@
 // Telecasts and the wall, in one module (the refactor, Nov 3 2026): the networks and where each comes from, what a game's Live telecast does, the wall, and the rest of the
 // settings window's Telecasts tab. base.js's cards call telecastFor and watchGame, and its league switch sendManifest, through later.
-import { Fan } from "./hosts.js?v=mw2y0dvv";
-import { qrSvg } from "./qr.js?v=mw2y0dvv";
-import { slateOfDay, abbr } from "./leagues.js?v=mw2y0dvv";
-import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw2y0dvv";
+import { Fan } from "./hosts.js?v=mw33ju01";
+import { qrSvg } from "./qr.js?v=mw33ju01";
+import { slateOfDay, abbr } from "./leagues.js?v=mw33ju01";
+import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw33ju01";
 Object.assign(later, { telecastFor, watchGame, sendManifest });
 
 // ---- The networks and their sources
@@ -51,7 +51,7 @@ function telecastFor(g) {
   return { how: "link", network: ln, url: ln === "ESPN+" && g.eid ? `https://www.espn.com/${leagueOf(g).code.toLowerCase()}/game/_/gameId/${g.eid}` : networkLinks[ln] };
 }
 // A word at the bottom of the screen for a few seconds, for what a press couldn't do.
-function toast(text) { let t = document.querySelector(".fan-toast"); if (!t) { t = el("div", "fan-toast"); document.body.append(t); } t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 7000); }
+function toast(text) { let t = document.querySelector(".toast"); if (!t) { t = el("div", "toast"); document.body.append(t); } t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 7000); }
 // Pressed: the HDHomeRun channel, tuned in VLC when that's installed, or else which channel to pick in the HDHomeRun app (which has no documented way to be opened on a channel);
 // or the network's link. NCAA FB's list, always on, opens YouTube TV's site when nothing is set.
 function watchGame(g) {
@@ -82,13 +82,13 @@ function readWall() { if (!Fan.wall) return; Fan.wall.get().then(d => { wallData
 function machineBox(m, sound) {
   const box = el("div", "wl-machine" + (m.online ? "" : " off")), head = el("div", "wl-head");
   head.append(el("b", null, m.name || "Screen"), el("span", "wl-state " + (m.online ? "on" : "off"), m.id === "self" ? "this computer" : m.online ? "on" : "asleep"));
-  const snap = el("button", "fan-start", "Snap back"); snap.type = "button"; snap.disabled = !m.online;
+  const snap = el("button", "settings-start", "Snap back"); snap.type = "button"; snap.disabled = !m.online;
   snap.addEventListener("click", () => wallAct({ op: "snap", machine: m.id }, `${m.name}: snapped back`));
   head.append(snap);
-  if (m.id !== "self" && !m.online) { const rm = el("button", "fan-start", "Remove"); rm.type = "button"; rm.title = "Take this computer off the wall; it can join again"; rm.addEventListener("click", () => wallAct({ op: "remove", machine: m.id }, `${m.name} removed`)); head.append(rm); }   // an asleep screen, which may be gone for good
+  if (m.id !== "self" && !m.online) { const rm = el("button", "settings-start", "Remove"); rm.type = "button"; rm.title = "Take this computer off the wall; it can join again"; rm.addEventListener("click", () => wallAct({ op: "remove", machine: m.id }, `${m.name} removed`)); head.append(rm); }   // an asleep screen, which may be gone for good
   box.append(head);
   const ds = Array.isArray(m.displays) ? m.displays : [], ws = Array.isArray(m.windows) ? m.windows : [];
-  if (!ds.length) { box.append(el("p", "fan-note", m.online ? "No monitors reported." : "Asleep or off: its screens come back when it does.")); return box; }
+  if (!ds.length) { box.append(el("p", "settings-note", m.online ? "No monitors reported." : "Asleep or off: its screens come back when it does.")); return box; }
   const minX = Math.min(...ds.map(d => d.bounds.x)), minY = Math.min(...ds.map(d => d.bounds.y)), w = Math.max(...ds.map(d => d.bounds.x + d.bounds.width)) - minX, h = Math.max(...ds.map(d => d.bounds.y + d.bounds.height)) - minY, k = Math.min(360 / w, 300 / h);
   const nameOf = (d, i) => (ds.length > 1 ? (i + 1) + " " : "") + (d.label || "Monitor");   // numbered on the map and in the menu alike, when there are several
   const map = el("div", "wl-map"); map.style.width = Math.round(w * k) + "px"; map.style.height = Math.round(h * k) + "px";
@@ -107,7 +107,7 @@ function machineBox(m, sound) {
   box.append(map);
   // where its telecasts open, one menu of every monitor and layout (the user's, Nov 3 2026), kept by the hub for this computer. A monitor is matched as the connector does (spot_for):
   // by name and size, then by position, so two of the same make are told apart.
-  const p = m.pref || {}, pick = el("select", "fan-pick wl-pick");
+  const p = m.pref || {}, pick = el("select", "settings-pick wl-pick");
   pick.setAttribute("aria-label", `Where ${m.name || "this computer"}'s telecasts open`);
   const def = el("option", null, "Fan's choice: the portrait monitor, 3 stacked"); def.value = ""; pick.append(def);
   ds.forEach((d, i) => {
@@ -132,15 +132,15 @@ function gameRows(machines) {
   const games = ALL_GAMES.filter(g => !g.final && wanted(g)).sort((p, q) => Date.parse(p.t) - Date.parse(q.t));
   const list = el("div", "wl-games");
   list.append(el("h3", null, "Games"));
-  if (!games.length) list.append(el("p", "fan-note", "No games left today, tomorrow or this NFL week, in the leagues that are on."));
+  if (!games.length) list.append(el("p", "settings-note", "No games left today, tomorrow or this NFL week, in the leagues that are on."));
   games.forEach(g => {
     const row = el("div", "wl-game"), tv = telecastFor(g), on = machines.filter(m => m.online);
     row.append(el("span", "wl-gname", `${leagueOf(g).code} ${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("small", null, `${shortDayFmt.format(new Date(g.t))} ${timeZoned(new Date(g.t))} · ${g.tv || "no network"}`));
     const btns = el("span", "wl-go");
-    if (!tv || tv.how !== "link") btns.append(el("small", "fan-note", tv ? "an HDHomeRun channel: from its card" : "no link for its network"));
+    if (!tv || tv.how !== "link") btns.append(el("small", "settings-note", tv ? "an HDHomeRun channel: from its card" : "no link for its network"));
     else {
-      if (Fan.door && Fan.door.here) { const b = el("button", "fan-start", "Here"); b.type = "button"; b.title = "Watch on this device"; b.addEventListener("click", () => window.open(tv.url, "_blank", "noopener")); btns.append(b); }   // a remote can watch on itself too, as a plain link
-      on.forEach(m => { const b = el("button", "fan-start", m.name); b.type = "button"; b.title = `Watch on ${m.name}`; b.addEventListener("click", () => wallAct({ op: "open", machine: m.id, url: tv.url }, `Opening on ${m.name}`)); btns.append(b); });
+      if (Fan.door && Fan.door.here) { const b = el("button", "settings-start", "Here"); b.type = "button"; b.title = "Watch on this device"; b.addEventListener("click", () => window.open(tv.url, "_blank", "noopener")); btns.append(b); }   // a remote can watch on itself too, as a plain link
+      on.forEach(m => { const b = el("button", "settings-start", m.name); b.type = "button"; b.title = `Watch on ${m.name}`; b.addEventListener("click", () => wallAct({ op: "open", machine: m.id, url: tv.url }, `Opening on ${m.name}`)); btns.append(b); });
     }
     row.append(btns);
     list.append(row);
@@ -152,21 +152,21 @@ function gameRows(machines) {
 function drawWall() {
   const box = wallBox;
   if (!box || !box.isConnected) return;
-  if (!wallData) { box.replaceChildren(el("h3", null, "Wall"), el("p", "fan-note", "Reading the wall…")); return; }
+  if (!wallData) { box.replaceChildren(el("h3", null, "Wall"), el("p", "settings-note", "Reading the wall…")); return; }
   const now = JSON.stringify([wallData, wallNote, leaguesOn.size]);
   if (now === wallShown && box.childNodes.length > 1) return;
   if (box.contains(document.activeElement) && document.activeElement.tagName === "SELECT") return;
   wallShown = now;
   const ms = wallData.machines || [], head = el("div", "wl-top");
   head.append(el("h3", null, "Wall"), el("small", "wl-note", wallNote));
-  const off = el("button", "fan-start", "Sound off"); off.type = "button"; off.disabled = !wallData.sound;
+  const off = el("button", "settings-start", "Sound off"); off.type = "button"; off.disabled = !wallData.sound;
   off.addEventListener("click", () => wallAct({ op: "sound", machine: "self", target: null }, "Sound off"));
   head.append(off);
   // computers that found this wall and asked to join, waiting for the user
   const asking = ms.filter(m => m.approved === false), shown = ms.filter(m => m.approved !== false), ask = el("div", "wl-asking");
   if (asking.length) {
     asking.forEach(m => {
-      const r = el("div", "wl-askrow"), yes = el("button", "fan-start", "Allow"), no = el("button", "fan-start", "Refuse"); yes.type = no.type = "button";
+      const r = el("div", "wl-askrow"), yes = el("button", "settings-start", "Allow"), no = el("button", "settings-start", "Refuse"); yes.type = no.type = "button";
       yes.addEventListener("click", () => wallAct({ op: "allow", machine: m.id }, `${m.name} joined`));
       no.addEventListener("click", () => wallAct({ op: "remove", machine: m.id }, `${m.name} refused`));
       r.append(el("b", null, m.name || "A computer"), el("span", null, " asks to join this wall as a screen"), yes, no);
@@ -174,7 +174,7 @@ function drawWall() {
     });
   }
   const wall = el("div", "wl-wall");
-  if (!shown.length) wall.append(el("p", "fan-note", "No screens yet. This computer shows here once it can open telecasts; other computers join below, with this computer's screens switch on."));
+  if (!shown.length) wall.append(el("p", "settings-note", "No screens yet. This computer shows here once it can open telecasts; other computers join below, with this computer's screens switch on."));
   shown.forEach(m => wall.append(machineBox(m, wallData.sound)));
   const body = el("div", "wl-body");
   body.append(wall, gameRows(shown));
@@ -196,20 +196,20 @@ let redrawTab = () => {};
 // joined it, with the day's games; then its two switches, each with its own address; then, on a computer whose wall takes no one, joining another computer's wall as a screen.
 // Without a wall, a note: telecasts open as plain links.
 const telecastRows = () => {
-  const grid = el("div", "fan-telecasts"), links = el("div");
+  const grid = el("div", "settings-telecasts"), links = el("div");
   links.append(...networkRows(), ...captureRows());
   if (Fan.wall) { const joined = !!(Fan.screen && Fan.screen.of); grid.append(wallSetup(joined ? [screenRows()] : [doorRows(), screenRows()]), ...(joined ? [] : [wallPanel()]), links); return [grid]; }
-  grid.append(el("p", "fan-note", Fan.hostHello ? "This connector can't run a wall or place telecast windows, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it runs the wall and places each telecast's window. Without it, a telecast opens as a plain link."), links);
+  grid.append(el("p", "settings-note", Fan.hostHello ? "This connector can't run a wall or place telecast windows, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it runs the wall and places each telecast's window. Without it, a telecast opens as a plain link."), links);
   return [grid];
 };
 // Wall setup (the user's, Nov 3 2026: "the first choice to make"), at the top of the tab and folding away once set: the two switches, or joining another wall. Open until something
 // is set, then as the user last left it, kept per browser. Folded, its title says how it's set.
 let setupOpen = null;   // this session's: the tab redraws as a switch changes, and the section stays as it was
 const wallSetup = parts => {
-  const d = el("details", "fan-setup"), s = el("summary"), door = Fan.door && Fan.door.info, of = Fan.screen && Fan.screen.of;
+  const d = el("details", "settings-setup"), s = el("summary"), door = Fan.door && Fan.door.info, of = Fan.screen && Fan.screen.of;
   const set = !!(of || (door && (door.screens.on || door.remote.on)));
   const how = Fan.door && Fan.door.here ? "This is a remote" : of ? `A screen on the wall at ${of.wall}${of.state === "waiting" ? ", waiting to be allowed" : ""}` : door ? `Screens ${door.screens.on ? "on" : "off"} · Remote control ${door.remote.on ? "on" : "off"}` : "";
-  s.append(el("b", null, "Wall setup"), el("span", "fan-setup-how", how));
+  s.append(el("b", null, "Wall setup"), el("span", "settings-setup-how", how));
   if (setupOpen === null) { let kept = null; try { kept = localStorage.getItem("fan.wallSetup"); } catch (e) {} setupOpen = kept ? kept === "open" : !set; }
   d.open = setupOpen;
   d.addEventListener("toggle", () => { setupOpen = d.open; try { localStorage.setItem("fan.wallSetup", d.open ? "open" : "closed"); } catch (e) {} });
@@ -218,66 +218,66 @@ const wallSetup = parts => {
 };
 // The wall's two switches, on the computer that runs it: other computers may join as screens, and tablets or phones may control it. Each has its own code and address.
 const doorRows = () => {
-  const box = el("div", "fan-door");
+  const box = el("div", "settings-door");
   if (!Fan.door) return box;
-  if (Fan.door.here) { box.append(el("p", "fan-door-here", "This is a remote for the wall: telecasts you start here open on its computers.")); return box; }
+  if (Fan.door.here) { box.append(el("p", "settings-door-here", "This is a remote for the wall: telecasts you start here open on its computers.")); return box; }
   const draw = (note = "") => {
     const d = Fan.door.info, row = (kind, label, on, url, ipUrl, how, qr) => {
-      const lab = el("label", "fan-check"), c = el("input");
+      const lab = el("label", "settings-check"), c = el("input");
       c.type = "checkbox"; c.checked = !!on;
       c.addEventListener("change", () => { c.disabled = true; Fan.door.set(kind, c.checked).then(() => redrawTab(), e => draw("Couldn't: " + e.message)); });
       lab.append(c, label);
       const out = [lab];
       if (on && url) {
-        out.push(el("p", "fan-note", how));
-        if (qr) { const q = el("div", "fan-qr"); q.innerHTML = qrSvg(url) || ""; q.title = "Point the tablet or phone's camera here"; out.push(q); }
-        out.push(el("div", "fan-door-url", url));
-        if (ipUrl) out.push(el("p", "fan-note", "By its number, if that name doesn't work on your network: " + ipUrl));
+        out.push(el("p", "settings-note", how));
+        if (qr) { const q = el("div", "settings-qr"); q.innerHTML = qrSvg(url) || ""; q.title = "Point the tablet or phone's camera here"; out.push(q); }
+        out.push(el("div", "settings-door-url", url));
+        if (ipUrl) out.push(el("p", "settings-note", "By its number, if that name doesn't work on your network: " + ipUrl));
       }
-      else if (on) out.push(el("p", "fan-note", "On, but this computer's address on the network couldn't be found."));
+      else if (on) out.push(el("p", "settings-note", "On, but this computer's address on the network couldn't be found."));
       return out;
     };
     box.replaceChildren(
       ...row("screens", "Let other computers join this wall as screens", d.screens.on, d.screens.url, d.screens.ipUrl, "On each of the other computers: Settings, Telecasts, Wall setup, Find walls, and Join this one; you'll allow it on this wall. Or paste this there:", false),
       ...row("remote", "Let a tablet or phone control this wall", d.remote.on, d.remote.url, d.remote.ipUrl, "On the tablet or phone, point its camera at this code, or open the address in Chrome, then Add to Home Screen. It pairs that device, once.", true));
-    if (d.open) box.append(el("p", "fan-note", "If Windows asks whether Fan's connector may use the network, choose Private networks."));
-    if (note) box.append(el("p", "fan-note", note));
+    if (d.open) box.append(el("p", "settings-note", "If Windows asks whether Fan's connector may use the network, choose Private networks."));
+    if (note) box.append(el("p", "settings-note", note));
   };
   draw();
   return box;
 };
 // This computer as a screen on another computer's wall: join with the screens address that one's Telecasts tab shows, or leave. Not while this computer's own wall takes screens.
 const screenRows = () => {
-  const box = el("div", "fan-door");
+  const box = el("div", "settings-door");
   if (!Fan.screen || (Fan.door && Fan.door.info.screens.on)) return box;
   const draw = () => {
     const j = Fan.screen.of;
     if (j) {
-      const leave = el("button", "fan-start", "Leave"); leave.type = "button";
-      leave.addEventListener("click", () => { leave.disabled = true; Fan.screen.set({ op: "leave" }).then(() => redrawTab(), e => { box.append(el("p", "fan-note", "Couldn't: " + e.message)); leave.disabled = false; }); });
+      const leave = el("button", "settings-start", "Leave"); leave.type = "button";
+      leave.addEventListener("click", () => { leave.disabled = true; Fan.screen.set({ op: "leave" }).then(() => redrawTab(), e => { box.append(el("p", "settings-note", "Couldn't: " + e.message)); leave.disabled = false; }); });
       const SAY = { waiting: `Waiting to be allowed: on that computer, Settings, Telecasts, Wall setup, Allow ${j.name}.`, refused: "That wall refused or removed this computer. Leave, then join again.", unreachable: "That wall isn't answering: its computer may be asleep or off." };
-      box.replaceChildren(el("p", "fan-door-here", `This computer is a screen on the wall at ${j.wall}, as ${j.name}.${j.state === "on" ? " That wall puts telecasts here." : ""}`), ...(SAY[j.state] ? [el("p", "fan-note", SAY[j.state])] : []), leave);
+      box.replaceChildren(el("p", "settings-door-here", `This computer is a screen on the wall at ${j.wall}, as ${j.name}.${j.state === "on" ? " That wall puts telecasts here." : ""}`), ...(SAY[j.state] ? [el("p", "settings-note", SAY[j.state])] : []), leave);
       if (j.state !== "on") setTimeout(() => { if (!box.isConnected || !Fan.hostHello) return; Fan.hostHello().then(h => { const was = JSON.stringify(Fan.screen.of); Fan.screen.of = h.screenOf || null; if (JSON.stringify(Fan.screen.of) !== was) redrawTab(); else draw(); }, () => {}); }, 3000);   // waiting: watch for the wall's answer
       return;
     }
-    const ip = el("input"), name = el("input"), go = el("button", "fan-start", "Join"), say = el("p", "fan-note", "");
+    const ip = el("input"), name = el("input"), go = el("button", "settings-start", "Join"), say = el("p", "settings-note", "");
     ip.type = "text"; ip.placeholder = "http://192.168.1.20:5280/?screen=123456"; ip.spellcheck = false; ip.setAttribute("aria-label", "The wall's screens address");
     name.type = "text"; name.value = Fan.screen.name; name.setAttribute("aria-label", "This computer's name on the wall");
     go.type = "button";
     go.addEventListener("click", () => { go.disabled = true; say.textContent = "Joining…"; Fan.screen.set({ op: "join", address: ip.value, name: name.value }).then(() => redrawTab(), e => { say.textContent = "Couldn't: " + e.message; go.disabled = false; }); });
-    const row = el("div", "fan-joinrow"); row.append(ip, go);
+    const row = el("div", "settings-joinrow"); row.append(ip, go);
     // Find walls: one ask on the home network; each wall that answers can be joined, and its computer allows it
-    const find = el("button", "fan-start fan-monbtn", "Find walls"), found = el("div", "fan-found");
+    const find = el("button", "settings-start settings-monbtn", "Find walls"), found = el("div", "settings-found");
     find.type = "button";
     find.addEventListener("click", () => {
-      find.disabled = true; found.replaceChildren(el("p", "fan-note", "Looking on your network…"));
+      find.disabled = true; found.replaceChildren(el("p", "settings-note", "Looking on your network…"));
       Fan.screen.find().then(walls => {
         find.disabled = false;
-        if (!walls.length) { found.replaceChildren(el("p", "fan-note", "No wall answered. On the computer that runs it, turn on \"Let other computers join this wall as screens\", or paste its address below.")); return; }
-        found.replaceChildren(...walls.map(w => { const r = el("div", "fan-foundrow"), b = el("button", "fan-start", "Join"); b.type = "button"; r.append(el("b", null, `${w.name}'s wall`), el("small", null, w.wall || w.ip || ""), b); b.addEventListener("click", () => { b.disabled = true; const ask = wall => Fan.screen.set({ op: "ask", wall, name: name.value }); (w.wall ? ask(w.wall).catch(() => ask(w.ip)) : ask(w.ip)).then(() => redrawTab(), e => { r.append(el("small", "fan-note", "Couldn't: " + e.message)); b.disabled = false; }); }); return r; }));
-      }, e => { find.disabled = false; found.replaceChildren(el("p", "fan-note", "Couldn't: " + e.message)); });
+        if (!walls.length) { found.replaceChildren(el("p", "settings-note", "No wall answered. On the computer that runs it, turn on \"Let other computers join this wall as screens\", or paste its address below.")); return; }
+        found.replaceChildren(...walls.map(w => { const r = el("div", "settings-foundrow"), b = el("button", "settings-start", "Join"); b.type = "button"; r.append(el("b", null, `${w.name}'s wall`), el("small", null, w.wall || w.ip || ""), b); b.addEventListener("click", () => { b.disabled = true; const ask = wall => Fan.screen.set({ op: "ask", wall, name: name.value }); (w.wall ? ask(w.wall).catch(() => ask(w.ip)) : ask(w.ip)).then(() => redrawTab(), e => { r.append(el("small", "settings-note", "Couldn't: " + e.message)); b.disabled = false; }); }); return r; }));
+      }, e => { find.disabled = false; found.replaceChildren(el("p", "settings-note", "Couldn't: " + e.message)); });
     });
-    box.replaceChildren(el("h3", null, "Join a wall"), el("p", "fan-note", "To make this computer a screen on another computer's wall: name it, then find that wall on your network, or paste the screens address its Telecasts tab shows."), name, find, found, row, say);
+    box.replaceChildren(el("h3", null, "Join a wall"), el("p", "settings-note", "To make this computer a screen on another computer's wall: name it, then find that wall on your network, or paste the screens address its Telecasts tab shows."), name, find, found, row, say);
   };
   draw();
   return box;
@@ -285,7 +285,7 @@ const screenRows = () => {
 // The telecast router's probe (PLAN.md E): one press on a Sunday morning saves what Sunday Ticket's page shows in Fan's TV window, so Claude can build the link finder from it.
 const captureRows = () => {
   if (!Fan.captureTelecast) return [];
-  const b = el("button", "fan-start", "Capture the TV window"), note = el("p", "fan-note", "For Sunday Ticket links. On a Sunday morning, open any telecast from Fan, go to Sunday Ticket in that window so the games show, then press this. It saves what the page shows on this computer, and presses nothing.");
+  const b = el("button", "settings-start", "Capture the TV window"), note = el("p", "settings-note", "For Sunday Ticket links. On a Sunday morning, open any telecast from Fan, go to Sunday Ticket in that window so the games show, then press this. It saves what the page shows on this computer, and presses nothing.");
   b.type = "button";
   b.addEventListener("click", () => {
     b.disabled = true; note.textContent = "Capturing…";
@@ -297,16 +297,16 @@ const captureRows = () => {
 // from the list read from it when its address is set. Rescan reads the list again and fills in what it can match.
 const networkRows = () => {
   const box = el("div"), draw = () => {
-    const note = el("p", "fan-note", "Where each network comes from: a link from any streaming service (YouTube TV, Xfinity, Peacock), copied from your browser while the channel plays, or its channel on your HDHomeRun" + (hdhr.ip ? "." : ", once its address is set in the Networks box on the Application tab."));
+    const note = el("p", "settings-note", "Where each network comes from: a link from any streaming service (YouTube TV, Xfinity, Peacock), copied from your browser while the channel plays, or its channel on your HDHomeRun" + (hdhr.ip ? "." : ", once its address is set in the Networks box on the Application tab."));
     box.replaceChildren(el("h3", null, "Networks"), note);
     if (hdhr.ip) {
-      const rescan = el("button", "fan-start", "Rescan"); rescan.type = "button"; rescan.disabled = !Fan.hdhrLineup; rescan.title = "Read the HDHomeRun's channels again and match them to networks";
+      const rescan = el("button", "settings-start", "Rescan"); rescan.type = "button"; rescan.disabled = !Fan.hdhrLineup; rescan.title = "Read the HDHomeRun's channels again and match them to networks";
       rescan.addEventListener("click", () => { rescan.disabled = true; hdhrList = null; draw(); });
       box.append(rescan);
-      if (!hdhrList && Fan.hdhrLineup) { const reading = el("p", "fan-note", "Reading the HDHomeRun's channels…"); box.append(reading); hdhrRead().then(draw, e => { reading.textContent = "Couldn't read its channels: " + e.message; }); }
+      if (!hdhrList && Fan.hdhrLineup) { const reading = el("p", "settings-note", "Reading the HDHomeRun's channels…"); box.append(reading); hdhrRead().then(draw, e => { reading.textContent = "Couldn't read its channels: " + e.message; }); }
     }
     box.append(netCols(allNetworks().map(n => {
-      const row = el("div", "fan-net"), s = el("select", "fan-pick"), c = el("input"), saved = hdhr.channels[n];
+      const row = el("div", "settings-net"), s = el("select", "settings-pick"), c = el("input"), saved = hdhr.channels[n];
       const chans = hdhrList ? hdhrList.map(x => [String(x.number), `HDHomeRun ${x.number} ${x.name || ""}`.trim()]) : [];
       if (saved && !chans.some(([v]) => v === saved)) chans.unshift([saved, "HDHomeRun " + saved]);
       [["none", "None"], ["link", "Link"], ...(hdhr.ip ? chans.map(([v, t]) => ["hdhr:" + v, t]) : [])].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; s.append(o); });
@@ -327,7 +327,7 @@ const networkRows = () => {
   draw();
   return [box];
 };
-const netCols = rows => { const d = el("div", "fan-netcols"); d.append(...rows); return d; };   // the networks in two columns
+const netCols = rows => { const d = el("div", "settings-netcols"); d.append(...rows); return d; };   // the networks in two columns
 // The Networks box: the HDHomeRun's address, the one tuner so far; each network's source is picked on the Telecasts tab.
 const networkPick = () => [el("small", null, "HDHomeRun"), hdhrBox()];
 // An HDHomeRun: its address on the user's network, then its channels read from it, each broadcast network matched to one. The match is guessed from Chicago's call signs and set by hand on the Telecasts tab.
@@ -343,7 +343,7 @@ const hdhrRead = () => Fan.hdhrLineup(hdhr.ip).then(r => {
   return r.channels.length;
 });
 const hdhrBox = () => {
-  const d = el("div", "fan-hdhr"), ip = el("input"), b = el("button", "fan-start", "Read channels"), note = el("small", null, hdhr.ip ? `${Object.keys(hdhr.channels).length} channels matched` : "Its address on your network");
+  const d = el("div", "settings-hdhr"), ip = el("input"), b = el("button", "settings-start", "Read channels"), note = el("small", null, hdhr.ip ? `${Object.keys(hdhr.channels).length} channels matched` : "Its address on your network");
   ip.type = "text"; ip.value = hdhr.ip; ip.placeholder = "192.168.1.50"; ip.spellcheck = false; ip.setAttribute("aria-label", "HDHomeRun address");
   ip.addEventListener("change", () => setHdhr({ ip: ip.value.trim() }));
   b.type = "button"; b.disabled = !Fan.hdhrLineup;

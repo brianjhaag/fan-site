@@ -1,11 +1,11 @@
 // The Handicap section (the NFL first; the user, Nov 4 2026): each game's own numbers to the user's spread and moneylines, against the market's. Moved out of panels.js.
-import { divideX } from "./layout.js?v=mw2y0dvv";
-import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw2y0dvv";
-import { Fan } from "./hosts.js?v=mw2y0dvv";
-import { CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw2y0dvv";
-import { TEAM, abbr } from "./leagues.js?v=mw2y0dvv";
-import { Calc } from "./calc.js?v=mw2y0dvv";
-import { divOf } from "./panels.js?v=mw2y0dvv";
+import { divideX } from "./layout.js?v=mw33ju01";
+import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw33ju01";
+import { Fan } from "./hosts.js?v=mw33ju01";
+import { CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw33ju01";
+import { TEAM, abbr } from "./leagues.js?v=mw33ju01";
+import { Calc } from "./calc.js?v=mw33ju01";
+import { divOf } from "./panels.js?v=mw33ju01";
 
   /* ==== Handicap (the NFL first; the user, Nov 4 2026): your spread for each game, from numbers you set game by game, against the market's. ==== */
   // A game's visitor margin = −HFA + each term's coefficient × its value (calc.js HC_VARS and hcVisitorMargin): DVOA diff (FTN's, shown, its coefficient yours; times
@@ -42,7 +42,7 @@ import { divOf } from "./panels.js?v=mw2y0dvv";
   // HC_STORE_WAIT, and a copy the same as this browser's builds nothing again.
   const HC_STORE_WAIT = 1500, hcStarted = Date.now();
   let hcStoreDone = false;
-  const hcStoreSettled = () => { hcStoreDone = true; if (!$("handicap").hidden && !$("handicap").querySelector(".hc-games")) renderHandicap(); };
+  const hcStoreSettled = () => { hcStoreDone = true; if (!$("handicap").hidden && !$("handicap").querySelector(".hc-games")) drawHandicap(); };
   const hcLoadStore = () => {
     if (hcFromStore || !Fan.store) return;
     hcFromStore = true;
@@ -80,7 +80,7 @@ import { divOf } from "./panels.js?v=mw2y0dvv";
     }
     return Calc.hcStates(games).filter(r => r.g.final && r.a.gp >= hc.minGames && r.h.gp >= hc.minGames);
   }
-  function renderHandicap() {
+  function drawHandicap() {
     if (drawStub("handicap")) return;
     hcLoadStore();
     if (!hcStoreDone && Date.now() - hcStarted < HC_STORE_WAIT) { if (!$("handicap").querySelector(".hc-games")) $("handicap").replaceChildren(); setTimeout(() => { if (!hcStoreDone) hcStoreSettled(); }, HC_STORE_WAIT); return; }   // the records' copy first, so the first draw is the last
@@ -115,7 +115,7 @@ import { divOf } from "./panels.js?v=mw2y0dvv";
   }
   // How to: what the page shows and how it works, in plain words
   function hcHowTo() {
-    const box = el("div", "xycell hc-how"), p = (h, ...lines) => { const s = el("div", "hc-how-s"); s.append(el("h3", null, h), ...lines.map(x => el("p", null, x))); return s; };
+    const box = el("div", "graphs-cell hc-how"), p = (h, ...lines) => { const s = el("div", "hc-how-s"); s.append(el("h3", null, h), ...lines.map(x => el("p", null, x))); return s; };
     box.append(el("div", "cap", "How the Handicap works"),
       p("What it is", "Your own line for every game of the week, set game by game, beside the market's. Where the market pays more than your line says it should, the price lights up."),
       p("A game's row", "From the left: the game's preview; the visitor's moneylines, yours on top and the market's under it; the visitor's badge; your spread for the visitor over the market's; @ and the home team; the home moneylines; and Fit. Each team's spread and moneylines are your one number for the game, read two ways."),
@@ -201,7 +201,7 @@ import { divOf } from "./panels.js?v=mw2y0dvv";
       ["vs fit", "Each game's gap in points from this season's fit: the market's visitor spread minus the one the DVOA coefficient fitted on the other games gives it. The biggest are the games the market prices furthest from this season's performance"]
     ];   // the theo moneylines moved into the game (the user, Nov 4 2026)
     // the column names on two lines, a word a line (the user, Nov 4 2026: "make the header row 2 rows"); Divisional is "Div. game"
-    heads.forEach(([x, tip, l]) => { const th = el("th", l ? "pb-l" : null), words = x === "Divisional" ? ["Div.", "game"] : x ? x.split(" ") : []; words.forEach((w, i) => { if (i) th.append(el("br")); th.append(w); }); if (tip) th.title = tip; hd.append(th); });
+    heads.forEach(([x, tip, l]) => { const th = el("th", l ? "trends-l" : null), words = x === "Divisional" ? ["Div.", "game"] : x ? x.split(" ") : []; words.forEach((w, i) => { if (i) th.append(el("br")); th.append(w); }); if (tip) th.title = tip; hd.append(th); });
     const dv = hcCols(terms).findIndex(c => c !== "div" && c.v === "dvoa");
     if (dv >= 0) hd.children[3 + dv].classList.add("hc-src");   // where FTN's DVOA stands, on its column's name's hover: no subtitles (the user, Nov 4 2026)
     // under the headers, the numbers a game starts at, so they stay in sight while a game's are changed (the user, Nov 4 2026): −HFA and each term's coefficient
@@ -232,7 +232,7 @@ import { divOf } from "./panels.js?v=mw2y0dvv";
   // a layout with the stack above the cards.
   function hcDivide() {
     if (divideX != null) return divideX;
-    const panel = $("panel"), was = panel.hidden, stack = document.querySelector(".col.left");
+    const panel = $("slate"), was = panel.hidden, stack = document.querySelector(".col.left");
     if (!stack) return null;
     const root = document.documentElement, off = root.classList.contains("tracking-off");   // as the strips measure it: the column as it is with tracking on
     if (was) { panel.style.visibility = "hidden"; panel.hidden = false; }
@@ -268,7 +268,7 @@ import { divOf } from "./panels.js?v=mw2y0dvv";
     if (head && head.children.length >= 3) { const w = i => head.children[i].getBoundingClientRect().width; tbl.style.setProperty("--hc-s2", w(0) + "px"); tbl.style.setProperty("--hc-s3", w(0) + w(1) + "px"); }
     // the pane reaches down to just above the info line, and the games' rows share out what's left of it, up to twice their own height (the user, Nov 4 2026: "measure
     // to bottom of the area (just above info line) and space out vertically"); past that it scrolls
-    const pane = wrap.closest(".hc-pane"), info = document.querySelector(".sec-title.one-line"), box = $("handicap");
+    const pane = wrap.closest(".hc-pane"), info = document.querySelector("fan-info-line"), box = $("handicap");
     if (!pane || !info) return;
     const pad = parseFloat(getComputedStyle(box).paddingBottom) || 0, avail = Math.max(200, Math.floor(info.getBoundingClientRect().top - 6 - pad - pane.getBoundingClientRect().top));
     pane.style.height = ""; pane.style.maxHeight = "none";
@@ -284,7 +284,7 @@ import { divOf } from "./panels.js?v=mw2y0dvv";
     if (pick) pick.style.width = "";
     if (pick && edge) {
       // each week as wide as a week on the NFL's top strip, so the highlight is the same (the user, Nov 4 2026); the chevrons take what's left, so it still ends at the divide
-      const strip = document.querySelector(".weektabs.wk2"), stripCell = (strip && parseFloat(strip.style.getPropertyValue("--cell"))) || HC_TAB;
+      const strip = document.querySelector(".strip-tabs.wk2"), stripCell = (strip && parseFloat(strip.style.getPropertyValue("--cell"))) || HC_TAB;
       const room = edge - pick.getBoundingClientRect().left, n = Math.min(18, Math.max(1, Math.floor((room - 2 * HC_ARROW) / stripCell)));
       pick.style.width = Math.floor(room) + "px"; pick.style.setProperty("--cell", stripCell + "px");
       if (n !== HC_SHOWN) { HC_SHOWN = n; hcWeekPicker(Number(wrap.dataset.week)); }
@@ -499,4 +499,4 @@ import { divOf } from "./panels.js?v=mw2y0dvv";
     return tr;
   }
 
-export { renderHandicap };
+export { drawHandicap };

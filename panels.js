@@ -1,16 +1,16 @@
 // The tabs that replace the game cards: Season stats (with Trends, the old Playbook, under its graphs), Graphs, and the per-game Game detail.
-import { riskGrid } from "./risk.js?v=mw2y0dvv";
-import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw2y0dvv";
-import { Fan } from "./hosts.js?v=mw2y0dvv";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, bdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, pricesOn, view } from "./base.js?v=mw2y0dvv";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
-  Object.assign(later, { renderGameDetail });
-  // PLAYBOOK: situations are search filters over past games. A situation is one entry in PLAYBOOK; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
+import { riskGrid } from "./risk.js?v=mw33ju01";
+import { DAILY_TEAMS, GAME_ENV, TEAM_INFO, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw33ju01";
+import { Fan } from "./hosts.js?v=mw33ju01";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, gdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, pricesOn, view } from "./base.js?v=mw33ju01";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw33ju01";
+  Object.assign(later, { drawGameDetail });
+  // SITUATIONS: situations are search filters over past games. A situation is one entry in SITUATIONS; `f` sees one team's game (t) and picks the side to bet, or with `game: true`
   // the game as a whole (only the totals mean anything then). t: home, sp (the team's spread, negative = favored), rest, div, day (0 Sun), hhmm (ET), total, wind, week, prev (margin of its last game this season, null in its first).
   // The history is the user's own pull (playbook.js through app/ingest.js), kept in their records: nothing ships with the page.
-  let playbookDoc = null, playbookWatched = false;
-  function setPlaybook(doc) { playbookDoc = doc; pbTeamGames = null; }
-  const PLAYBOOK = [
+  let trendsDoc = null, trendsWatched = false;
+  function setTrends(doc) { trendsDoc = doc; trendsTeamGames = null; }
+  const SITUATIONS = [
     { h: "Every favorite", d: "for reference", f: t => t.sp < 0 },
     { h: "Short road underdogs", d: "+0.5 to +5.5", f: t => !t.home && t.sp > 0 && t.sp < 6 },
     { h: "Divisional road favorites", f: t => !t.home && t.div && t.sp < 0 },
@@ -27,12 +27,12 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     { h: "Low totals", d: "40 or less", game: true, f: t => t.total <= 40 },
     { h: "Windy games", d: "15+ mph", game: true, f: t => t.wind != null && t.wind >= 15 }
   ];
-  let pbTeamGames = null, pbOpen = new Set();
+  let trendsTeamGames = null, trendsOpen = new Set();
   // Both teams' view of every game, each with the margin of its previous game that season.
-  function pbGames() {
-    if (pbTeamGames) return pbTeamGames;
+  function trendsGames() {
+    if (trendsTeamGames) return trendsTeamGames;
     const last = new Map(), out = [];
-    playbookDoc.rows.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([season, week, day, hhmm, aw, hm, as, hs, ar, hr, aml, hml, spread, aso, hso, total, uo, oo, div, wind]) => {
+    trendsDoc.rows.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([season, week, day, hhmm, aw, hm, as, hs, ar, hr, aml, hml, spread, aso, hso, total, uo, oo, div, wind]) => {
       const one = (team, home, m, rest, ml, sp, spo) => {
         const key = season + team, t = { season, week, day, hhmm, team, home, m, rest, ml, sp, spo, total, uo, oo, div: !!div, wind, points: as + hs, prev: last.has(key) ? last.get(key) : null };
         out.push(t);
@@ -40,45 +40,45 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       one(aw, false, as - hs, ar, aml, spread, aso); one(hm, true, hs - as, hr, hml, -spread, hso);
       last.set(season + aw, as - hs); last.set(season + hm, hs - as);
     });
-    return pbTeamGames = out;
+    return trendsTeamGames = out;
   }
   // Trends (was the Playbook section; under Season stats' graphs since Nov 4 2026, on the user's word), drawn into box.
   function drawTrends(box) {
-    if (!playbookWatched && Fan.store) { playbookWatched = true; Fan.store.watchDoc("playbook", "games", d => { if (d) { setPlaybook(d); changed("playbook"); } }, () => {}); }
-    if (!playbookDoc) { box.replaceChildren(el("p", "pb-note", Fan.screens ? "Its history pulls to this computer with your lines, and shows here when it arrives." : "Its history pulls to your own computer, which takes the Fan connector.")); return; }
-    const games = pbGames(), year = Math.max(...games.map(t => t.season)), lastWk = Math.max(...games.filter(t => t.season === year).map(t => t.week));
+    if (!trendsWatched && Fan.store) { trendsWatched = true; Fan.store.watchDoc("playbook", "games", d => { if (d) { setTrends(d); changed("playbook"); } }, () => {}); }
+    if (!trendsDoc) { box.replaceChildren(el("p", "trends-note", Fan.screens ? "Its history pulls to this computer with your lines, and shows here when it arrives." : "Its history pulls to your own computer, which takes the Fan connector.")); return; }
+    const games = trendsGames(), year = Math.max(...games.map(t => t.season)), lastWk = Math.max(...games.filter(t => t.season === year).map(t => t.week));
     const roi = (p, n) => { const v = n ? p / n * 100 : null, td = el("td", v == null ? "dim" : Math.abs(v) < .05 ? "dim" : v > 0 ? "pos" : "neg", v == null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "%"); return td; };
     const rec = (a, b, c) => a + "–" + b + (c ? "–" + c : "");
     const cells = (s, game) => {
-      const dash = () => el("td", "dim", "—"), first = el("td", "pb-l", String(s.n));
+      const dash = () => el("td", "dim", "—"), first = el("td", "trends-l", String(s.n));
       return [first, ...(game ? [dash(), dash(), dash(), dash()] : [el("td", null, rec(s.mw, s.ml)), roi(s.mp, s.mw + s.ml), el("td", null, rec(s.aw, s.al, s.ap)), roi(s.ar, s.aw + s.al)]), el("td", null, rec(s.o, s.u, s.op)), roi(s.or, s.o + s.u)];
     };
     const table = el("table"), head = el("thead"), h1 = el("tr"), h2 = el("tr"), body = el("tbody");
-    const group = (text, n) => { const th = el("th", "pb-g", text); th.colSpan = n; return th; };
+    const group = (text, n) => { const th = el("th", "trends-g", text); th.colSpan = n; return th; };
     h1.append(el("th"), group(String(year), 7), group(`Past 5 (${year - 5}–${year - 1})`, 8));
     const heads = ["Games", "ML", "ROI", "Spread", "ROI", "O–U", "Over ROI"];
     h2.append(el("th", null, "Situation"));
-    [...heads, ...heads, "Spread z"].forEach((t, i) => h2.append(el("th", i === 0 || i === 7 ? "pb-l" : null, t)));
+    [...heads, ...heads, "Spread z"].forEach((t, i) => h2.append(el("th", i === 0 || i === 7 ? "trends-l" : null, t)));
     h2.lastChild.title = "Spread wins minus losses over the square root of the bets: about 2 or more would be unusual for one filter, and much less so across many";
     head.append(h1, h2);
-    PLAYBOOK.forEach((p, i) => {
+    SITUATIONS.forEach((p, i) => {
       const all = games.filter(p.game ? t => t.home && p.f(t) : p.f), cur = pbStats(all.filter(t => t.season === year)), past = pbStats(all.filter(t => t.season < year && t.season >= year - 5));
-      const tr = el("tr", "pb-s"), name = el("td", null, p.h);
+      const tr = el("tr", "trends-s"), name = el("td", null, p.h);
       if (p.d) name.append(el("small", null, p.d));
       const z = el("td", null, p.game || !(past.aw + past.al) ? "—" : ((past.aw - past.al) / Math.sqrt(past.aw + past.al)).toFixed(1));
       tr.append(name, ...cells(cur, p.game), ...cells(past, p.game), z);
       tr.title = "Click for each season";
-      tr.addEventListener("click", () => { if (pbOpen.has(i)) pbOpen.delete(i); else pbOpen.add(i); changed("playbook"); });
+      tr.addEventListener("click", () => { if (trendsOpen.has(i)) trendsOpen.delete(i); else trendsOpen.add(i); changed("playbook"); });
       body.append(tr);
-      if (pbOpen.has(i)) for (let y = year; y >= year - 5; y--) {
-        const row = el("tr", "pb-y"), s = pbStats(all.filter(t => t.season === y)), lab = el("td", null, String(y)), gap = el("td", "pb-l");
+      if (trendsOpen.has(i)) for (let y = year; y >= year - 5; y--) {
+        const row = el("tr", "trends-y"), s = pbStats(all.filter(t => t.season === y)), lab = el("td", null, String(y)), gap = el("td", "trends-l");
         lab.style.paddingLeft = "24px"; gap.colSpan = 8;
         row.append(lab, ...cells(s, p.game), gap);
         body.append(row);
       }
     });
     table.append(head, body);
-    box.replaceChildren(el("p", "pb-note", `Regular season, closing lines (nflverse, as of ${new Date(playbookDoc.at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).replace(",", "")}); ${year} is through Week ${lastWk}. ROI is a flat bet on the situation's side at the closing price. Click a row for each season. With this many filters, most hot numbers are noise.`), table);
+    box.replaceChildren(el("p", "trends-note", `Regular season, closing lines (nflverse, as of ${new Date(trendsDoc.at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).replace(",", "")}); ${year} is through Week ${lastWk}. ROI is a flat bet on the situation's side at the closing price. Click a row for each season. With this many filters, most hot numbers are noise.`), table);
     // a window too narrow for its columns scales the table down to its width, rather than running it off the right
     const room = box.clientWidth - parseFloat(getComputedStyle(box).paddingLeft) - parseFloat(getComputedStyle(box).paddingRight);
     if (table.offsetWidth > room) table.style.zoom = String(Math.floor(room / table.offsetWidth * 1000) / 1000);
@@ -95,7 +95,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     return { svg, add };
   };
   const cell = (title, svg, wide) => {
-    const c = el("div", "xycell" + (wide ? " wide" : ""));
+    const c = el("div", "graphs-cell" + (wide ? " wide" : ""));
     if (title) c.append(el("div", "cap", title));
     c.append(svg);
     return c;
@@ -115,7 +115,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     return seg;
   }
   // Season stats panel: this season's real results as two histograms, margins of victory and totals, in the league's own buckets (RULES.leagues' season).
-  function renderSeason() {
+  function drawSeasonStats() {
     if (drawStub("season")) return;
     const box = $("season"), pad = 22;   // pad: a cell's border and padding
     const W = Math.max(560, box.clientWidth - 48), lg = LG(), S = lg.season;   // 48: the box's padding and the scroll pane's gutter
@@ -154,7 +154,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       const k = Math.min(margin, K);
       counts.set(k, (counts.get(k) || 0) + 1);
     });
-    const room = document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - box.getBoundingClientRect().top - 220;   // above the info line, less the heading, the two captions and the cells' frames
+    const room = document.querySelector(".strip.bottom").getBoundingClientRect().top - 46 - box.getBoundingClientRect().top - 220;   // above the info line, less the heading, the two captions and the cells' frames
     const Wh = W - pad, Hh = Math.max(220, Math.min(340, Math.floor(room / 2))), mh = { l: 84, r: 80, t: 30, b: 40 };   // two histograms share the page's height
     const { svg: hs, add: hadd } = mkSvg(Wh, Hh, `Histogram of ${lg.code} game margins of victory`);
     const bwid = (Wh - mh.l - mh.r) / K, XH = k => mh.l + (k - 0.5) * bwid;   // bucket k is centered at XH(k)
@@ -195,12 +195,12 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     }
     pane.append(cell(`${whatT} · ${results.length} games, ${span} · both teams' ${unit} together, each game counted once · ${LO}− and ${HI}+ include everything past them`, ts, true));
     if (lg.stats && !document.documentElement.classList.contains("prices-off")) {
-      const trends = el("div", "xycell wide pb-trends"), inner = el("div");
+      const trends = el("div", "graphs-cell wide trends"), inner = el("div");
       trends.append(el("div", "cap", "Trends"), inner);
       pane.append(trends);
       drawTrends(inner);
     }
-    pane.style.maxHeight = Math.max(200, Math.floor(document.querySelector(".tabrows.bottom").getBoundingClientRect().top - 46 - pane.getBoundingClientRect().top - 12)) + "px";   // down to the info line
+    pane.style.maxHeight = Math.max(200, Math.floor(document.querySelector(".strip.bottom").getBoundingClientRect().top - 46 - pane.getBoundingClientRect().top - 12)) + "px";   // down to the info line
     pane.scrollTop = keep;
   }
 
@@ -223,8 +223,8 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     add("image", { href: TEAM[n].art, x: 0, y: 0, width: iw, height: ih }, null, box);
     box.style.pointerEvents = "none";
   }
-  function renderXY(again = true) {
-    const box = $("xy"), games = graphGames();
+  function drawGraphs(again = true) {
+    const box = $("graphs"), games = graphGames();
     const avail = box.clientWidth;   // measured with the old graphs still in place, so a scrollbar they caused is already counted
     box.replaceChildren();
     const pts8 = games.flatMap(g => [0, 1].map(i => ({ g, side: i ? "home" : "away", ml: g.line.ml[i], sp: i ? -g.line.sp : g.line.sp })));
@@ -276,7 +276,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
 
     // dir +1: underdogs (positive spreads, +S at the left, 0 at the right); dir -1: favorites (negative spreads, 0 at the left, -S at the right).
     // Hg keeps the whole panel inside the viewport (no vertical scrolling at 1710x940); a portrait window runs it down to the bottom strip's text row
-    const portraitH = isTall() ? window.innerHeight - document.querySelector(".tabrows.bottom").offsetHeight - 36 - 8 - (box.getBoundingClientRect().top + window.scrollY) : 0;
+    const portraitH = isTall() ? window.innerHeight - document.querySelector(".strip.bottom").offsetHeight - 36 - 8 - (box.getBoundingClientRect().top + window.scrollY) : 0;
     const Wg = Math.max(260, Math.floor((W - gap) / 2) - pad), Hg = Math.max(768, Math.floor(portraitH)), m = { l: 84, r: 80, t: 24, b: 104 };
     function graph(list, dir, label) {
       const { svg, add } = mkSvg(Wg, Hg, label);
@@ -344,14 +344,14 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       return svg;
     }
     const dogs = pts8.filter(p => p.sp > 0), favs = pts8.filter(p => p.sp <= 0);
-    const row = el("div", "xyrow");
+    const row = el("div", "graphs-row");
     row.append(cell(null, graph(dogs, 1, `Scatter of Week ${curWeek} underdogs: point spread against moneyline`)),
       cell(null, graph(favs, -1, `Scatter of Week ${curWeek} favorites: point spread against moneyline`)));
 
     box.append(row);
     // The opportunity this panel hunts for: a game whose underdog is better backed with the points while its favorite is better backed with the
     // moneyline (the `hot` set). Those games get a connector line between their two badges, drawn in an overlay svg over the whole panel.
-    const link = document.createElementNS(SVG_NS, "svg"); link.setAttribute("class", "xylink"); box.append(link);
+    const link = document.createElementNS(SVG_NS, "svg"); link.setAttribute("class", "graphs-link"); box.append(link);
     {
       const hotNames = new Set([...hot].map(gameLabel)), br = box.getBoundingClientRect();
       const mk = (tag, attrs) => { const n = document.createElementNS(SVG_NS, tag); Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v)); link.append(n); };
@@ -390,7 +390,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
         if (pop && pop.dataset.game === chip.dataset.game) return;
         hide();
         const { g, fav, dog, dogPrice } = info, base = RULES.userSet.pairBase, key = gameKey(g);
-        pop = el("div", "xypair");
+        pop = el("div", "flagged-pair");
         pop.dataset.game = chip.dataset.game;
         const dogPts = pts(dog.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1));
         const S = Math.abs(dog.sp), start = Math.floor(S) + 1, favName = nick(g, fav.side), dogName = nick(g, dog.side);
@@ -446,7 +446,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
         const favVen = v && v.ml[fav.side], dogVen = v && v.sp.dog, b2Ven = bd && [bd.src2, c2], b3Ven = bd && bd.c3 ? [bd.src3, c3] : null;
         const px = (ven, price) => ven ? ven[1] : 1 / decimalOf(price);
         const where = (ven, p, kalshiText, polyText) => ven ? `${ven[0]} at ${Math.round(ven[1] * 100)}¢: ${ven[0] === "Kalshi" ? kalshiText : polyText}` : `at about ${Math.round(p * 100)}¢ (no venue saved for this game)`;
-        const table = el("table", "xypair-t");
+        const table = el("table", "flagged-pair-t");
         table.innerHTML = "<thead><tr><th>Contracts</th><th>Bet</th><th>Venue</th><th>Ask</th><th>Cost</th><th>Pays</th></tr></thead><tbody></tbody>";
         const row = (what, dollars, ven, price, kalshiText, polyText, label) => {
           const p = px(ven, price), n = Math.round(dollars / p), r = el("tr");
@@ -461,7 +461,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
           table.tBodies[0].append(r);
         };
         const odd = od => odds(Math.round(od));
-        const list = el("div", "xypair-tx");
+        const list = el("div", "flagged-pair-tx");
         const have = [...bets0.filter(t => !t.parlay).map(t => `${usd(t.amount)}${t.bonus ? " bonus" : ""} ${t.side} ${t.type === "Moneyline" ? "moneyline" : pts(t.line)}`), ...(parlays0.length ? [`${parlays0.length} multi-game parlay${parlays0.length > 1 ? "s" : ""} (not counted)`] : []), ...bets0.filter(t => t.parlay).map(() => "a same-game parlay")];
         list.append(el("div", "tx sub", `Already on this game: ${have.length ? have.join(" · ") : "nothing"}`));
         if (aNew > 0) row(`${favName} to win`, aNew, favVen, fav.ml, `Yes on "${favName} win"`, `the ${favName} outcome of the moneyline market`, odds(fav.ml));
@@ -470,16 +470,16 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
         if (cNew > 0.5) row(`${favName} +${K3.toFixed(1)} (the underdog does not win by more than 3)`, cNew, b3Ven, priceOdds(c3), `No on "${dogName} win by over ${K3.toFixed(1)} points"`, `the ${favName} outcome of "Spread: ${dogName} (−${K3.toFixed(1)})"`, `${odd(priceOdds(c3))}${bd && bd.c3 ? "" : ", model price"}`);
         if (dNew <= 0.5 && bNew <= 0.5 && cNew <= 0.5 && aNew <= 0) list.append(el("div", "tx sub", "Nothing to add: your position already meets the target."));
         else list.append(table);
-        const foot = el("div", "xypair-sum");
+        const foot = el("div", "flagged-pair-sum");
         foot.append(el("div", null, `Now: ${line(exAt)}`), el("div", null, `After: ${line(afterAt)} · new money ${usd(aNew + [dNew, bNew, cNew].filter(x => x > 0.5).reduce((s, x) => s + x, 0))}`));
         if (chances) foot.append(el("div", null, `Chances from the market (${abbr(favName)} win ${Math.round((1 - (chances[0] + chances[1])) * 100)}%): ${chances.map((p, i) => `${regions[i][0].replace(`${dogName} by`, "upset by").replace(`${favName} by`, "fav by")} ${Math.round(p * 100)}%`).join(" · ")} · expected value about ${sgn(ev)}`));
-        pop.append(el("div", "xypair-h", `To get to optimal: ${usd(base)} on the ${favName} moneyline in total; a blowout (${favName} by ${k2f + 1}+) breaks even and a small upset loses less than a big one`), riskGrid(g, bets, 640, [], [], 0, 67).el, list, foot);
+        pop.append(el("div", "flagged-pair-h", `To get to optimal: ${usd(base)} on the ${favName} moneyline in total; a blowout (${favName} by ${k2f + 1}+) breaks even and a small upset loses less than a big one`), riskGrid(g, bets, 640, [], [], 0, 67).el, list, foot);
         document.body.append(pop);
         place(e);
       });
     }
     // The tall graphs can bring a scrollbar that narrows the card; draw once more at the width that is left.
-    if (again && Math.max(560, box.clientWidth) !== W) renderXY(false);
+    if (again && Math.max(560, box.clientWidth) !== W) drawGraphs(false);
   }
 
   // Team context for the game details, from ESPN's public NFL endpoints (team records and standings, season statistics, schedule results, injury report), pulled
@@ -561,7 +561,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
   }
   // A daily league's game preview (the NBA, the NHL; Nov 3 2026): the NFL's whiteboard with the league's own numbers. The head-to-head table, then under each team its injuries,
   // its spot (rest, the last game, the run of home or road games, its standing) and its season so far: the last results and the next games, from the league's own days on the page.
-  function renderDailyDetail(box, g) {
+  function drawDailyDetail(box, g) {
     const l = g.league, T = DAILY_TEAMS[l] || {}, code = side => abbr(nick(g, side)), vs = `${code("away")} @ ${code("home")}`;
     if (!T[code("away")] || !T[code("home")]) {   // this browser's own pull, the first time a game preview opens
       box.replaceChildren(el("div", "pg-stub", vs), el("p", "pg-stub-t", "Asking ESPN for team stats and injuries…"));
@@ -581,13 +581,13 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     ];
     const rank = (fn, high, v) => 1 + all.filter(t => { const x = fn(t); return x !== null && (high ? x > v : x < v); }).length;
     const edges = t => metrics.map(([label, fn, high, fmt]) => { const v = fn(t); return v === null ? null : label + " " + fmt(v) + " (#" + rank(fn, high, v) + ")"; }).filter(Boolean).join(", ");
-    const head = el("div", "bd-head"), info = el("div", "bd-info"), part = (...n) => { if (info.childNodes.length) info.append(el("i", null, " · ")); info.append(...n); };
+    const head = el("div", "gd-head"), info = el("div", "gd-info"), part = (...n) => { if (info.childNodes.length) info.append(el("i", null, " · ")); info.append(...n); };
     if (g.final) part(el("b", null, "FINAL " + g.final[0] + " – " + g.final[1]));
     part(el("span", null, `${shortDayFmt.format(new Date(g.t))} · ${timeZoned(new Date(g.t))}`));
     if (g.tv) part(el("span", null, g.tv));
     if (Array.isArray(g.arena)) g.arena.filter(Boolean).forEach(x => part(el("span", null, x)));   // arena, not venue: a game's venue is the slate's cheapest place for each leg
     head.dataset.scene = "dome";
-    const team = (side, t) => { const d = el("div", "bd-team " + side); d.append(bdBadge(g, side, t.called.toUpperCase())); return d; };
+    const team = (side, t) => { const d = el("div", "gd-team " + side); d.append(gdBadge(g, side, t.called.toUpperCase())); return d; };
     head.append(info, team("away", A), team("home", H));
     // each team's season from the league's games on the page: [ms, opponent's code, home?, its score, theirs], scores null until played
     const seasonOf = c => ALL_GAMES.filter(x => x.league === l && (abbr(nick(x, "away")) === c || abbr(nick(x, "home")) === c)).map(x => { const home = abbr(nick(x, "home")) === c, s = x.final; return [Date.parse(x.t), abbr(nick(x, home ? "away" : "home")), home ? 1 : 0, s ? s[home ? 1 : 0] : null, s ? s[home ? 0 : 1] : null, x]; }).sort((p, q) => p[0] - q[0]);
@@ -613,23 +613,23 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       add("mot", "Standing", t.r + " (" + t.stand + ")" + (nhl && t.standPts !== null ? ", " + t.standPts + " points" : "") + ", " + (home ? "home " + t.h : "road " + t.a) + ", last ten " + t.l10 + (t.streak >= 3 ? ", W" + t.streak : t.streak <= -3 ? ", L" + Math.abs(t.streak) : ""));
       return out;
     };
-    const low = el("div", "bd-low"), half = (t, side) => {
-      const d = el("div", "bd-half"), c2 = el("div", "bd-col"), look = darkLook(g, side), label = (cls, text) => { const x = el("div", cls, text); x.style.background = look.bg; x.style.color = look.fg; return x; };
-      const list = el("div", "bd-ilist");
-      c2.append(label("bd-vlabel", "Injuries"), list);
+    const low = el("div", "gd-low"), half = (t, side) => {
+      const d = el("div", "gd-half"), c2 = el("div", "gd-col"), look = darkLook(g, side), label = (cls, text) => { const x = el("div", cls, text); x.style.background = look.bg; x.style.color = look.fg; return x; };
+      const list = el("div", "gd-ilist");
+      c2.append(label("gd-vlabel", "Injuries"), list);
       [...t.inj].sort((p, q) => (q[2] === "Injured Reserve") - (p[2] === "Injured Reserve")).forEach(([name, pos, status, type, key]) => {
-        const ln = el("div", "bd-line" + (key ? " key" : "")), nm = name.split(" "), short = nm.length > 1 ? nm[0][0] + ". " + nm.slice(1).join(" ") : name, k = status === "Out" ? "out" : status === "Injured Reserve" ? "ir" : "q";
+        const ln = el("div", "gd-line" + (key ? " key" : "")), nm = name.split(" "), short = nm.length > 1 ? nm[0][0] + ". " + nm.slice(1).join(" ") : name, k = status === "Out" ? "out" : status === "Injured Reserve" ? "ir" : "q";
         const nmEl = el("span", "nm", short + " "); nmEl.append(el("span", "pos", pos));
         ln.append(nmEl, el("span", "st " + k, status === "Out" ? "OUT" : status === "Injured Reserve" ? "IR" : "DTD"), el("span", "dim", type));
         list.append(ln);
       });
-      if (!t.inj.length) list.append(el("div", "bd-line dim", "none listed"));
+      if (!t.inj.length) list.append(el("div", "gd-line dim", "none listed"));
       // the season: the last results and the next games, sixteen cells, the game being viewed highlighted
-      const c3 = el("div", "bd-col bd-sched"), grid = el("div", "bd-sgrid bd-days"), sch = seasonOf(code(side)), i = Math.max(0, sch.findIndex(x => x[5] === g)), from = Math.max(0, Math.min(i - 12, sch.length - 16));
+      const c3 = el("div", "gd-col gd-sched"), grid = el("div", "gd-sgrid gd-days"), sch = seasonOf(code(side)), i = Math.max(0, sch.findIndex(x => x[5] === g)), from = Math.max(0, Math.min(i - 12, sch.length - 16));
       c3.style.setProperty("--tc", look.bg);
-      c3.append(label("bd-vlabel sched", "Season"));
+      c3.append(label("gd-vlabel sched", "Season"));
       sch.slice(from, from + 16).forEach(e => {
-        const cell = el("div", "bd-sc" + (e[5] === g ? " cur" : ""));
+        const cell = el("div", "gd-sc" + (e[5] === g ? " cur" : ""));
         cell.title = shortDayFmt.format(new Date(e[0]));
         cell.append(el("span", "nm", (e[2] ? "v " : "@ ") + e[1]));
         if (e[3] === null) cell.append(el("span", "dim", e[5] === g ? "" : new Date(e[0]).toLocaleDateString("en-US", { month: "numeric", day: "numeric", timeZone: "America/New_York" })));
@@ -638,9 +638,9 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       });
       grid.style.flex = "1"; grid.style.minWidth = "0";
       c3.append(grid);
-      const c4 = el("div", "bd-col bd-sched bd-script"), sbody = el("div", "bd-sbody");
+      const c4 = el("div", "gd-col gd-sched gd-script"), sbody = el("div", "gd-sbody");
       c4.style.setProperty("--tc", look.bg);
-      spotLines(side, t).forEach(x => { const r = el("div", "bd-sl " + x.cls); if (x.label) r.append(el("b", null, x.label + " ")); r.append(document.createTextNode(x.text)); sbody.append(r); });
+      spotLines(side, t).forEach(x => { const r = el("div", "gd-sl " + x.cls); if (x.label) r.append(el("b", null, x.label + " ")); r.append(document.createTextNode(x.text)); sbody.append(r); });
       c4.append(sbody);
       d.append(c2, c4, c3);
       return d;
@@ -649,23 +649,23 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     const setRows = (h, sfs) => { low.style.setProperty("--lh", h + "px"); low.style.setProperty("--lfs", Math.max(10, Math.min(14, Math.round(h * 0.56))) + "px"); if (sfs) low.style.setProperty("--sfs", sfs + "px"); [...low.children].forEach(d => { d.style.gridTemplateRows = Math.max(nInj * h + 2, 70) + "px auto minmax(0, 1fr)"; }); };
     low.append(half(A, "away"), half(H, "home"));
     setRows(lh);
-    const wrap = el("div", "bd-wrap");
+    const wrap = el("div", "gd-wrap");
     wrap.append(head, low);
     box.replaceChildren(wrap);
     // a short window: tighten the injury rows, then the script's type, until the script clears the season panel and nothing is cut off, as the NFL's board does
     for (let i = 0, h = lh, sfs = 14.5; i < 24; i++) {
-      const scs = [...box.querySelectorAll(".bd-script")], sch = [...box.querySelectorAll(".bd-half > .bd-sched:not(.bd-script)")];
+      const scs = [...box.querySelectorAll(".gd-script")], sch = [...box.querySelectorAll(".gd-half > .gd-sched:not(.gd-script)")];
       const deficit = Math.max(low.scrollHeight - low.clientHeight - 1, ...scs.map((e, k) => e.getBoundingClientRect().bottom - sch[k].getBoundingClientRect().top + 4));
       if (deficit <= 0.5) break;
       if (h > 13) { h = Math.max(13, h - Math.max(1, Math.ceil(deficit / nInj))); setRows(h); }
       else if (sfs > 10.5) { sfs -= 0.5; setRows(h, sfs); }
       else break;
     }
-    const sp = [...box.querySelectorAll(".bd-script")], sh = Math.max(0, ...sp.map(e => e.offsetHeight));
+    const sp = [...box.querySelectorAll(".gd-script")], sh = Math.max(0, ...sp.map(e => e.offsetHeight));
     sp.forEach(e => { e.style.minHeight = sh + "px"; });
   }
-  function renderGameDetail(box, g) {
-    if (leagueOf(g).daily && leagueOf(g).gameDetails) { try { renderDailyDetail(box, g); } catch (e) { box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", "This preview couldn't be drawn: " + e.message)); } return; }
+  function drawGameDetail(box, g) {
+    if (leagueOf(g).daily && leagueOf(g).gameDetails) { try { drawDailyDetail(box, g); } catch (e) { box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", "This preview couldn't be drawn: " + e.message)); } return; }
     if (!leagueOf(g).gameDetails) { box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", `${leagueOf(g).code} game details are not built yet.`)); return; }
     if (!TEAM_INFO[nick(g, "away")] || !TEAM_INFO[nick(g, "home")]) {   // this browser's own pull, the first time a game detail opens
       box.replaceChildren(el("div", "pg-stub", `${abbr(nick(g, "away"))} @ ${abbr(nick(g, "home"))}`), el("p", "pg-stub-t", "Asking ESPN for team stats and injuries…"));
@@ -693,26 +693,26 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     ];
     const wp = rec => { const [w, l, t = 0] = (rec || "0-0").split("-").map(Number); return w + l + t ? (w + t / 2) / (w + l + t) : 0; };
     const row = (label, av, hv, best, ar, hr) => {
-      const r = el("div", "bd-row"), a = el("div", "v a"), l = el("div", "l", label), h = el("div", "v h");
+      const r = el("div", "gd-row"), a = el("div", "v a"), l = el("div", "l", label), h = el("div", "v h");
       a.append(av); if (ar) a.append(el("small", null, "#" + ar));
       if (hr) h.append(el("small", null, "#" + hr)); h.append(hv);
       if (best === "a") a.classList.add("best"); else if (best === "h") h.classList.add("best");
       r.append(a, l, h);
       return r;
     };
-    const wrap = el("div", "bd-wrap");
-    if (!A || !H) { wrap.append(el("div", "bd-foot", "No team data for this matchup.")); box.replaceChildren(wrap); return; }
+    const wrap = el("div", "gd-wrap");
+    if (!A || !H) { wrap.append(el("div", "gd-foot", "No team data for this matchup.")); box.replaceChildren(wrap); return; }
     // header: each team (helmet, chip, record and standing) around the game's time, network and result
-    const head = el("div", "bd-head"), team = (side, t) => {
+    const head = el("div", "gd-head"), team = (side, t) => {
       // the game card's badge (team color, helmet overhanging at the left) with the LONG name (the nickname) instead of the abbreviation
       // the card's coloring, as it LOOKS on the card: the team's background lightened a third, blended 50% with the card paper, the team's own text color, no outline
-      const d = el("div", "bd-team " + side);   // the card draws its color at 50% over its dark paper: on the white board the half-alpha would wash out, so bdBadge blends it opaque
-      d.append(bdBadge(g, side));   // (the record / standings line under the badge is gone)
+      const d = el("div", "gd-team " + side);   // the card draws its color at 50% over its dark paper: on the white board the half-alpha would wash out, so gdBadge blends it opaque
+      d.append(gdBadge(g, side));   // (the record / standings line under the badge is gone)
       return d;
     };
     // ONE info line above the team names (result, kickoff, network, stadium, city, kickoff-hour forecast); the whole top of the card sits on a weather backdrop
     let wxMid = null;
-    const info = el("div", "bd-info"), part = (...n) => { if (info.childNodes.length) info.append(el("i", null, " · ")); info.append(...n); };
+    const info = el("div", "gd-info"), part = (...n) => { if (info.childNodes.length) info.append(el("i", null, " · ")); info.append(...n); };
     if (g.final) part(el("b", null, "FINAL " + g.final[0] + " – " + g.final[1]));
     part(el("span", null, `${shortDayFmt.format(new Date(g.t))} · ${timeZoned(new Date(g.t))}`));
     if (g.tv) part(el("span", null, g.tv));
@@ -720,7 +720,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     if (env) {
       if (env[0]) part(el("span", null, env[0]));
       if (env[1]) part(el("span", null, env[1]));
-      if (!g.final && !env[2] && env[3]) { wxMid = el("div", "bd-wxmid"); wxMid.title = "Forecast for kickoff"; wxMid.innerHTML = weatherIcon(env[5], false) + "<span>" + (env[4] !== null ? env[4] + "° " : "") + env[3] + "</span>"; }   // the kickoff forecast sits in the middle between the badges; an indoor stadium has none
+      if (!g.final && !env[2] && env[3]) { wxMid = el("div", "gd-wxmid"); wxMid.title = "Forecast for kickoff"; wxMid.innerHTML = weatherIcon(env[5], false) + "<span>" + (env[4] !== null ? env[4] + "° " : "") + env[3] + "</span>"; }   // the kickoff forecast sits in the middle between the badges; an indoor stadium has none
     }
     head.dataset.scene = "";
     if (env && !g.final) {
@@ -729,7 +729,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
     }
     head.append(info, team("away", A), team("home", H)); if (wxMid) head.append(wxMid);
     // the head-to-head table
-    const rows = el("div", "bd-rows");
+    const rows = el("div", "gd-rows");
     const cmp = (x, y, high) => (x === null || y === null || x === y ? "" : (high ? x > y : x < y) ? "a" : "h");
     rows.append(row("Record", A.r, H.r, wp(A.r) === wp(H.r) ? "" : wp(A.r) > wp(H.r) ? "a" : "h"));
     rows.append(row("Road · home record", A.a || "–", H.h || "–", wp(A.a) === wp(H.h) ? "" : wp(A.a) > wp(H.h) ? "a" : "h"));
@@ -738,10 +738,10 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       rows.append(row(label, x === null ? "–" : fmt(x), y === null ? "–" : fmt(y), cmp(x, y, high), x === null ? 0 : rank(fn, high, x), y === null ? 0 : rank(fn, high, y)));
     });
     // last five results and the injury report, under each team
-    const low = el("div", "bd-low"), half = (t, side) => {
-      const d = el("div", "bd-half"), c2 = el("div", "bd-col");
+    const low = el("div", "gd-low"), half = (t, side) => {
+      const d = el("div", "gd-half"), c2 = el("div", "gd-col");
       // no header: a vertical INJURIES label in the team's colors runs down the left side of the list
-      const lab = el("div", "bd-vlabel", "Injuries"), list = el("div", "bd-ilist"), look = darkLook(g, side);
+      const lab = el("div", "gd-vlabel", "Injuries"), list = el("div", "gd-ilist"), look = darkLook(g, side);
       lab.style.background = look.bg; lab.style.color = look.fg;
       if (look.outline) lab.style.boxShadow = "inset 0 0 0 2px " + look.outline;
       c2.append(lab, list);
@@ -752,23 +752,23 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       const clusterUnits = new Set(clusters.map(([name]) => name));
       // injured reserve first, then the game statuses (Out, Doubtful, Questionable); the sort is stable, so key players stay first within each
       [...t.inj].sort((p, q) => (q[2] === "Injured Reserve") - (p[2] === "Injured Reserve")).forEach(([name, pos, status, type, key]) => {
-        const ln = el("div", "bd-line" + (key ? " key" : "") ), inClu = status !== "Injured Reserve" && clusterUnits.has(UNIT[pos]), nm = name.split(" "), short = nm.length > 1 ? nm[0][0] + ". " + nm.slice(1).join(" ") : name, k = status === "Out" ? "out" : status === "Doubtful" ? "doubt" : status === "Injured Reserve" ? "ir" : "q";
+        const ln = el("div", "gd-line" + (key ? " key" : "") ), inClu = status !== "Injured Reserve" && clusterUnits.has(UNIT[pos]), nm = name.split(" "), short = nm.length > 1 ? nm[0][0] + ". " + nm.slice(1).join(" ") : name, k = status === "Out" ? "out" : status === "Doubtful" ? "doubt" : status === "Injured Reserve" ? "ir" : "q";
         const nmEl = el("span", "nm", short + " "), posEl = el("span", inClu ? "pos clu" : "pos", pos);   // the position text carries the cluster highlight
         nmEl.append(posEl);
         ln.append(nmEl, el("span", "st " + k, status === "Out" ? "OUT" : status === "Doubtful" ? "DOUBT" : status === "Injured Reserve" ? "IR" : "Q"), el("span", "dim", type));
         list.append(ln);
       });
-      if (!t.inj.length) list.append(el("div", "bd-line dim", "none listed"));
+      if (!t.inj.length) list.append(el("div", "gd-line dim", "none listed"));
       // the whole schedule, weeks 1-18 in three columns of six: results where played, the matchup being viewed highlighted, byes marked
-      const c3 = el("div", "bd-col bd-sched"), grid = el("div", "bd-sgrid"), byWeek = new Map((t.sch || []).map(x => [x[0], x]));
+      const c3 = el("div", "gd-col gd-sched"), grid = el("div", "gd-sgrid"), byWeek = new Map((t.sch || []).map(x => [x[0], x]));
       c3.style.setProperty("--tc", darkLook(g, side).bg);   // a very light team color theme for the schedule
       // a vertical SCHEDULE label like the injuries one, team colored, the full height of the panel on its left
-      const slab = el("div", "bd-vlabel sched", "Schedule"), sdk = darkLook(g, side);
+      const slab = el("div", "gd-vlabel sched", "Schedule"), sdk = darkLook(g, side);
       slab.style.background = sdk.bg; slab.style.color = sdk.fg;
       if (sdk.outline) slab.style.boxShadow = "inset 0 0 0 2px " + sdk.outline;
       c3.append(slab);
       for (let wk = 1; wk <= 18; wk++) {
-        const e = byWeek.get(wk), cell = el("div", "bd-sc" + (e && wk === g.week ? " cur" : "") + (!e ? " bye" : ""));
+        const e = byWeek.get(wk), cell = el("div", "gd-sc" + (e && wk === g.week ? " cur" : "") + (!e ? " bye" : ""));
         cell.append(el("span", "dim wk", String(wk)));
         if (!e) cell.append(el("span", "dim bye-w", "BYE"));
         else {
@@ -779,13 +779,13 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
         grid.append(cell);
       }
       // two empty cells after Week 18 so the vertical rules run to the bottom of the last column too
-      for (let k = 0; k < 2; k++) grid.append(el("div", "bd-sc blank"));
+      for (let k = 0; k < 2; k++) grid.append(el("div", "gd-sc blank"));
       grid.style.flex = "1"; grid.style.minWidth = "0";
       c3.append(grid);
       // the game script: plain text straight on the board (no label, no panel), from scriptLines
-      const c4 = el("div", "bd-col bd-sched bd-script"), sbody = el("div", "bd-sbody");
+      const c4 = el("div", "gd-col gd-sched gd-script"), sbody = el("div", "gd-sbody");
       c4.style.setProperty("--tc", darkLook(g, side).bg);   // only the role line uses it
-      scriptLines(g, side).forEach(l => { const row = el("div", "bd-sl " + l.cls); if (l.label) row.append(el("b", null, l.label + " ")); row.append(document.createTextNode(l.text)); sbody.append(row); });
+      scriptLines(g, side).forEach(l => { const row = el("div", "gd-sl " + l.cls); if (l.label) row.append(el("b", null, l.label + " ")); row.append(document.createTextNode(l.text)); sbody.append(row); });
       c4.append(sbody);
       d.append(c2, c4, c3);
       return d;
@@ -802,7 +802,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       let lhNow = lh, sfs = 14.5;
       const setRows = () => { low.style.setProperty("--lh", lhNow + "px"); low.style.setProperty("--lfs", Math.max(10, Math.min(14, Math.round(lhNow * 0.56))) + "px"); [...low.children].forEach(d => { d.style.gridTemplateRows = (nInj * lhNow + 2) + "px auto minmax(0, 1fr)"; }); };
       for (let i = 0; i < 24; i++) {
-        const scs = [...box.querySelectorAll(".bd-script")], sch = [...box.querySelectorAll(".bd-half > .bd-sched:not(.bd-script)")];
+        const scs = [...box.querySelectorAll(".gd-script")], sch = [...box.querySelectorAll(".gd-half > .gd-sched:not(.gd-script)")];
         const deficit = Math.max(low.scrollHeight - low.clientHeight - 1, ...scs.map((e, k) => e.getBoundingClientRect().bottom - sch[k].getBoundingClientRect().top));
         if (deficit <= 0.5) break;   // (the label bleeds 1px past the panel: a 1px scroll overflow is not a real deficit)
         if (lhNow > 13) { lhNow = Math.max(13, lhNow - Math.max(1, Math.ceil(deficit / nInj))); setRows(); }
@@ -811,7 +811,7 @@ import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw2y0dvv";
       }
     }
     // the two script panels share one height so their top edges (and the schedules under them) line up (measured after the board is in the page)
-    const sp = [...box.querySelectorAll(".bd-script")], sh = Math.max(0, ...sp.map(e => e.offsetHeight));
+    const sp = [...box.querySelectorAll(".gd-script")], sh = Math.max(0, ...sp.map(e => e.offsetHeight));
     sp.forEach(e => { e.style.minHeight = sh + "px"; });
   }
-export { divOf, renderGameDetail, renderSeason, renderXY, setPlaybook };
+export { divOf, drawGameDetail, drawSeasonStats, drawGraphs, setTrends };

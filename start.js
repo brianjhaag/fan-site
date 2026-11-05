@@ -1,54 +1,54 @@
 // Runs last: opens the page on the current week, draws it and connects the sockets.
-import "./base.js?v=mw2y0dvv";
-import "./layout.js?v=mw2y0dvv";
-import "./risk.js?v=mw2y0dvv";
-import "./panels.js?v=mw2y0dvv";
-import "./handicap.js?v=mw2y0dvv";
-import "./tracker.js?v=mw2y0dvv";
-import "./trade.js?v=mw2y0dvv";
-import "./telecasts.js?v=mw2y0dvv";
-import "./cards.js?v=mw2y0dvv";
-import "./settings.js?v=mw2y0dvv";
-import { renderCode, useOwnMethods } from "./code.js?v=mw2y0dvv";
-import { Fan } from "./hosts.js?v=mw2y0dvv";
-import { WEEK_GAMES } from "./espn.js?v=mw2y0dvv";
-import { sendManifest, useWallLinks } from "./telecasts.js?v=mw2y0dvv";
-import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, initLines, leaguesOn, leaveOffLeague, marketWanted, switchWeek, view, weekNow } from "./base.js?v=mw2y0dvv";
-import { renderSectionTabs } from "./layout.js?v=mw2y0dvv";
-import { renderByes, renderGames } from "./cards.js?v=mw2y0dvv";
-import { LEAGUES_READY } from "./leagues.js?v=mw2y0dvv";
-import { renderRisk, renderTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw2y0dvv";
-import { renderSeason, renderXY } from "./panels.js?v=mw2y0dvv";
-import { renderHandicap } from "./handicap.js?v=mw2y0dvv";
-import { renderLedger, renderPick, renderTickets, startRecords } from "./tracker.js?v=mw2y0dvv";
-import { fillSettings, findConnector } from "./settings.js?v=mw2y0dvv";
+import "./base.js?v=mw33ju01";
+import "./layout.js?v=mw33ju01";
+import "./risk.js?v=mw33ju01";
+import "./panels.js?v=mw33ju01";
+import "./handicap.js?v=mw33ju01";
+import "./tracker.js?v=mw33ju01";
+import "./trade.js?v=mw33ju01";
+import "./telecasts.js?v=mw33ju01";
+import "./cards.js?v=mw33ju01";
+import "./settings.js?v=mw33ju01";
+import { drawCode, useOwnMethods } from "./code.js?v=mw33ju01";
+import { Fan } from "./hosts.js?v=mw33ju01";
+import { WEEK_GAMES } from "./espn.js?v=mw33ju01";
+import { sendManifest, useWallLinks } from "./telecasts.js?v=mw33ju01";
+import { setTrackingOn, setLeagueOn, changed, curWeek, definePanels, drawLeagueStub, drawNow, startLines, leaguesOn, leaveOffLeague, marketWanted, switchWeek, view, weekNow } from "./base.js?v=mw33ju01";
+import { drawSectionTabs } from "./layout.js?v=mw33ju01";
+import { drawByes, drawGameCards } from "./cards.js?v=mw33ju01";
+import { LEAGUES_READY } from "./leagues.js?v=mw33ju01";
+import { drawRiskDetail, drawTotals, selectionAfter, selectionBefore } from "./risk.js?v=mw33ju01";
+import { drawSeasonStats, drawGraphs } from "./panels.js?v=mw33ju01";
+import { drawHandicap } from "./handicap.js?v=mw33ju01";
+import { drawLedger, drawPick, drawSavedTickets, startRecords } from "./tracker.js?v=mw33ju01";
+import { drawSettings, findConnector } from "./settings.js?v=mw33ju01";
   // What redraws when something changes, in drawing order. tickets: a wager, the week or Track. lines: prices and finals. cards: scores, badges or the card layout. selection: the game in the risk detail. exec: an order being sent. settings: what the settings window shows, such as what the connector offers.
   const BOARD = ["tickets", "lines", "cards", "selection"];
   const whenShowing = (v, draw) => () => { if (view === v) draw(); };
   definePanels([
     [selectionBefore, ["selection"]],
-    [renderTickets, ["tickets", "selection"]],
-    [renderTotals, [...BOARD, "view:week"]],
-    [whenShowing("ledger", renderLedger), [...BOARD, "view:ledger", "balances", "leagues"]],
-    [whenShowing("xy", renderXY), [...BOARD, "view:xy", "size"]],
-    [whenShowing("season", renderSeason), [...BOARD, "view:season", "size", "past", "playbook"]],
-    [whenShowing("handicap", renderHandicap), ["view:handicap", "lines", "cards", "past", "size"]],
-    [whenShowing("code", renderCode), ["view:code"]],
+    [drawSavedTickets, ["tickets", "selection"]],
+    [drawTotals, [...BOARD, "view:week"]],
+    [whenShowing("ledger", drawLedger), [...BOARD, "view:ledger", "balances", "leagues"]],
+    [whenShowing("graphs", drawGraphs), [...BOARD, "view:graphs", "size"]],
+    [whenShowing("season", drawSeasonStats), [...BOARD, "view:season", "size", "past", "playbook"]],
+    [whenShowing("handicap", drawHandicap), ["view:handicap", "lines", "cards", "past", "size"]],
+    [whenShowing("code", drawCode), ["view:code"]],
     [drawLeagueStub, ["view"]],
-    [renderGames, [...BOARD, "view:week"]],
-    [renderRisk, ["tickets", "lines", "selection", "exec", "size", "view:week"]],
-    [renderSectionTabs, ["view"]],
+    [drawGameCards, [...BOARD, "view:week"]],
+    [drawRiskDetail, ["tickets", "lines", "selection", "exec", "size", "view:week"]],
+    [drawSectionTabs, ["view"]],
     [selectionAfter, ["selection"]],
-    [fillSettings, ["settings"]],
+    [drawSettings, ["settings"]],
   ]);
   Fan.setMarket(marketWanted());
   // the page opens on the CURRENT week: NFL weeks run Wednesday to Tuesday, and Week 8 starts Wed Oct 28 2026 (the same window the lines script uses)
-  { const w0 = weekNow(); document.querySelectorAll(".weektabs [data-week]").forEach(b => b.classList.toggle("now", Number(b.dataset.week) === w0)); if (WEEK_GAMES[w0] && w0 !== curWeek) switchWeek(w0); }
+  { const w0 = weekNow(); document.querySelectorAll(".strip-tabs [data-week]").forEach(b => b.classList.toggle("now", Number(b.dataset.week) === w0)); if (WEEK_GAMES[w0] && w0 !== curWeek) switchWeek(w0); }
   // ignore hover until the pointer really moves: the spot under a stationary mouse at load must not light anything up. A touch screen has no hover, and this would swallow its first tap
   if (!navigator.maxTouchPoints) { const root = document.documentElement; root.classList.add("nohover"); const on = () => { root.classList.remove("nohover"); removeEventListener("mousemove", on, true); removeEventListener("pointerdown", on, true); removeEventListener("touchstart", on, true); }; addEventListener("mousemove", on, true); addEventListener("pointerdown", on, true); addEventListener("touchstart", on, true); }
   Fan.setLeagues([...leaguesOn]);
   leaveOffLeague();
-  renderByes(); changed("tickets"); drawNow(); renderPick();
+  drawByes(); changed("tickets"); drawNow(); drawPick();
   (async () => {
     // The connector first: it doesn't wait on ESPN, so the Application tab shows it at once, however long the daily leagues' pulls take (Nov 3 2026).
     try { await Fan.connectStore(); } catch (e) {}
@@ -63,7 +63,7 @@ import { fillSettings, findConnector } from "./settings.js?v=mw2y0dvv";
     try { const saved = JSON.parse(localStorage.getItem("fan.leagues") || "[]"); for (const k of saved) if (k !== "nfl" && LEAGUES_READY.includes(k)) await setLeagueOn(k, true); if (saved.some(k => k !== "nfl" && leaguesOn.has(k)) && !saved.includes("nfl")) await setLeagueOn("nfl", false); } catch (e) {}
     await startRecords();
     changed("settings");
-    initLines();
+    startLines();
   })();
   // The chart is drawn at the card's width, so redraw when the window changes size.
   let resizeTimer;

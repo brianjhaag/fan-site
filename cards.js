@@ -1,13 +1,13 @@
 // The game cards (the refactor, Nov 3 2026, from base.js): each card's badges, lines and gutter, the strip of cards in kickoff windows, a finished week's grid, and the byes.
-import { Calc } from "./calc.js?v=mw2y0dvv";
-import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw2y0dvv";
-import { closePreview, CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw2y0dvv";
-import { renderSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw2y0dvv";
-import { renderGameDetail } from "./panels.js?v=mw2y0dvv";
-import { fillMoneyline, fillSpread, fillTotal, showSaved } from "./tracker.js?v=mw2y0dvv";
-import { telecastFor, watchGame } from "./telecasts.js?v=mw2y0dvv";
+import { Calc } from "./calc.js?v=mw33ju01";
+import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw33ju01";
+import { closePreview, CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw33ju01";
+import { drawSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw33ju01";
+import { drawGameDetail } from "./panels.js?v=mw33ju01";
+import { enterMoneyline, enterSpread, enterTotal, showSaved } from "./tracker.js?v=mw33ju01";
+import { telecastFor, watchGame } from "./telecasts.js?v=mw33ju01";
 // base.js draws the byes as a league or week changes
-Object.assign(later, { renderByes });
+Object.assign(later, { drawByes });
 
 let lastSavedTabKey = "";
 
@@ -91,17 +91,17 @@ function teamRow(g, side, over) {
   const nl = !!g.noLine;   // no market yet (a far-off week): dashes instead of the placeholder numbers
   const ml = el("td", "ml", !pricesOn() ? "" : nl ? "—" : odds(L.ml[n]));   // tracking off: no prices anywhere, not dashes
   ml.style.color = brighterOf(g, side);
-  if (!nl && pricesOn() && trackingOn) { ml.classList.add("ml-go"); ml.addEventListener("click", e => { e.stopPropagation(); fillMoneyline(g, n); }); }   // a moneyline click fills the wager ticket instead of selecting the card
+  if (!nl && pricesOn() && trackingOn) { ml.classList.add("ml-go"); ml.addEventListener("click", e => { e.stopPropagation(); enterMoneyline(g, n); }); }   // a moneyline click fills the wager ticket instead of selecting the card
   const nsp = !nl && !!L.noSp, favRow = L.ml[n] < L.ml[1 - n] || (L.ml[n] === L.ml[1 - n] && !away);   // no spread market yet: the favorite's row keeps its chance to win, the other a dash
   const spc = el("td", "sp", !pricesOn() || nl ? "" : nsp ? (favRow ? Calc.winPct(L.ml, away) + "%" : "—") : sp < 0 ? Calc.winPct(L.ml, away) + "%" : pts(sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1)));   // one decimal always: +4.0, +3.5
   spc.style.color = brighterOf(g, side);
   if (spc.textContent.endsWith("%")) spc.classList.add("wp");
-  if (!nl && !nsp && sp >= 0 && pricesOn() && trackingOn) { spc.classList.add("ml-go"); spc.addEventListener("click", e => { e.stopPropagation(); fillSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
+  if (!nl && !nsp && sp >= 0 && pricesOn() && trackingOn) { spc.classList.add("ml-go"); spc.addEventListener("click", e => { e.stopPropagation(); enterSpread(g, n); }); }   // the spread shows on the underdog's row, so a click fills the underdog
   tr.append(ml, name, spc);
   // The total is the same for both teams: one cell on the first row spanning both, centered between them.
   if (away) {
     const tot = el("td", "tot", !pricesOn() ? "" : nl || L.noTot ? "—" : Number(L.tot).toFixed(1)); tot.rowSpan = 2;
-    if (!nl && !L.noTot && pricesOn() && trackingOn) { tot.classList.add("ml-go"); tot.title = "Top half: over. Bottom half: under."; tot.addEventListener("click", e => { e.stopPropagation(); const r = tot.getBoundingClientRect(); fillTotal(g, e.clientY < r.top + r.height / 2 ? 0 : 1); }); }   // a total click fills the wager ticket
+    if (!nl && !L.noTot && pricesOn() && trackingOn) { tot.classList.add("ml-go"); tot.title = "Top half: over. Bottom half: under."; tot.addEventListener("click", e => { e.stopPropagation(); const r = tot.getBoundingClientRect(); enterTotal(g, e.clientY < r.top + r.height / 2 ? 0 : 1); }); }   // a total click fills the wager ticket
     tr.append(tot);
   }
   return tr;
@@ -122,7 +122,7 @@ function showTradeTip(anchor, h) {
   tip.style.top = (a.top - t.height - 8 >= 8 ? a.top - t.height - 8 : a.bottom + 8) + "px";
 }
 let cardsScroll = null;
-function renderGames() {
+function drawGameCards() {
   hideTradeTip();
   const box = $("games");
   // A week whose games are all final has no wager ticket; the saved tickets card shows its Summary tab by default (set once per week, and when the week becomes final).
@@ -132,14 +132,14 @@ function renderGames() {
   fitSlateLine();
   if (curWeek + ":" + allFinal !== lastSavedTabKey) { lastSavedTabKey = curWeek + ":" + allFinal; showSaved(allFinal ? "summary" : "tickets"); }
   const shownDetail = detailGame && GAMES.includes(detailGame) ? detailGame : null;
-  const wasDetail = box.classList.contains("bd");
+  const wasDetail = box.classList.contains("gd");
   if (shownDetail && !wasDetail) cardsScroll = { week: curWeek, league, x: box.scrollLeft, y: window.scrollY };   // closing the preview puts the cards back where they were
-  box.classList.toggle("bd", !!shownDetail);
+  box.classList.toggle("gd", !!shownDetail);
   // a game preview takes over the ticket column's room: the totals, saved tickets and wager ticket are hidden (their space stays) and the preview card widens across it
-  { const topEl = document.querySelector(".top"), cl = document.querySelector(".col.left"); topEl.classList.toggle("bd-open", !!shownDetail); topEl.style.setProperty("--bdx", (cl.getBoundingClientRect().width + 20) + "px"); }
-  if (shownDetail) { box.classList.remove("strip", "flat"); renderGameDetail(box, shownDetail); { const x = el("button", "bd-close", "×"); x.type = "button"; x.title = "Close"; x.setAttribute("aria-label", "Close game preview"); x.addEventListener("click", () => closePreview()); box.append(x); } renderSectionTabs(); fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); updateGameArrows(); return; }
+  { const topEl = document.querySelector(".top"), cl = document.querySelector(".col.left"); topEl.classList.toggle("gd-open", !!shownDetail); topEl.style.setProperty("--bdx", (cl.getBoundingClientRect().width + 20) + "px"); }
+  if (shownDetail) { box.classList.remove("kickoff-windows", "flat"); drawGameDetail(box, shownDetail); { const x = el("button", "gd-close", "×"); x.type = "button"; x.title = "Close"; x.setAttribute("aria-label", "Close game preview"); x.addEventListener("click", () => closePreview()); box.append(x); } drawSectionTabs(); fitViewportHeight(); fitSectionTabs(); fitTicketColumn(); updateGameArrows(); return; }
   box.replaceChildren();
-  box.classList.add("strip");   // every week: the cards sit in columns by kickoff window, with a scrollbar along the bottom
+  box.classList.add("kickoff-windows");   // every week: the cards sit in columns by kickoff window, with a scrollbar along the bottom
   const made = [];
   GAMES.forEach(g => {
     const mine = gameBets(g);
@@ -208,7 +208,7 @@ function renderGames() {
     made.push([g, card]);
   });
   windowColumns(box, made);
-  renderSectionTabs();
+  drawSectionTabs();
   fitViewportHeight();
   fitSectionTabs();
   fitTicketColumn();
@@ -282,7 +282,7 @@ function flatGrid(box, cards) {
 window.addEventListener("resize", () => { const b = $("games"); if (b && b.classList.contains("flat")) changed("cards"); });
 
 // The teams not playing this week: every team in the color table that is on no game of the selected week.
-function renderByes() {
+function drawByes() {
   const playing = new Set(GAMES.flatMap(g => [nick(g, "away"), nick(g, "home")]));
   const off = LG().byes ? NFL_NICKS.filter(t => !playing.has(t)).sort() : [];   // only the NFL has byes
   const box = $("byes");
@@ -299,4 +299,4 @@ function renderByes() {
   fitSlateLine();
 }
 
-export { renderGames, renderByes, BADGE_STYLES, badgeStyle, setBadgeStyle };
+export { drawGameCards, drawByes, BADGE_STYLES, badgeStyle, setBadgeStyle };

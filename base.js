@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw2y0dvv";
-import { BOOK_ICONS } from "./data/assets.js?v=mw2y0dvv";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw2y0dvv";
-import { Calc } from "./calc.js?v=mw2y0dvv";
-import { Fan } from "./hosts.js?v=mw2y0dvv";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw33ju01";
+import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw33ju01";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw33ju01";
+import { Calc } from "./calc.js?v=mw33ju01";
+import { Fan } from "./hosts.js?v=mw33ju01";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -28,7 +28,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
   let league = "nfl";   // the league on screen, chosen with the league picker
   document.documentElement.dataset.league = league;   // fan.css dresses a league's page by it (the NHL's rink and boards)
   // The layout (Look/feel's Layout, on the user's word, Nov 2 2026): Auto follows the window as before, or the user picks Landscape or Portrait. Phone isn't a choice: a phone is too tight to be of use, so only Auto reaches the phone rules, kept as they are. It's classes on the page that
-  // fan.css's layout rules hang on: lay-narrow (920px or less), lay-phone (760px or less), lay-portrait (a portrait window over 920px). Kept per browser.
+  // fan.css's layout rules hang on: layout-narrow (920px or less), layout-phone (760px or less), layout-portrait (a portrait window over 920px). Kept per browser.
   const LAYOUTS = [["auto", "Auto"], ["landscape", "Landscape"], ["portrait", "Portrait"]];   // a saved "phone" falls back to Auto
   let layoutPref = "auto";
   try { const v = localStorage.getItem("fan.layout"); if (LAYOUTS.some(([k]) => k === v)) layoutPref = v; } catch (e) {}
@@ -36,16 +36,16 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
   const LAYOUT_QUERIES = { phone: "(max-width: 760px)", narrow: "(max-width: 920px)", portrait: "(orientation: portrait) and (min-width: 921px)" };
   function applyLayout() {
     const auto = layoutPref === "auto", c = document.documentElement.classList;
-    c.toggle("lay-phone", auto && mq(LAYOUT_QUERIES.phone));
-    c.toggle("lay-narrow", auto && mq(LAYOUT_QUERIES.narrow));
-    c.toggle("lay-portrait", auto ? mq(LAYOUT_QUERIES.portrait) : layoutPref === "portrait");
+    c.toggle("layout-phone", auto && mq(LAYOUT_QUERIES.phone));
+    c.toggle("layout-narrow", auto && mq(LAYOUT_QUERIES.narrow));
+    c.toggle("layout-portrait", auto ? mq(LAYOUT_QUERIES.portrait) : layoutPref === "portrait");
   }
   applyLayout();
   const layoutLists = Object.values(LAYOUT_QUERIES).map(q => matchMedia(q));   // kept: a media list nothing holds can be dropped with its listener, and the layout then stuck where the page loaded
   layoutLists.forEach(m => m.addEventListener("change", applyLayout));
   addEventListener("resize", applyLayout);
   function setLayoutPref(k) { layoutPref = k; try { localStorage.setItem("fan.layout", k); } catch (e) {} applyLayout(); changed("size", "cards"); }
-  const isPhone = () => document.documentElement.classList.contains("lay-phone");
+  const isPhone = () => document.documentElement.classList.contains("layout-phone");
   // A tall window, for the panels that run down to the bottom strip: a portrait one, or a phone held upright.
   const isTall = () => (layoutPref === "auto" ? mq("(orientation: portrait)") : layoutPref === "portrait");
   const LG = () => Calc.RULES.leagues[league];
@@ -62,7 +62,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
   // What the totals and the saved tickets show: the selected game and its wagers, or the whole week.
   const ticketsInView = () => riskGame ? tickets.filter(inRiskGame) : tickets;
   const gamesInView = () => riskGame ? [riskGame] : GAMES;
-  let curWeek = 7, GAMES = WEEK_GAMES[7] || [], view = "week";   // view: "week" and "xy" (Graphs) belong to the selected week; a key of SECTIONS is one of the other top buttons
+  let curWeek = 7, GAMES = WEEK_GAMES[7] || [], view = "week";   // view: "week" and "graphs" belong to the selected week; a key of SECTIONS is one of the other top buttons
   // The top strip's tabs other than the weeks, and the bottom strip's buttons for each; an entry with `stub` is a placeholder saying what it will show. A section with one view has no bottom buttons. A new section or view is one entry here.
   const SECTIONS = {
     handicap: [{ k: "main", h: "Handicap" }],   // every league (the user, Nov 4 2026); Playbook's Trends moved under Season stats' graphs
@@ -135,30 +135,30 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
   }
   // The game overview's badge (also used on the risk detail): the card's coloring as it LOOKS on the card (the team's background lightened a third,
   // blended 50% with the card paper #1a1f26, drawn opaque), the team's own text color, the helmet overhanging at the left, the nickname in caps.
-  function bdBadge(g, side, label) {
-    const nk = nick(g, side), badge = el("div", "bd-badge"), look = teamLook(g, side);
+  function gdBadge(g, side, label) {
+    const nk = nick(g, side), badge = el("div", "gd-badge"), look = teamLook(g, side);
     const [r_, g_, b_] = [1, 3, 5].map(i => { const v = parseInt(look.bg.slice(i, i + 2), 16); return Math.round(v + (255 - v) * .33); }), paper = [26, 31, 38];
     badge.style.background = `rgb(${Math.round((r_ + paper[0]) / 2)} ${Math.round((g_ + paper[1]) / 2)} ${Math.round((b_ + paper[2]) / 2)})`;
     badge.style.color = look.fg;
-    if (hasArt(nk)) badge.append(helmImg(nk, "bd-bhelm"));
-    badge.append(el("span", "bd-bname", label || last(g[side]).toUpperCase()));
+    if (hasArt(nk)) badge.append(helmImg(nk, "gd-bhelm"));
+    badge.append(el("span", "gd-bname", label || last(g[side]).toUpperCase()));
     return badge;
   }
 
   // Sportsbook icons (the files are kept in icons/): site favicons embedded as data URIs. ClutchBet's is a generated initials badge (no favicon could be fetched). "Other" has none.
   // Short names for the saved tickets and the game detail (the dropdown, Ledger and wager card keep the full names).
-  const BOOK_ABBR = { "DraftKings": "DK", "FanDuel": "FD", "BetMGM": "MGM", "Caesars": "CP", "bet365": "365", "BetRivers": "BR", "ESPN Bet": "ESPN", "Fanatics": "FAN", "Hard Rock Bet": "HR", "Circa Sports": "CIR", "Bally Bet": "BAL", "BetMonarch": "MON", "ClutchBet": "CLU", "SBK": "SBK", "SI Sportsbook": "SI", "Sporttrade": "ST", "Kalshi": "KAL", "Betsafe": "BSF", "Other": "OTH" };
-  const bookAbbr = name => BOOK_ABBR[name] || name;
+  const SPORTSBOOK_ABBR = { "DraftKings": "DK", "FanDuel": "FD", "BetMGM": "MGM", "Caesars": "CP", "bet365": "365", "BetRivers": "BR", "ESPN Bet": "ESPN", "Fanatics": "FAN", "Hard Rock Bet": "HR", "Circa Sports": "CIR", "Bally Bet": "BAL", "BetMonarch": "MON", "ClutchBet": "CLU", "SBK": "SBK", "SI Sportsbook": "SI", "Sporttrade": "ST", "Kalshi": "KAL", "Betsafe": "BSF", "Other": "OTH" };
+  const sportsbookAbbr = name => SPORTSBOOK_ABBR[name] || name;
   // A sportsbook's icon followed by its name (the short name with short); icon only with iconOnly; just the name when it has no icon.
-  function bookTag(name, iconOnly, short) {
-    const tag = el("span", "bk"), src = BOOK_ICONS[name];
+  function sportsbookTag(name, iconOnly, short) {
+    const tag = el("span", "bk"), src = SPORTSBOOK_ICONS[name];
     if (src) { const i = document.createElement("img"); i.className = "bico"; i.src = src; i.alt = ""; i.width = i.height = 16; tag.append(i); }
-    if (!(iconOnly && src)) tag.append(document.createTextNode(short ? bookAbbr(name) : name));
+    if (!(iconOnly && src)) tag.append(document.createTextNode(short ? sportsbookAbbr(name) : name));
     if (short || iconOnly) tag.title = name;
     return tag;
   }
 
-  const APP_VERSION = "0.58.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.58.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -244,7 +244,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
   setInterval(staleCheck, 60000);
   // The update text and the byes share one line under the game cards AND the wager ticket (left edge of the cards to the right edge of the ticket): 22px, smaller when they would not fit.
   function fitSlateLine() {
-    const line = document.querySelector(".sec-title.one-line"), note = $("slateNote"), wager = document.querySelector(trackingOn ? ".col.left" : ".tabrows.bottom");   // with tracking off there's no wager ticket: the line runs to the strip's right edge
+    const line = document.querySelector("fan-info-line"), note = $("slateNote"), wager = document.querySelector(trackingOn ? ".col.left" : ".strip.bottom");   // with tracking off there's no wager ticket: the line runs to the strip's right edge
     if (!line || !wager) return;
     const W = wager.getBoundingClientRect().right - line.getBoundingClientRect().left;
     if (!(W > 0)) return;
@@ -254,7 +254,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
     const shrink = (holder, need) => { holder.style.setProperty("--slate-fs", "16px"); let fs = Math.max(8, Math.min(16, 16 * W / need())); holder.style.setProperty("--slate-fs", fs + "px"); while (fs > 8 && need() > W) { fs = Math.max(8, fs - .5); holder.style.setProperty("--slate-fs", fs + "px"); } };
     box.style.removeProperty("--slate-fs"); line.style.setProperty("--slate-fs", "16px");
     // A narrow layout folds a line that doesn't fit (the user's, Nov 2 2026): the byes over the rest, each line then shrinking on its own only if it still doesn't fit.
-    const fold = document.documentElement.classList.contains("lay-narrow") && byes() + rest() > W;
+    const fold = document.documentElement.classList.contains("layout-narrow") && byes() + rest() > W;
     line.classList.toggle("folded", fold);
     if (fold) { shrink(line, rest); shrink(box, byes); } else shrink(line, () => byes() + rest());
   }
@@ -299,7 +299,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
       applySlate(rows.map(r => ({ id: r.id, data: () => r.data })));
     }, () => slateNote("Connection lost: reload the page"));
   }
-  const initLines = () => { later.syncPrices(); if (Fan.lines) watchSlate(); };
+  const startLines = () => { later.syncPrices(); if (Fan.lines) watchSlate(); };
   setRefresh(() => changed("cards"));
 
   function el(tag, cls, text) {
@@ -379,15 +379,15 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
   const drawLeagueStub = () => { if (LEAGUES.includes(view)) drawStub(view); };
   function showView(v) {
     view = v;
-    $("ledger").hidden = v !== "ledger"; $("xy").hidden = v !== "xy"; $("season").hidden = v !== "season"; $("handicap").hidden = v !== "handicap"; $("code").hidden = v !== "code"; $("panel").hidden = v !== "week";
+    $("ledger").hidden = v !== "ledger"; $("graphs").hidden = v !== "graphs"; $("season").hidden = v !== "season"; $("handicap").hidden = v !== "handicap"; $("code").hidden = v !== "code"; $("slate").hidden = v !== "week";
     LEAGUES.forEach(k => { $(k).hidden = v !== k; });
-    ["ledger", "xy", "season", "handicap", "code"].forEach(k => $("tab-" + k).setAttribute("aria-selected", String(v === k)));
-    document.querySelectorAll(".weektabs [data-week]").forEach(b => { const w = Number(b.dataset.week); b.classList.toggle("now", w === weekNow()); b.setAttribute("aria-selected", String(!SECTIONS[v] && w === curWeek)); });   // Graphs belongs to the selected week; one top tab is active at a time
+    ["ledger", "graphs", "season", "handicap", "code"].forEach(k => $("tab-" + k).setAttribute("aria-selected", String(v === k)));
+    document.querySelectorAll(".strip-tabs [data-week]").forEach(b => { const w = Number(b.dataset.week); b.classList.toggle("now", w === weekNow()); b.setAttribute("aria-selected", String(!SECTIONS[v] && w === curWeek)); });   // Graphs belongs to the selected week; one top tab is active at a time
     syncDayArrows();
     changed("view", "view:" + v);
     syncLeaguePick();
   }
-  $("tab-xy").addEventListener("click", () => { detailGame = null; if (view === "xy") { showView("week"); } else showView("xy"); });   // clicking Graphs again goes back to the cards
+  $("tab-graphs").addEventListener("click", () => { detailGame = null; if (view === "graphs") { showView("week"); } else showView("graphs"); });   // clicking Graphs again goes back to the cards
   // Season stats, Handicap and Ledger: clicking the active one closes it, onto the current week's cards.
   ["season", "handicap", "ledger", "code"].forEach(k => $("tab-" + k).addEventListener("click", () => { if (view === k) { detailGame = null; switchWeek(weekNow()); } else showView(k); }));
   // The week tabs follow the league: Weeks 1-17, or for a daily league (the NBA, the NHL) yesterday, for its results, then its days from today (leagues.js), the spare tabs hidden.
@@ -396,7 +396,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
   let dayShift = 0;
   const maxShift = l => LEAGUE_DEFS[l].days - 6;   // the last tab on the last day pulled
   const canShiftBack = l => nbaDay(dayShift - 2) >= seasonDay(l);
-  const dayTabs = () => [...document.querySelectorAll(".weektabs [data-week]")].slice(0, LEAGUE_DEFS[league].days + 1);
+  const dayTabs = () => [...document.querySelectorAll(".strip-tabs [data-week]")].slice(0, LEAGUE_DEFS[league].days + 1);
   function openSlot() { const tabs = dayTabs(), i = tabs.findIndex(b => Number(b.dataset.week) === curWeek); return i >= 0 ? i : tabs.findIndex(b => Number(b.dataset.week) === weekNow()); }
   function syncDayArrows() {
     const daily = Calc.RULES.leagues[league].daily, i = daily ? openSlot() : -1;
@@ -416,7 +416,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
   const seasonDay = l => Number(new Date(LEAGUE_DEFS[l].start).toISOString().slice(0, 10).replace(/-/g, ""));
   function labelTabs(l) {
     const daily = Calc.RULES.leagues[l].daily;
-    [...document.querySelectorAll(".weektabs [data-week]")].forEach((b, i) => {
+    [...document.querySelectorAll(".strip-tabs [data-week]")].forEach((b, i) => {
       b.style.display = daily && i > LEAGUE_DEFS[l].days ? "none" : "";
       if (!daily) { b.dataset.week = String(i + 1); b.textContent = "Week " + (i + 1); return; }
       const d = new Date(Date.now() + (i - 1 + dayShift) * 864e5);
@@ -436,7 +436,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
     labelTabs(l);
     detailGame = null;
     switchWeek(weekNow());
-    later.renderByes();
+    later.drawByes();
   }
   // The league picker (the user's, Nov 2 2026: graphical, like the wager ticket's pickers): a button with the league on screen in its own type, opening a list of every league but
   // those waiting for next year, each dressed as its own strip, the ones that are off dimmed and not choosable. Its arrows step through the leagues that are on, as the Book picker's do.
@@ -452,7 +452,7 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
     const names = leagueNames(), cur = LEAGUES.includes(view) ? view : league;
     $("leaguePick").replaceChildren(names[cur]);
     $("leagueList").replaceChildren(...pickable().map(k => {
-      const li = el("li", "lg-tile", names[k]);
+      const li = el("li", "league-tile", names[k]);
       li.setAttribute("role", "option"); li.dataset.v = k; li.dataset.lg = k;
       li.setAttribute("aria-selected", String(k === cur)); li.setAttribute("aria-disabled", String(!leaguesOn.has(k)));
       li.addEventListener("click", () => { if (leaguesOn.has(k)) pickLeague(k); });
@@ -507,16 +507,16 @@ import { Fan } from "./hosts.js?v=mw2y0dvv";
     showView(back && back.view ? back.view : "week");
   }
   document.addEventListener("keydown", e => { if (e.key === "Escape" && detailGame) closePreview(); });   // back from a game preview to where it was opened
-  function clearRiskQuietly() { const col = document.querySelector(".col.left"), rc = $("riskCard"); col.classList.remove("has-sel"); rc.classList.add("rk-off"); rc.classList.remove("rk-over"); rc.setAttribute("aria-hidden", "true"); }
+  function clearRiskQuietly() { const col = document.querySelector(".col.left"), rc = $("riskDetail"); col.classList.remove("has-selection"); rc.classList.add("rk-off"); rc.classList.remove("rk-over"); rc.setAttribute("aria-hidden", "true"); }
   function switchWeek(w) {
     if (w === curWeek) { if (view !== "week") showView("week"); return; }
     riskByWeek[curWeek] = riskKey; riskGame = null; clearRiskQuietly();
     riskKey = riskByWeek[w] || "";
     selectSlate(w);
-    $("panel").setAttribute("aria-labelledby", "tab-w" + w);
-    $("slateTitle").textContent = slateTitleOf(w); later.renderByes();
+    $("slate").setAttribute("aria-labelledby", "tab-w" + w);
+    $("slateTitle").textContent = slateTitleOf(w); later.drawByes();
     later.weekChanged();
     applySlate(); showView("week");
   }
-  document.querySelectorAll(".weektabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
-export { closePreview, nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, newestFor, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, $, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, bdBadge, betClass, bookAbbr, bookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, initLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, view, vigOf, weekNow, setRiskKey, CARD_ACTIONS, teamChip, hasArt, brighterOf, fitSlateLine, graphsOK, SECTIONS, isPhone, mq };
+  document.querySelectorAll(".strip-tabs [data-week]").forEach(b => b.addEventListener("click", () => { const had = !!detailGame; detailGame = null; const w = Number(b.dataset.week); if (had && w === curWeek) showView("week"); else switchWeek(w); }));
+export { closePreview, nflWeek, ticketFromFill, weirdFills, setWeirdFills, programBehind, newestFor, LAYOUTS, isTall, layoutPref, setLayoutPref, nick, changed, definePanels, drawLeagueStub, drawNow, $, ALL_GAMES, APP_VERSION, FAN_CLASSES, GAMES, LG, RULES, allTickets, americanOf, applySlate, gdBadge, betClass, sportsbookAbbr, sportsbookTag, calc, centsOf, contractsFor, curWeek, dayFmt, deadFor, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, extremes, fillAmounts, fillSide, freshPrices, gameBets, gameKey, gameLabel, gameSettledPL, gamesInView, graphGames, hedgeFor, helmImg, startLines, kalshiCalc, kalshiCheck, kalshiMarket, last, later, league, leagueId, leagueNames, leagueOf, leaguesOn, leaveOffLeague, ledgerRows, legGame, legResult, legText, lineOf, lineOk, marginModel, money, nbaDay, odds, outcomes, pairFlagged, pairStakes, parlayShares, pbStats, profitOf, projectedPL, pts, readTicker, replyFill, resultCell, riskGame, riskKey, riskOf, selectSlate, setDetailGame, marketWanted, pricesOn, pricesWanted, trackingOn, clearPrices, setLeagueOn, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, shareRisk, shareTerm, shortDayFmt, showView, signedMoney, slateAt, linesAt, spentShares, status, subView, switchWeek, teamLook, ticketLeagueOn, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned, tz, view, vigOf, weekNow, setRiskKey, CARD_ACTIONS, teamChip, hasArt, brighterOf, fitSlateLine, graphsOK, SECTIONS, isPhone, mq };

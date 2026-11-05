@@ -1,9 +1,9 @@
 // The Code section (TRADING.md, Nov 3 2026): the algo grid, the code editor and the console with its prompt, in one page opened by the Code button, as Ledger is.
 // With a connector of 0.38 or later, the algos are the connector's algoRuntime's: kept in its records, checked, run and armed there, with or without a page open; the grid and the console show what it
 // reports, and the prompt runs there. With none, an algo is a draft kept in this browser, every one not approved, and the prompt answers from the page itself, saying so.
-import { Fan } from "./hosts.js?v=mw2y0dvv";
-import { $, el, changed } from "./base.js?v=mw2y0dvv";
-import { Calc } from "./calc.js?v=mw2y0dvv";
+import { Fan } from "./hosts.js?v=mw33ju01";
+import { $, el, changed } from "./base.js?v=mw33ju01";
+import { Calc } from "./calc.js?v=mw33ju01";
 
 const KEPT = "fan.algos";   // the drafts, per browser, when there's no algoRuntime; draftsMoved into the connector the first time one is found
 const STATES = ["not approved", "off", "running", "armed"];   // TRADING.md: an algo's states, in order
@@ -95,17 +95,17 @@ function startPolling() {
 
 // ---- The editor: a text area over its own highlighted copy, with line numbers. Fan's global scope (fan.…) gets a color of its own, so the special dot reads at a glance (TRADING.md).
 const WORDS = new Set("await break case catch class const continue default delete do else export extends false finally for function if import in instanceof let new null of return super switch this throw true try typeof undefined var void while yield".split(" "));
-const escHtml = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const escapeHtml = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 function highlight(src) {
   const re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|\b(fan(?:\.[A-Za-z_$][\w$@]*)*)|\b(\d[\d_]*\.?\d*(?:e[+-]?\d+)?)\b|\b([A-Za-z_$][\w$]*)\b/g;
   let out = "", at = 0, m;
   while ((m = re.exec(src))) {
-    out += escHtml(src.slice(at, m.index));
+    out += escapeHtml(src.slice(at, m.index));
     const [t, com, str, scope, num, word] = m;
-    out += com ? `<i class="c-com">${escHtml(com)}</i>` : str ? `<i class="c-str">${escHtml(str)}</i>` : scope ? `<i class="c-fan">${escHtml(scope)}</i>` : num ? `<i class="c-num">${escHtml(num)}</i>` : WORDS.has(word) ? `<i class="c-kw">${escHtml(word)}</i>` : escHtml(t);
+    out += com ? `<i class="code-comment">${escapeHtml(com)}</i>` : str ? `<i class="code-string">${escapeHtml(str)}</i>` : scope ? `<i class="code-fan">${escapeHtml(scope)}</i>` : num ? `<i class="code-number">${escapeHtml(num)}</i>` : WORDS.has(word) ? `<i class="code-keyword">${escapeHtml(word)}</i>` : escapeHtml(t);
     at = m.index + t.length;
   }
-  return out + escHtml(src.slice(at)) + "\n";
+  return out + escapeHtml(src.slice(at)) + "\n";
 }
 function codeEditor() {
   const box = el("div", "cd-ed"), nums = el("pre", "cd-nums"), painted = el("pre", "cd-view"), text = el("textarea", "cd-text");
@@ -152,7 +152,7 @@ function gridTable() {
     state.title = why;
     const name = el("td", "cd-name", "Methods"); name.title = "Your own methods, in Fan's place: de-vigging, the margin model, the Handicap's fit and more";
     tr.append(name, state, ...Array.from({ length: SHARED_COLS }, () => el("td", "cd-cell")));
-    tr.addEventListener("click", () => { pickedId = pickedId === METHODS_ID ? null : METHODS_ID; drawCode(); });
+    tr.addEventListener("click", () => { pickedId = pickedId === METHODS_ID ? null : METHODS_ID; drawCodePage(); });
     body.append(tr);
   }
   if (!algos.length) { const tr = el("tr", "cd-none"), td = el("td", null, "No algos yet: press New."); td.colSpan = heads.length; tr.append(td); body.append(tr); }
@@ -160,7 +160,7 @@ function gridTable() {
     const tr = el("tr", x.id === pickedId ? "on" : null), state = el("td", "cd-state st-" + STATES.indexOf(x.state || STATES[0]), x.state || STATES[0]);
     if (x.error) { state.classList.add("cd-err"); state.title = x.error; }
     tr.append(el("td", "cd-name", x.name), state, ...Array.from({ length: SHARED_COLS }, (_, i) => { const c = (x.cells || [])[i] || {}, td = el("td", "cd-cell", c.v == null ? "" : String(c.v)); if (c.bg) td.style.background = c.bg; if (c.font) td.style.font = c.font; return td; }));
-    tr.addEventListener("click", () => { pickedId = x.id === pickedId ? null : x.id; drawCode(); });
+    tr.addEventListener("click", () => { pickedId = x.id === pickedId ? null : x.id; drawCodePage(); });
     body.append(tr);
   });
   table.append(body);
@@ -179,14 +179,14 @@ function algoGrid() {
   add.addEventListener("click", async () => {
     const id = "a" + Date.now().toString(36), draft = { id, name: "Algo " + (algos.length + 1), code: STARTER, cols: ["", "", ""], state: STATES[0] };
     pickedId = id;
-    if (algoRuntime()) { algos.push(draft); await askRuntime({ op: "save", ...draft }); drawCode(); return; }
-    algos.push(draft); keepAlgos(); drawCode();
+    if (algoRuntime()) { algos.push(draft); await askRuntime({ op: "save", ...draft }); drawCodePage(); return; }
+    algos.push(draft); keepAlgos(); drawCodePage();
   });
   del.disabled = !a; del.title = "Delete this algo";
-  del.addEventListener("click", () => { if (!a) return; if (!del.classList.contains("sure")) { del.classList.add("sure"); del.textContent = "Delete: sure?"; return; } pickedId = null; if (algoRuntime()) { askRuntime({ op: "delete", id: a.id }).then(drawCode); return; } algos = algos.filter(x => x.id !== a.id); keepAlgos(); drawCode(); });
+  del.addEventListener("click", () => { if (!a) return; if (!del.classList.contains("sure")) { del.classList.add("sure"); del.textContent = "Delete: sure?"; return; } pickedId = null; if (algoRuntime()) { askRuntime({ op: "delete", id: a.id }).then(drawCodePage); return; } algos = algos.filter(x => x.id !== a.id); keepAlgos(); drawCodePage(); });
   name.value = a ? a.name : ""; name.disabled = !a; name.placeholder = "Name"; name.setAttribute("aria-label", "Algo name");
-  name.addEventListener("change", () => { if (!a || !name.value.trim()) return; a.name = name.value.trim(); if (algoRuntime()) askRuntime({ op: "save", id: a.id, name: a.name }); else { keepAlgos(); drawCode(); } });
-  const cols = Array.from({ length: SHARED_COLS }, (_, i) => { const c = el("input", "cd-col"); c.value = a && a.cols ? a.cols[i] || "" : ""; c.disabled = !a; c.placeholder = "Column " + (i + 1); c.setAttribute("aria-label", "Column " + (i + 1) + "'s name"); c.addEventListener("change", () => { if (!a) return; a.cols = a.cols || ["", "", ""]; a.cols[i] = c.value; if (algoRuntime()) askRuntime({ op: "save", id: a.id, cols: a.cols }); else { keepAlgos(); drawCode(); } }); return c; });
+  name.addEventListener("change", () => { if (!a || !name.value.trim()) return; a.name = name.value.trim(); if (algoRuntime()) askRuntime({ op: "save", id: a.id, name: a.name }); else { keepAlgos(); drawCodePage(); } });
+  const cols = Array.from({ length: SHARED_COLS }, (_, i) => { const c = el("input", "cd-col"); c.value = a && a.cols ? a.cols[i] || "" : ""; c.disabled = !a; c.placeholder = "Column " + (i + 1); c.setAttribute("aria-label", "Column " + (i + 1) + "'s name"); c.addEventListener("change", () => { if (!a) return; a.cols = a.cols || ["", "", ""]; a.cols[i] = c.value; if (algoRuntime()) askRuntime({ op: "save", id: a.id, cols: a.cols }); else { keepAlgos(); drawCodePage(); } }); return c; });
   const note = algoRuntime() ? "Algos run in the connector, with or without this page open. An edit takes one back to not approved." : "Algos run in the Fan connector, 0.38 or later. Without one they're drafts in this browser, and none can be checked or run.";
   bar.append(add, name, ...cols, del, ...stateButtons(a), el("span", "cd-note", note));
   box.append(bar, withKids("div", "cd-scroll", [gridTable()]));
@@ -234,10 +234,10 @@ function redrawLive() {
 }
 
 // The algos down the left; on the right the editor, taking most of the height, with the console and its prompt under it (the user, Nov 3 2026).
-function drawCode() {
+function drawCodePage() {
   const page = $("code");
   if (!page) return;
   page.replaceChildren(algoGrid(), withKids("div", "cd-low", [codeEditor(), consoleBox()]));
 }
-const renderCode = () => { drawCode(); if (algoRuntime()) { readRuntime(); startPolling(); } };
-export { renderCode, useOwnMethods };
+const drawCode = () => { drawCodePage(); if (algoRuntime()) { readRuntime(); startPolling(); } };
+export { drawCode, useOwnMethods };

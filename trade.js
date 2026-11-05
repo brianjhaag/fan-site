@@ -1,10 +1,10 @@
 // Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSel, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw2y0dvv";
-import { Fan } from "./hosts.js?v=mw2y0dvv";
-import { Calc } from "./calc.js?v=mw2y0dvv";
-import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw2y0dvv";
-import { ABBR, slateDocId } from "./leagues.js?v=mw2y0dvv";
-  Object.assign(later, { hedgeControls, execControls, renderKalshiCheck, syncPlace });
+import { addTicket, centsOk, clearTicket, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw33ju01";
+import { Fan } from "./hosts.js?v=mw33ju01";
+import { Calc } from "./calc.js?v=mw33ju01";
+import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw33ju01";
+import { ABBR, slateDocId } from "./leagues.js?v=mw33ju01";
+  Object.assign(later, { hedgeControls, execControls, drawKalshiCheck, syncPlace });
   // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
   let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), sig, text, cls } so the result survives the card's redraws
   (async () => {
@@ -73,12 +73,12 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw2y0dvv";
   // Every fill becomes one ticket per order: Place and Execute save theirs from the order's reply, so only a fill from anywhere else is saved here.
   // A fill the fills collection already holds was handled before (the feed repeats fills on reload), so a ticket you deleted stays deleted.
   const OTHER_WINDOW_MS = 5000;   // Claude's default
-  const ownOrders = new Map(), fillTix = new Map();   // ownOrders: client id of an order this page sent -> its fills so far; fillTix: order id -> its ticket, ahead of the snapshot
+  const ownOrders = new Map(), fillTickets = new Map();   // ownOrders: client id of an order this page sent -> its fills so far; fillTickets: order id -> its ticket, ahead of the snapshot
   function saveFillTicket(x) {
     if (x.env === "demo") return;
-    const id = `fill-${x.venue}-${x.order_id}`, out = ticketFromFill(x, fillTix.get(id) || allTickets.find(t => t.id === id), k => dayFmt.format(new Date(k)) + ", " + timeZoned(new Date(k)));
+    const id = `fill-${x.venue}-${x.order_id}`, out = ticketFromFill(x, fillTickets.get(id) || allTickets.find(t => t.id === id), k => dayFmt.format(new Date(k)) + ", " + timeZoned(new Date(k)));
     if (!out) return;
-    fillTix.set(id, out.ticket);
+    fillTickets.set(id, out.ticket);
     return inStore ? Fan.store.set("wagers", id, out.ticket) : undefined;
   }
   async function handleFill(x, delayMs) {
@@ -214,7 +214,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw2y0dvv";
   }
   // The Ledger's Kalshi check: every fill on the account against the saved tickets, read when opened. Reads only.
   let checkRun = 0;
-  async function renderKalshiCheck() {
+  async function drawKalshiCheck() {
     const box = $("ledger"), run = ++checkRun;
     box.replaceChildren(el("div", "pg-stub", "Kalshi check"), el("p", "pg-stub-t", Fan.trader || Fan.keyed ? "Reading Kalshi's fills…" : Fan.account ? "Connect Kalshi first: settings, Sportsbooks, Kalshi account." : "Needs the connector."));
     if (!Fan.trader && !Fan.keyed) return;
@@ -223,7 +223,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw2y0dvv";
     catch (e) { if (run === checkRun) box.replaceChildren(el("div", "pg-stub", "Kalshi check"), el("p", "pg-stub-t", "Could not read Kalshi: " + ((e && (e.message || e.code)) || "error"))); return; }
     if (run !== checkRun || view !== "ledger" || subView.ledger !== "check") return;
     const r = kalshiCheck(fills, allTickets), cents = v => "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }), count = v => v.toLocaleString("en-US", { maximumFractionDigits: 2 });
-    const note = el("p", "pb-note", r.off.length ? `${r.off.length} of ${r.rows.length} bets differ. Fills ${cents(r.fillPaid)}, tickets ${cents(r.ticketPaid)}.` : `All ${r.rows.length} bets match. Fills ${cents(r.fillPaid)}, tickets ${cents(r.ticketPaid)}.`);
+    const note = el("p", "trends-note", r.off.length ? `${r.off.length} of ${r.rows.length} bets differ. Fills ${cents(r.fillPaid)}, tickets ${cents(r.ticketPaid)}.` : `All ${r.rows.length} bets match. Fills ${cents(r.fillPaid)}, tickets ${cents(r.ticketPaid)}.`);
     const table = el("table", "lsheet"), head = el("tr");
     ["Bet", "Fills", "Paid", "Tickets", "Amount", "Difference"].forEach(h => head.append(el("th", null, h)));
     const thead = el("thead"), body = el("tbody"); thead.append(head);
@@ -243,7 +243,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw2y0dvv";
     if ($("bonus").checked) return { why: "A bonus bet cannot be placed" };
     const l = readLeg(), a = parseFloat($("amount").value);
     if (!l || !(a > 0) || !centsOk(l.cents)) return { why: "Fill in the ticket" };
-    const limit = Calc.placeLimit(l.cents, $("payup").value), g = GAMES[gameSel.value], p = limit / 100, m = kalshiMarket(g, l);
+    const limit = Calc.placeLimit(l.cents, $("payup").value), g = GAMES[gameSelect.value], p = limit / 100, m = kalshiMarket(g, l);
     if (m.why) return { why: m.why };
     const { tk, side } = m, txt = l.type === "Moneyline" ? `${l.side} to win` : `${l.side} ${lineShown(l.type, l.line)}`;
     const n = contractsFor(a, p);
@@ -271,4 +271,4 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw2y0dvv";
     if (lastExec.cls === "ok") clearTicket();
     syncPlace();
   });
-export { showDemo, demoAway, pendingFills, execControls, handleFill, placeSpec, refreshPrices, renderKalshiCheck, setBet, syncPlace };
+export { showDemo, demoAway, pendingFills, execControls, handleFill, placeSpec, refreshPrices, drawKalshiCheck, setBet, syncPlace };
