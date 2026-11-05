@@ -1,12 +1,12 @@
 // The settings window: Fan's button, its tabs and the status indicators.
-import { espnState } from "./espn.js?v=mw44n6yh";
-import { Fan } from "./hosts.js?v=mw44n6yh";
-import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, gdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw44n6yh";
-import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw44n6yh";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw44n6yh";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw44n6yh";
-import { demoAway, setBet } from "./trade.js?v=mw44n6yh";
-import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw44n6yh";
+import { espnState } from "./espn.js?v=mw46i2a7";
+import { Fan } from "./hosts.js?v=mw46i2a7";
+import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, gdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw46i2a7";
+import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw46i2a7";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw46i2a7";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw46i2a7";
+import { demoAway, setBet } from "./trade.js?v=mw46i2a7";
+import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw46i2a7";
   // Fan's button opens the settings window.
   let drawSettings;
   // The public page is the front door. A browser that has asked for the connector looks for it on load and moves there, saying so. Only those: the look can bring up a browser permission prompt. ?stay stays.
@@ -151,7 +151,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
           let tries = 0;
           const t = setInterval(() => {
             if (++tries > 60) { clearInterval(t); fail("It didn't come back. Press Update again, or start the connector from the web link."); return; }
-            Fan.hostHello().then(hi => { if (hi.version !== from) { clearInterval(t); location.reload(); } }, () => {});
+            Fan.hostHello().then(hi => { if (hi.version !== from) { clearInterval(t); location.replace("/" + location.search); } }, () => {});
           }, 2000);
         }, e => fail("Couldn't update: " + (e && e.message)));
       });
@@ -229,7 +229,7 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
     };
     // Holding page updates is gone, on the user's word (Nov 2 2026): every copy follows the site. A connector still holding is let go once, which reloads the page.
     let released = false;
-    const releaseHeld = hi => { if (released || !(hi && hi.page && hi.page.held) || !Fan.pageChoice) return; released = true; Fan.pageChoice("release").then(() => location.reload(), () => {}); };
+    const releaseHeld = hi => { if (released || !(hi && hi.page && hi.page.held) || !Fan.pageChoice) return; released = true; Fan.pageChoice("release").then(() => location.replace("/" + location.search), () => {}); };
     setInterval(() => { const box = document.querySelector(".settings-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }, 5000);
     new MutationObserver(() => { const box = document.querySelector(".settings-about"); if (win.open && box && !box.closest("[hidden]")) drawStatus(box); }).observe($("feedNote"), { attributes: true, childList: true, characterData: true, subtree: true });   // the fill feed's dot changes when the feed does
     // The connector, one box in four sections, its three jobs and its program, with a small gear outside it, level with the bottom section, on the user's word (Nov 2 2026). The gear turns, green, while the whole system is healthy (drawStatus): the user knows it's all well if it's turning.

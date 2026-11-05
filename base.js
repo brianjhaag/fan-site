@@ -1,9 +1,9 @@
 // The page's core: state, formats, tabs and menus. The game cards are cards.js.
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw44n6yh";
-import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw44n6yh";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw44n6yh";
-import { Calc } from "./calc.js?v=mw44n6yh";
-import { Fan } from "./hosts.js?v=mw44n6yh";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw46i2a7";
+import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw46i2a7";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw46i2a7";
+import { Calc } from "./calc.js?v=mw46i2a7";
+import { Fan } from "./hosts.js?v=mw46i2a7";
   // What a file calls in the files loaded after it. Each file adds its own names as it loads (test/modules.test.js checks them), so no file imports a later one.
   const later = {};
   // Auto-render. Whatever changes the page's data says so with changed(topic), and the panels that depend on that topic redraw once, right after the running code ends, in the order of the table in start.js.
@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js?v=mw44n6yh";
     return tag;
   }
 
-  const APP_VERSION = "0.59.1";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
+  const APP_VERSION = "0.60.0";   // the label in the settings window and the title. Claude sets it at each build, as major.minor.patch
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   // in the settings window's header, so it shows whether or not Bet tracking is on
@@ -235,7 +235,7 @@ import { Fan } from "./hosts.js?v=mw44n6yh";
   // user's own connector (localhost:5180) it reloads itself once to get the other one. Served in dev mode means the connector added its reload script. Once per change, so
   // nothing can loop.
   const servedDev = [...document.scripts].some(s => s.textContent.includes("/connector/saves"));
-  const devFollow = dev => { if (location.origin + "/" !== Fan.localFan || !!dev === servedDev) return; let last = null; try { last = sessionStorage.getItem("fan.devReload"); sessionStorage.setItem("fan.devReload", String(!!dev)); } catch (e) {} if (last !== String(!!dev)) location.reload(); };
+  const devFollow = dev => { if (location.origin + "/" !== Fan.localFan || !!dev === servedDev) return; let last = null; try { last = sessionStorage.getItem("fan.devReload"); sessionStorage.setItem("fan.devReload", String(!!dev)); } catch (e) {} if (last !== String(!!dev)) location.replace("/" + location.search); };   // the root: the connector sends it to /r/dev/ or the release served
   const askHost = () => { if (Fan.hostHello) Fan.hostHello().then(hi => { showVersion(hi.version, hi.pageDev, hi.os); devFollow(hi.pageDev); return hi.refresh || ""; }, () => "The connector isn't answering").then(p => { if (p !== hostProblem) { hostProblem = p; slateNote(noteText); } }); };
   setTimeout(askHost, 3000); setInterval(askHost, 10000);
   // the update text turns amber when the lines are more than an hour old (checked every minute)

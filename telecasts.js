@@ -1,9 +1,9 @@
 // Telecasts and the wall, in one module (the refactor, Nov 3 2026): the networks and where each comes from, what a game's Live telecast does, the wall, and the rest of the
 // settings window's Telecasts tab. base.js's cards call telecastFor and watchGame, and its league switch sendManifest, through later.
-import { Fan } from "./hosts.js?v=mw44n6yh";
-import { qrSvg } from "./qr.js?v=mw44n6yh";
-import { slateOfDay, abbr } from "./leagues.js?v=mw44n6yh";
-import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw44n6yh";
+import { Fan } from "./hosts.js?v=mw46i2a7";
+import { qrSvg } from "./qr.js?v=mw46i2a7";
+import { slateOfDay, abbr } from "./leagues.js?v=mw46i2a7";
+import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw46i2a7";
 Object.assign(later, { telecastFor, watchGame, sendManifest });
 
 // ---- The networks and their sources
