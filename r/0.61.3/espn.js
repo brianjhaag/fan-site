@@ -1,8 +1,8 @@
 
 
 
-import { SHARED } from "./shared.js?v=mw48ucq2";
-import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw48ucq2";
+import { SHARED } from "./shared.js?v=mw49jmu7";
+import { LEAGUE_DEFS, leagueCodes, teamName } from "./leagues.js?v=mw49jmu7";
 const SITE = "https://site.api.espn.com/apis/site/v2/sports";
 const NEUTRAL_LINE = () => ({ sp: 0, spj: [-110, -110], tot: 45, toj: [-110, -110], ml: [-110, -110] });   
 const STALE_MS = 6 * 3600e3, TEAMS_MS = 24 * 3600e3, WEEK8 = SHARED.season.week8, NFL_WEEKS = 18;

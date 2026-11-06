@@ -1,8 +1,8 @@
 
 
-import { HELMETS, NBA_LOGOS, NHL_LOGOS } from "./data/assets.js?v=mw48ucq2";
-import { Calc } from "./calc.js?v=mw48ucq2";
-import { SHARED } from "./shared.js?v=mw48ucq2";
+import { HELMETS, NBA_LOGOS, NHL_LOGOS } from "./data/assets.js?v=mw49jmu7";
+import { Calc } from "./calc.js?v=mw49jmu7";
+import { SHARED } from "./shared.js?v=mw49jmu7";
 
 
 const LEAGUE_DEFS = SHARED.leagues;

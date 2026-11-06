@@ -1,9 +1,9 @@
 
-import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw48ucq2";
-import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw48ucq2";
-import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw48ucq2";
-import { Calc } from "./calc.js?v=mw48ucq2";
-import { Fan } from "./hosts.js?v=mw48ucq2";
+import { WEEK_GAMES, pullDaily, pullNcaafb, pullStatus, setRefresh, wantScores } from "./espn.js?v=mw49jmu7";
+import { SPORTSBOOK_ICONS } from "./data/assets.js?v=mw49jmu7";
+import { HELM_PAD, LEAGUES_LATER, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf } from "./leagues.js?v=mw49jmu7";
+import { Calc } from "./calc.js?v=mw49jmu7";
+import { Fan } from "./hosts.js?v=mw49jmu7";
   
   const later = {};
   
@@ -158,7 +158,7 @@ import { Fan } from "./hosts.js?v=mw48ucq2";
     return tag;
   }
 
-  const APP_VERSION = "0.61.2";   
+  const APP_VERSION = "0.61.3";   
   const $ = id => document.getElementById(id);
   document.title = "Fan " + APP_VERSION;
   $("appName").textContent = APP_VERSION;   

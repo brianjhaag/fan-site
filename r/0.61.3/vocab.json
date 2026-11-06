@@ -37,6 +37,7 @@
   "terms": [
     { "term": "Fan", "kind": "thing", "means": "The app; and the Fan button, which opens the settings window." },
     { "term": "Page", "kind": "thing", "means": "Fan's front end, the one web page in src/, wherever it's served from." },
+    { "term": "Redirect", "kind": "thing", "means": "The site's root page: it reads the signed pointer and sends the visit to the current release's folder, r/<version>/. It shows and holds nothing of Fan. Was the shell." },
     { "term": "User", "kind": "idea", "means": "A person who runs Fan with their own data, on their own machine. Fan's people are named by role, never by name." },
     { "term": "Alpha user", "kind": "idea", "means": "A user Fan does specific, rapid cycles with: builds for their setup, fixes from their reports. Their value is that they're a user; never named." },
     { "term": "Site", "kind": "thing", "means": "The public page on GitHub Pages, where every copy of Fan follows." },

@@ -1,9 +1,9 @@
 
-import { addTicket, centsOk, clearTicket, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw48ucq2";
-import { Fan } from "./hosts.js?v=mw48ucq2";
-import { Calc } from "./calc.js?v=mw48ucq2";
-import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw48ucq2";
-import { ABBR, slateDocId } from "./leagues.js?v=mw48ucq2";
+import { addTicket, centsOk, clearTicket, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw49jmu7";
+import { Fan } from "./hosts.js?v=mw49jmu7";
+import { Calc } from "./calc.js?v=mw49jmu7";
+import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw49jmu7";
+import { ABBR, slateDocId } from "./leagues.js?v=mw49jmu7";
   Object.assign(later, { hedgeControls, execControls, drawKalshiCheck, syncPlace });
   
   let execBusy = false, lastExec = null, execPct = 100;   

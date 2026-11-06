@@ -1,11 +1,11 @@
 
-import { Calc } from "./calc.js?v=mw48ucq2";
-import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw48ucq2";
-import { closePreview, GAME_CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw48ucq2";
-import { drawSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw48ucq2";
-import { drawGameDetail } from "./panels.js?v=mw48ucq2";
-import { enterMoneyline, enterSpread, enterTotal, showSaved } from "./tracker.js?v=mw48ucq2";
-import { telecastFor, watchGame } from "./telecasts.js?v=mw48ucq2";
+import { Calc } from "./calc.js?v=mw49jmu7";
+import { NFL_NICKS, PLATE_STATES, TEAM, abbr } from "./leagues.js?v=mw49jmu7";
+import { closePreview, GAME_CARD_ACTIONS, nick, changed, $, GAMES, LG, curWeek, detailGame, el, extremes, gameBets, gameKey, gameSettledPL, hedgeFor, helmImg, last, league, leagueId, leagueOf, lineOf, money, odds, parlayShares, projectedPL, pts, riskGame, setDetailGame, pricesOn, trackingOn, setRiskGame, shareRisk, shortDayFmt, showView, signedMoney, spentShares, status, teamLook, tickets, timeZoned, setRiskKey, later, teamChip, hasArt, brighterOf, fitSlateLine } from "./base.js?v=mw49jmu7";
+import { drawSectionTabs, fitTicketColumn, updateGameArrows, fitViewportHeight, fitSectionTabs } from "./layout.js?v=mw49jmu7";
+import { drawGameDetail } from "./panels.js?v=mw49jmu7";
+import { enterMoneyline, enterSpread, enterTotal, showSaved } from "./tracker.js?v=mw49jmu7";
+import { telecastFor, watchGame } from "./telecasts.js?v=mw49jmu7";
 
 Object.assign(later, { drawByes });
 

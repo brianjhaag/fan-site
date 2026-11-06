@@ -1,9 +1,9 @@
 
 
-import { Fan } from "./hosts.js?v=mw48ucq2";
-import { qrSvg } from "./qr.js?v=mw48ucq2";
-import { slateOfDay, abbr } from "./leagues.js?v=mw48ucq2";
-import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw48ucq2";
+import { Fan } from "./hosts.js?v=mw49jmu7";
+import { qrSvg } from "./qr.js?v=mw49jmu7";
+import { slateOfDay, abbr } from "./leagues.js?v=mw49jmu7";
+import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw49jmu7";
 Object.assign(later, { telecastFor, watchGame, sendManifest });
 
 

@@ -1,9 +1,9 @@
 
-import { riskGrid } from "./risk.js?v=mw48ucq2";
-import { DAILY_TEAMS, GAME_VENUES, TEAM_INFO, VENUE, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw48ucq2";
-import { Fan } from "./hosts.js?v=mw48ucq2";
-import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, gdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, trendsStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, pricesOn, view } from "./base.js?v=mw48ucq2";
-import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw48ucq2";
+import { riskGrid } from "./risk.js?v=mw49jmu7";
+import { DAILY_TEAMS, GAME_VENUES, TEAM_INFO, VENUE, WEEK_GAMES, ensureDailyTeams, ensureTeams, pastKept, pastSeasons, seasonName, setPastRefresh } from "./espn.js?v=mw49jmu7";
+import { Fan } from "./hosts.js?v=mw49jmu7";
+import { ALL_GAMES, LG, league, isTall, nick, $, RULES, americanOf, gdBadge, changed, curWeek, decimalOf, detailGame, drawStub, el, evMoneyline, evPoints, gameBets, gameKey, gameLabel, graphGames, last, later, leagueOf, marginModel, odds, outcomes, pairFlagged, pairStakes, parlayShares, trendsStats, profitOf, pts, shortDayFmt, status, teamLook, ticketPL, timeZoned, pricesOn, view } from "./base.js?v=mw49jmu7";
+import { ABBR, HELM_PAD, TEAM, abbr, lumOf } from "./leagues.js?v=mw49jmu7";
   Object.assign(later, { drawGameDetail });
   
   

@@ -1,6 +1,6 @@
 
-import { nick, pricesOn, $, GAMES, gdBadge, sportsbookTag, calc, deadFor, el, extremes, gameBets, gameKey, gameLabel, gamesInView, hedgeFor, last, later, leagueOf, legResult, legText, money, odds, parlayShares, profitOf, projectedPL, pts, resultCell, riskGame, riskKey, riskOf, setRiskGame, shareRisk, shareTerm, shortDayFmt, signedMoney, spentShares, status, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned } from "./base.js?v=mw48ucq2";
-import { fitTicketColumn, updateGameArrows } from "./layout.js?v=mw48ucq2";
+import { nick, pricesOn, $, GAMES, gdBadge, sportsbookTag, calc, deadFor, el, extremes, gameBets, gameKey, gameLabel, gamesInView, hedgeFor, last, later, leagueOf, legResult, legText, money, odds, parlayShares, profitOf, projectedPL, pts, resultCell, riskGame, riskKey, riskOf, setRiskGame, shareRisk, shareTerm, shortDayFmt, signedMoney, spentShares, status, ticketPL, ticketPrice, tickets, ticketsInView, timeFmt, timeZoned } from "./base.js?v=mw49jmu7";
+import { fitTicketColumn, updateGameArrows } from "./layout.js?v=mw49jmu7";
   
   
   function riskGrid(g, bets, W, parlayLegs = [], shares = [], minHalfWidth = 0, shrink = 0, textSize = 18) {   

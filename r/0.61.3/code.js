@@ -1,9 +1,9 @@
 
 
 
-import { Fan } from "./hosts.js?v=mw48ucq2";
-import { $, el, changed } from "./base.js?v=mw48ucq2";
-import { Calc } from "./calc.js?v=mw48ucq2";
+import { Fan } from "./hosts.js?v=mw49jmu7";
+import { $, el, changed } from "./base.js?v=mw49jmu7";
+import { Calc } from "./calc.js?v=mw49jmu7";
 
 const KEPT = "fan.algos";   
 const STATES = ["not approved", "off", "running", "armed"];   

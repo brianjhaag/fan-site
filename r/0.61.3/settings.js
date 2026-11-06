@@ -1,12 +1,12 @@
 
-import { espnState } from "./espn.js?v=mw48ucq2";
-import { Fan } from "./hosts.js?v=mw48ucq2";
-import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, gdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw48ucq2";
-import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw48ucq2";
-import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw48ucq2";
-import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw48ucq2";
-import { demoAway, setBet } from "./trade.js?v=mw48ucq2";
-import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw48ucq2";
+import { espnState } from "./espn.js?v=mw49jmu7";
+import { Fan } from "./hosts.js?v=mw49jmu7";
+import { weirdFills, programBehind, newestFor, LAYOUTS, layoutPref, setLayoutPref, gdBadge, switchWeek, weekNow, APP_VERSION, $, allTickets, el, leagueNames, leaguesOn, pricesWanted, setLeagueOn, slateAt, linesAt, timeZoned, trackingOn } from "./base.js?v=mw49jmu7";
+import { BADGE_STYLES, badgeStyle, setBadgeStyle } from "./cards.js?v=mw49jmu7";
+import { LEAGUE_DEFS, LEAGUES_LATER, LEAGUES_READY } from "./leagues.js?v=mw49jmu7";
+import { recordsItems, setPrices, setTracking } from "./tracker.js?v=mw49jmu7";
+import { demoAway, setBet } from "./trade.js?v=mw49jmu7";
+import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } from "./telecasts.js?v=mw49jmu7";
   
   let drawSettings;
   
@@ -65,15 +65,17 @@ import { allNetworks, hdhr, liveSource, networkPick, sourceOf, telecastTab } fro
       return box;
     };
     
+    
+    const siteRoot = new URL(/\/r\/[^/]+\/$/.test(location.pathname) ? "../../" : "./", location.href);
     const connectorRows = () => {
       const box = el("div", "settings-connector"), steps = el("ol"), step = (...parts) => { const li = el("li"); li.append(...parts); steps.append(li); };
       const windows = /Windows/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !navigator.maxTouchPoints, onChromebook = /CrOS/.test(navigator.userAgent), get = el("a", "settings-start", (mac ? "Download for Mac " : "Download for Windows ") + APP_VERSION);
-      get.href = mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe"; get.setAttribute("download", mac ? `fan-connector-mac-${APP_VERSION}.zip` : `fan-connector-setup-${APP_VERSION}.exe`);   
+      get.href = new URL(mac ? "fan-connector-mac.zip" : "fan-connector-setup.exe", siteRoot).href; get.setAttribute("download", mac ? `fan-connector-mac-${APP_VERSION}.zip` : `fan-connector-setup-${APP_VERSION}.exe`);   
       get.addEventListener("click", knowConnector);
       box.append(el("h3", null, "Why it's needed"), el("p", null, "Watch and Track work right here. Price and Bet need the Fan connector: a small program on your computer that pulls prices over your own connection and holds your own Kalshi key. Nothing about your bets or your key leaves your computer for this site."));
       
       if (onChromebook) {
-        const line = "curl -fLo fan-connector-setup " + new URL("fan-connector-chromebook", location.href).href + " && chmod +x fan-connector-setup && ./fan-connector-setup";
+        const line = "curl -fLo fan-connector-setup " + new URL("fan-connector-chromebook", siteRoot).href + " && chmod +x fan-connector-setup && ./fan-connector-setup";
         const code = el("code", "settings-command", line), copy = el("button", "settings-start", "Copy");
         copy.type = "button"; copy.addEventListener("click", () => { navigator.clipboard?.writeText(line).then(() => { copy.textContent = "Copied"; }, () => {}); knowConnector(); });
         step(el("b", null, "Turn on Linux. "), "Once: Settings, About ChromeOS, Developers, Linux development environment, Set up. It takes a few minutes.");

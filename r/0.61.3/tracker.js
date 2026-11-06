@@ -1,9 +1,9 @@
 
-import { Fan } from "./hosts.js?v=mw48ucq2";
-import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, sportsbookAbbr, sportsbookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw48ucq2";
-import { setFold } from "./layout.js?v=mw48ucq2";
-import { TEAM, abbr } from "./leagues.js?v=mw48ucq2";
-import { setTrends } from "./panels.js?v=mw48ucq2";
+import { Fan } from "./hosts.js?v=mw49jmu7";
+import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, sportsbookAbbr, sportsbookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw49jmu7";
+import { setFold } from "./layout.js?v=mw49jmu7";
+import { TEAM, abbr } from "./leagues.js?v=mw49jmu7";
+import { setTrends } from "./panels.js?v=mw49jmu7";
   Object.assign(later, { syncPrices, sportsbookReport, enterMoneyline, enterSpread, enterTotal, showSaved, weekChanged });
   const SPORTSBOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
   const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))}${g.line.noSp ? "" : " " + pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };   

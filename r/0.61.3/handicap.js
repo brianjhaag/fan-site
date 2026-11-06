@@ -1,11 +1,11 @@
 
-import { divideX } from "./layout.js?v=mw48ucq2";
-import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw48ucq2";
-import { Fan } from "./hosts.js?v=mw48ucq2";
-import { GAME_CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw48ucq2";
-import { TEAM, abbr } from "./leagues.js?v=mw48ucq2";
-import { Calc } from "./calc.js?v=mw48ucq2";
-import { divOf } from "./panels.js?v=mw48ucq2";
+import { divideX } from "./layout.js?v=mw49jmu7";
+import { WEEK_GAMES, dvoaNow, pastNflGames } from "./espn.js?v=mw49jmu7";
+import { Fan } from "./hosts.js?v=mw49jmu7";
+import { GAME_CARD_ACTIONS, GAMES, setDetailGame, showView, switchWeek, helmImg, hasArt, league, nick, $, RULES, changed, curWeek, drawStub, el, gameKey, last, later, marginModel, odds, view, weekNow } from "./base.js?v=mw49jmu7";
+import { TEAM, abbr } from "./leagues.js?v=mw49jmu7";
+import { Calc } from "./calc.js?v=mw49jmu7";
+import { divOf } from "./panels.js?v=mw49jmu7";
 
    
   
