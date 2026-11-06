@@ -1,4 +1,0 @@
-{
-  "about": "The files the connector's engine runs for Fan's calculations, in order (PLAN.md E, replaceable methods). @user is the user's own methods file, methods/user.js in the connector's data folder. A connector before 0.58.0 ignores this and runs calc.js alone.",
-  "calc": ["calc.js", "@user", "methods-use.js"]
-}
