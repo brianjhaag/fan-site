@@ -1,6 +1,6 @@
-// A QR code for an address (Nov 3 2026: the wall's remote address, for a tablet's camera), drawn by the page itself, so Fan fetches nothing to make one. Byte mode, error
-// correction level M, versions 1 to 10 (up to 213 bytes), the mask scored as the standard does. After Project Nayuki's QR Code generator (MIT), cut down to what Fan needs.
-const ECC_PER_BLOCK = [10, 16, 26, 18, 24, 16, 18, 22, 22, 26];   // level M, versions 1-10
+
+
+const ECC_PER_BLOCK = [10, 16, 26, 18, 24, 16, 18, 22, 22, 26];   
 const BLOCKS = [1, 1, 1, 2, 2, 4, 4, 4, 5, 5];
 const gfMul = (x, y) => { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; } return z & 0xFF; };
 function rsDivisor(degree) {
@@ -22,13 +22,13 @@ function alignPositions(v, size) {
   for (let spot = size - 7; out.length < n; spot -= step) out.splice(1, 0, spot);
   return out;
 }
-// Data codewords then error correction, interleaved across blocks as the standard lays them out.
+
 function codewords(data, v) {
   const nb = BLOCKS[v - 1], ecl = ECC_PER_BLOCK[v - 1], raw = Math.floor(rawModules(v) / 8), short = nb - raw % nb, shortLen = Math.floor(raw / nb), div = rsDivisor(ecl), blocks = [];
   for (let i = 0, k = 0; i < nb; i++) {
     const dataBlock = data.slice(k, k + shortLen - ecl + (i < short ? 0 : 1)); k += dataBlock.length;
     const b = dataBlock.concat(rsRemainder(dataBlock, div));
-    if (i < short) b.splice(shortLen - ecl, 0, 0);   // a short block gets a placeholder, skipped below
+    if (i < short) b.splice(shortLen - ecl, 0, 0);   
     blocks.push(b);
   }
   const out = [];
@@ -38,14 +38,14 @@ function codewords(data, v) {
 const MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, x => x % 3 === 0, (x, y) => (x + y) % 3 === 0, (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
   (x, y) => x * y % 2 + x * y % 3 === 0, (x, y) => (x * y % 2 + x * y % 3) % 2 === 0, (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0];
 
-// The modules, rows of booleans (dark), for text; null when it's too long for version 10.
+
 function qrMatrix(text) {
   const bytes = [...new TextEncoder().encode(text)];
   let v = 1;
   const bitsFor = ver => 4 + (ver <= 9 ? 8 : 16) + bytes.length * 8;
   while (v <= 10 && bitsFor(v) > dataCodewords(v) * 8) v++;
   if (v > 10) return null;
-  // the bit stream: byte mode, the count, the bytes, the terminator, then padding
+  
   const bits = [], put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); }, cap = dataCodewords(v) * 8;
   put(4, 4); put(bytes.length, v <= 9 ? 8 : 16); bytes.forEach(b => put(b, 8));
   put(0, Math.min(4, cap - bits.length)); put(0, (8 - bits.length % 8) % 8);
@@ -59,7 +59,7 @@ function qrMatrix(text) {
   const al = alignPositions(v, size), alignLast = al.length - 1;
   al.forEach((ay, i) => al.forEach((ax, j) => { if ((i === 0 && j === 0) || (i === 0 && j === alignLast) || (i === alignLast && j === 0)) return; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1); }));
   const format = mask => {
-    const d = (0 << 3) | mask; let r = d;   // level M's format bits are 00
+    const d = (0 << 3) | mask; let r = d;   
     for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
     const b = ((d << 10) | r) ^ 0x5412, bit = i => ((b >>> i) & 1) === 1;
     for (let i = 0; i <= 5; i++) set(8, i, bit(i));
@@ -75,7 +75,7 @@ function qrMatrix(text) {
     const b = (v << 12) | r;
     for (let i = 0; i < 18; i++) { const dark = ((b >>> i) & 1) === 1, a = size - 11 + i % 3, c = Math.floor(i / 3); set(a, c, dark); set(c, a, dark); }
   }
-  // the codewords, two columns at a time, up and down, skipping the timing column
+  
   let i = 0;
   for (let right = size - 1; right >= 1; right -= 2) {
     if (right === 6) right = 5;
@@ -90,7 +90,7 @@ function qrMatrix(text) {
   apply(best); format(best);
   return m;
 }
-// The standard's readability score: long runs, 2x2 blocks, finder-like stretches, and the dark share.
+
 function penalty(m) {
   const size = m.length, line = get => {
     let s = 0, run = 1, seq = [];
@@ -106,7 +106,7 @@ function penalty(m) {
   const total = size * size;
   return s + Math.floor(Math.abs(dark * 20 - total * 10) / total) * 10;
 }
-// As SVG, with the standard's quiet border of 4 modules, scaled to px.
+
 function qrSvg(text, px = 220) {
   const m = qrMatrix(text);
   if (!m) return null;

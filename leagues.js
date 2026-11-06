@@ -1,21 +1,21 @@
-// Each league's identity in one place, from what adding the NBA and NHL taught on Nov 2 2026: how its slates are numbered and named, where ESPN keeps it,
-// and its teams, with their codes, colors, home states and art, keyed the way calc.js's nick() keys them. The money and model rules stay in calc.js (RULES.leagues).
-import { HELMETS, NBA_LOGOS, NHL_LOGOS } from "./data/assets.js?v=mw47lj9q";
-import { Calc } from "./calc.js?v=mw47lj9q";
-import { SHARED } from "./shared.js?v=mw47lj9q";
 
-// A slate is what one tab shows: an NFL week is its number, a daily league's slate its base plus the Eastern-time day. The leagues themselves are the shared config's (shared.js), which the connector reads too.
+
+import { HELMETS, NBA_LOGOS, NHL_LOGOS } from "./data/assets.js?v=mw48ucq2";
+import { Calc } from "./calc.js?v=mw48ucq2";
+import { SHARED } from "./shared.js?v=mw48ucq2";
+
+
 const LEAGUE_DEFS = SHARED.leagues;
-// On the user's word (Nov 2 2026): a first visit has the NFL only; the NBA and NHL can be turned on, and stay as the user left them. MLB waits for next year: struck through in the Leagues tab, not in the league picker.
+
 const LEAGUE_ORDER = Object.keys(LEAGUE_DEFS);
 const LEAGUES_READY = LEAGUE_ORDER.filter(k => !LEAGUE_DEFS[k].nextYear), LEAGUES_LATER = LEAGUE_ORDER.filter(k => LEAGUE_DEFS[k].nextYear);
 const DAILY = LEAGUE_ORDER.filter(k => LEAGUE_DEFS[k].slate === "day").sort((a, b) => LEAGUE_DEFS[b].base - LEAGUE_DEFS[a].base);
-// The league a slate number (a ticket's week) belongs to: under 10000000 an NFL week, 0 a market in no league.
+
 const leagueOfSlate = w => (!w ? null : w < 1e7 ? "nfl" : DAILY.find(k => w > LEAGUE_DEFS[k].base) || null);
-const slateOfDay = (l, day) => LEAGUE_DEFS[l].base + day;   // day: an Eastern-time yyyymmdd
+const slateOfDay = (l, day) => LEAGUE_DEFS[l].base + day;   
 const slatePrefix = w => { const l = leagueOfSlate(w), d = LEAGUE_DEFS[l || "nfl"]; return d.tag + (w - (d.base || 0)); };
-const metaDocId = w => (w === 7 ? "meta" : "meta" + slatePrefix(w).replace(/^w/, ""));   // Week 7's note document predates the tabs
-// A slate's title over the cards: "Week 8", or the league and the day, "NHL Nov 2".
+const metaDocId = w => (w === 7 ? "meta" : "meta" + slatePrefix(w).replace(/^w/, ""));   
+
 function slateTitleOf(w) {
   const l = leagueOfSlate(w), d = LEAGUE_DEFS[l || "nfl"];
   if (d.slate !== "day") return "Week " + w;
@@ -23,7 +23,7 @@ function slateTitleOf(w) {
   return d.name + " " + new Date(Date.UTC(Math.floor(day / 1e4), Math.floor(day % 1e4 / 100) - 1, day % 100, 12)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-// The NFL's teams by nickname: Kalshi's code, the user's team color table [U] (background, text) and home state.
+
 const NFL_ROWS = {
   Cardinals: ["ARI", "#FF0000", "#FFFFFF", "AZ"],
   Falcons: ["ATL", "#000000", "#CC4125", "GA"],
@@ -58,7 +58,7 @@ const NFL_ROWS = {
   Titans: ["TEN", "#3D85C6", "#20124D", "TN"],
   Commanders: ["WSH", "#FF0000", "#FFFF00", "MD"]
 };
-// The NBA's and NHL's by Kalshi's code: full name, home state or province, then ESPN's team color and alternate color. Not game data.
+
 const NBA_ROWS = {
   ATL: ["Atlanta Hawks", "GA", "#c8102e", "#fdb927"],
   BOS: ["Boston Celtics", "MA", "#008348", "#ffffff"],
@@ -125,22 +125,22 @@ const NHL_ROWS = {
   WSH: ["Washington Capitals", "DC", "#d71830", "#0b1f41"],
   WPG: ["Winnipeg Jets", "MB", "#002d62", "#c41230"]
 };
-// Home states and provinces, for the license badge.
+
 const PLATE_STATES = {
   AZ: "Arizona", CA: "California", CO: "Colorado", DC: "Washington D.C.", FL: "Florida", GA: "Georgia", IL: "Illinois", IN: "Indiana", LA: "Louisiana", MA: "Massachusetts", MD: "Maryland", MI: "Michigan", MN: "Minnesota", MO: "Missouri",
   AB: "Alberta", BC: "British Columbia", MB: "Manitoba", QC: "Quebec", NC: "North Carolina", NJ: "New Jersey", NV: "Nevada", NY: "New York", OH: "Ohio", OK: "Oklahoma", ON: "Ontario", OR: "Oregon", PA: "Pennsylvania", TN: "Tennessee", TX: "Texas", UT: "Utah", WA: "Washington", WI: "Wisconsin"
 };
-// Some helmet images carry transparent padding on their left (measured from the alpha channel, % of the image width), so the left edge is trimmed off (object-view-box)
-// and every helmet starts at its own left edge.
+
+
 const HELM_PAD = { Cardinals: 9.565, Rams: 9.565, Seahawks: 9.565, Lions: 1.887, Titans: .952, Buccaneers: .962, Chiefs: .962, Commanders: .971, Falcons: .962 };
 
-// Colors: relative luminance, and the contrast between two colors (WCAG's ratio).
+
 const lumOf = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)); return .2126 * r + .7152 * g + .0722 * b; };
 const contrast = (a, b) => { const [x, y] = [lumOf(a), lumOf(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
-// ESPN's second color, when it's too close to the first to read on it, gives way to white or black, whichever reads better [C]. The NFL keeps the user's table as it is.
+
 const readable = (bg, fg) => (contrast(bg, fg) >= 3 ? fg : contrast(bg, "#ffffff") >= contrast(bg, "#000000") ? "#ffffff" : "#000000");
 
-// Every team of every league, by its key: { lg (its league), code, name, bg, fg, state, art }. art is its helmet or logo, or null.
+
 const TEAM = {};
 Object.entries(NFL_ROWS).forEach(([nk, [code, bg, fg, state]]) => { TEAM[nk] = { lg: "nfl", code, name: nk, bg, fg, state, art: HELMETS[nk] || null }; });
 const espnTeams = (lg, rows, artOf) => Object.entries(rows).forEach(([code, [name, state, bg, fg]]) => {
@@ -149,13 +149,13 @@ const espnTeams = (lg, rows, artOf) => Object.entries(rows).forEach(([code, [nam
 });
 espnTeams("nba", NBA_ROWS, (code, nk) => NBA_LOGOS[nk]);
 espnTeams("nhl", NHL_ROWS, code => NHL_LOGOS[code]);
-// A team's code by key, as Arm's config and the slate documents want it, and the code for a name, or the name itself.
+
 const ABBR = Object.fromEntries(Object.entries(TEAM).map(([k, t]) => [k, t.code]));
 const abbr = n => ABBR[n] || n;
 const teamOf = (g, side) => TEAM[Calc.nick(g, side)];
-const teamName = (l, code) => (l === "nba" ? NBA_ROWS : NHL_ROWS)[code][0];   // a daily league's full name for a code
+const teamName = (l, code) => (l === "nba" ? NBA_ROWS : NHL_ROWS)[code][0];   
 const leagueCodes = l => new Set(Object.values(TEAM).filter(t => t.lg === l).map(t => t.code));
 const NFL_NICKS = Object.keys(NFL_ROWS);
-// A game's slate document id: its slate, then the teams' codes, as the connector writes it.
+
 const slateDocId = g => slatePrefix(g.week) + "-" + ABBR[Calc.nick(g, "away")] + "-" + ABBR[Calc.nick(g, "home")];
 export { ABBR, DAILY, HELM_PAD, LEAGUES_LATER, LEAGUES_READY, LEAGUE_DEFS, LEAGUE_ORDER, NFL_NICKS, PLATE_STATES, TEAM, abbr, contrast, leagueCodes, leagueOfSlate, lumOf, metaDocId, slateDocId, slateOfDay, slateTitleOf, teamName, teamOf };

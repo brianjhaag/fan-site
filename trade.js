@@ -1,12 +1,12 @@
-// Trading: Place, Execute, the fill feed, the Kalshi check. It reaches a venue only through Fan.trader, and stays off when nothing fills that socket.
-import { addTicket, centsOk, clearTicket, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw47lj9q";
-import { Fan } from "./hosts.js?v=mw47lj9q";
-import { Calc } from "./calc.js?v=mw47lj9q";
-import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw47lj9q";
-import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
+
+import { addTicket, centsOk, clearTicket, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, ticketsReady, updateTicket } from "./tracker.js?v=mw48ucq2";
+import { Fan } from "./hosts.js?v=mw48ucq2";
+import { Calc } from "./calc.js?v=mw48ucq2";
+import { ticketFromFill, nick, changed, $, ALL_GAMES, GAMES, RULES, allTickets, calc, hedgeFor, contractsFor, dayFmt, el, fillAmounts, fillSide, freshPrices, gameKey, gameLabel, kalshiCheck, kalshiMarket, last, later, leagueId, odds, readTicker, replyFill, riskGame, subView, timeZoned, marketWanted, pricesOn, trackingOn, view } from "./base.js?v=mw48ucq2";
+import { ABBR, slateDocId } from "./leagues.js?v=mw48ucq2";
   Object.assign(later, { hedgeControls, execControls, drawKalshiCheck, syncPlace });
-  // EXECUTE. The suggested bet's button and Place send one limit order, immediate-or-cancel, through Fan.trader. One click, one order: no caps or confirmations here by design.
-  let execBusy = false, lastExec = null, execPct = 100;   // lastExec = { at: Date.now(), signature, text, cls } so the result survives the card's redraws
+  
+  let execBusy = false, lastExec = null, execPct = 100;   
   (async () => {
     await Fan.connectTrader();
     showDemo();
@@ -15,17 +15,17 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     syncPlace();
     if (reader()) { pendingFills().catch(() => {}); feedLoop(); }
   })();
-  // A demo key says so everywhere orders are: a badge on every view, the tab's title and the buttons that send.
+  
   function showDemo() {
     if (Fan.env !== "demo") return;
     document.documentElement.classList.add("demo");
     document.title = "DEMO " + document.title;
     const b = el("span", "demo-badge", "DEMO");
     b.id = "demoBadge"; b.title = "Kalshi's demo, fake money";
-    $("infoVer").after(b);   // at the info line's far right
+    $("infoVer").after(b);   
     $("fanBtn").setAttribute("aria-label", "Fan, settings, on Kalshi's demo with fake money");
   }
-  // A connector that isn't answering holds no key that this page can see, so the badge goes until it's back.
+  
   function demoAway(away) {
     const b = $("demoBadge");
     if (!b) return;
@@ -33,19 +33,19 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     document.documentElement.classList.toggle("demo", !away);
     document.title = (away ? "" : "DEMO ") + document.title.replace(/^DEMO /, "");
   }
-  let feedWaiting = Date.now();   // when the feed last stopped being connected
-  const reader = () => Fan.trader || Fan.reads;   // what can read the venue, whether or not it takes orders
+  let feedWaiting = Date.now();   
+  const reader = () => Fan.trader || Fan.reads;   
   async function setBet(on) {
     try { await Fan.setBet(on); } catch (e) {}
     syncPlace(); changed("exec", "settings");
   }
-  // FILL FEED. wait_fill stays open until a fill arrives. Every fill is logged to the fills collection
-  // (doc feed-<trade_id>, so a repeat overwrites itself) and shown with its delay. It does not save tickets yet: Execute saves its own from the order's reply.
+  
+  
   const feedShow = (text, cls) => { const n = document.getElementById("feedNote"); if (n) { n.textContent = text; n.className = cls || ""; } };
-  // A fill moves that game's book, so its prices are re-read at once through Fan.trader and saved to the slate doc: the card, the risk detail and the
-  // suggestion redraw now, and the next snapshot cannot bring the older prices back. Before kickoff the line takes the cheaper of Kalshi's fresh ask and Polymarket's last saved one; once
-  // under way `live` is Kalshi alone and `line`, the closing line, is never touched.
-  const priceBusy = new Map();   // event key -> ticker to read again when the read in flight ends
+  
+  
+  
+  const priceBusy = new Map();   
   function applyFreshPrices(q) {
     if (!pricesOn()) return;
     const g = ALL_GAMES.find(x => leagueId(x) === (q.league || "nfl") && ABBR[nick(x, "away")] === q.away && ABBR[nick(x, "home")] === q.home && (!q.start || Math.abs(Date.parse(x.t) - q.start) < 864e5));
@@ -56,9 +56,9 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     if (Fan.lines) Fan.lines.update("slate", slateDocId(g), patch).catch(() => {});
   }
   async function refreshPrices(ticker, venue) {
-    if (!pricesOn() || venue !== "kalshi") return;   // the page's prices are Kalshi's; another venue's fill has its own ladder to read when it gets one
+    if (!pricesOn() || venue !== "kalshi") return;   
     const key = String(ticker).split("-")[1];
-    if (priceBusy.has(key)) { priceBusy.set(key, ticker); return; }   // several fills of one order: one more read after this one
+    if (priceBusy.has(key)) { priceBusy.set(key, ticker); return; }   
     priceBusy.set(key, null);
     try {
       const q = await reader().call("market_prices", { venue, ticker });
@@ -68,12 +68,12 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     priceBusy.delete(key);
     if (again) refreshPrices(again, venue);
   }
-  // The connector saves each fill the moment it hears it, marked handled: false. The page makes the ticket and marks it handled, so a fill heard with no page open waits in the records, unless the
-  // connector makes it first. A record without the mark was handled long ago.
-  // Every fill becomes one ticket per order: Place and Execute save theirs from the order's reply, so only a fill from anywhere else is saved here.
-  // A fill the fills collection already holds was handled before (the feed repeats fills on reload), so a ticket you deleted stays deleted.
-  const OTHER_WINDOW_MS = 5000;   // Claude's default
-  const ownOrders = new Map(), fillTickets = new Map();   // ownOrders: client id of an order this page sent -> its fills so far; fillTickets: order id -> its ticket, ahead of the snapshot
+  
+  
+  
+  
+  const OTHER_WINDOW_MS = 5000;   
+  const ownOrders = new Map(), fillTickets = new Map();   
   function saveFillTicket(x) {
     if (x.env === "demo") return;
     const id = `fill-${x.venue}-${x.order_id}`, out = ticketFromFill(x, fillTickets.get(id) || allTickets.find(t => t.id === id), k => dayFmt.format(new Date(k)) + ", " + timeZoned(new Date(k)));
@@ -88,19 +88,19 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     try {
       if (inStore && x.env !== "demo") {
         const had = await Fan.store.get("fills", "feed-" + id);
-        savedClient = had && had.client;   // a fill replayed after a restart comes from Kalshi's list, which leaves out the client id. The record heard live has it, and without it the order's own ticket isn't recognized and a second one gets made
+        savedClient = had && had.client;   
         waiting = !!had && had.handled === false; known = !!had && !waiting;
         if (!had) Fan.store.set("fills", "feed-" + id, { at: Date.now(), venue: x.venue, env: x.env, source: x.catchup ? "catchup" : "feed", ticker: x.ticker, side: x.side, action: x.action, price: x.price, filled: x.count, fee: x.fee, order: x.order_id, client: x.client_order_id || null, tradeMs: x.ts_ms, serverMs: x.received_ms, ...(x.catchup ? {} : { delayMs }), reply: x.raw }).catch(() => {});
       }
     } catch (e) {}
     const done = () => { if (waiting) Fan.store.update("fills", "feed-" + id, { handled: true, ...(x.catchup ? {} : { delayMs }) }).catch(() => {}); };
     const clientOrder = x.client_order_id || savedClient;
-    if (clientOrder && ownOrders.has(clientOrder)) { ownOrders.get(clientOrder).push(x); return; }   // its ticket comes from the order's reply; its money, from the fills (calc.js's withFills)
+    if (clientOrder && ownOrders.has(clientOrder)) { ownOrders.get(clientOrder).push(x); return; }   
     if (known) return;
-    // Another Fan window may have sent this order, and its ticket comes with the order's reply, after the fill. Give it time to arrive before saving one from the fill.
+    
     if (clientOrder && Date.now() - x.ts_ms < 60000) await new Promise(r => setTimeout(r, OTHER_WINDOW_MS));
     if (clientOrder && allTickets.some(t => t.fillId === clientOrder && t.id !== `fill-${x.venue}-${x.order_id}`)) return done();
-    try { await saveFillTicket(x); done(); } catch (e) {}   // not marked, so it's tried again on the next opening
+    try { await saveFillTicket(x); done(); } catch (e) {}   
   }
   async function pendingFills() {
     await ticketsReady;
@@ -113,16 +113,16 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     let boot, after, tries = 0;
     for (;;) {
       try {
-        const r = await reader().call("wait_fill", { ...(boot ? { boot, after } : {}), timeout_ms: boot ? 20000 : 1 });   // the first call is only to learn the feed's state, so it doesn't wait for a fill. A fill after it is still caught, by its place in the stream
+        const r = await reader().call("wait_fill", { ...(boot ? { boot, after } : {}), timeout_ms: boot ? 20000 : 1 });   
         boot = r.boot; after = r.seq; tries = 0;
-        // Fills from every venue arrive in one shape (see the server's venues/host.js). A catch-up fill was missed while disconnected or closed: it is logged, but it says nothing about the book now.
+        
         (r.fills || []).forEach(x => {
           handleFill(x, Date.now() - x.ts_ms);
           if (!x.catchup) refreshPrices(x.ticker, x.venue);
         });
         const fs = Calc.feedState(r.venues, Date.now() - (feedWaiting || (feedWaiting = Date.now())));
         if (fs.cls === "on") feedWaiting = 0;
-        if (Fan.keyed === false) feedShow("", ""); else feedShow(fs.text, fs.cls);   // with no key there's nothing for it to connect to, and the settings window says so
+        if (Fan.keyed === false) feedShow("", ""); else feedShow(fs.text, fs.cls);   
       } catch (e) {
         const c = e && e.code;
         if (!(e && e.retryable) || (++tries > 3 && !e.keepTrying)) { feedShow(c === "server_not_connected" ? "" : "Feed off: " + (c || "error"), "off"); return; }
@@ -131,12 +131,12 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
       }
     }
   }
-  // The suggested bet's Execute button and its size slider.
+  
   function execControls(h, signature) {
     const hx = el("div", "exec-controls"), btn = el("button", "exec-button"), sl = el("input", "exec-share");
     const contractCount = () => Math.max(1, Math.round(h.n * execPct / 100)), labelEl = () => { btn.textContent = execBusy ? "Sending…" : `Execute ${execPct}%${Fan.env === "demo" ? " (demo)" : ""}`; btn.title = Fan.trader ? `Buy ${contractCount()} ${h.side.toUpperCase()} on ${h.tk} at ${Math.round(h.ask * 100)}¢ or better, immediate-or-cancel` : "Needs the connector (" + (Fan.traderWhy || "still checking") + ")"; };
     btn.type = "button"; btn.disabled = execBusy || !Fan.trader;
-    sl.type = "range"; sl.min = "10"; sl.max = "100"; sl.step = "10"; sl.value = String(execPct); sl.disabled = execBusy; sl.title = "Share of the suggested size to send";   // the slider scales the suggestion: the label shows the share, the order sends that share of the contracts
+    sl.type = "range"; sl.min = "10"; sl.max = "100"; sl.step = "10"; sl.value = String(execPct); sl.disabled = execBusy; sl.title = "Share of the suggested size to send";   
     sl.addEventListener("input", () => { execPct = Number(sl.value); labelEl(); });
     labelEl();
     btn.addEventListener("click", e => { e.stopPropagation(); runExec({ ...h, n: contractCount() }, signature); });
@@ -154,7 +154,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
       const fill = replyFill(o, h.side, h.ask), avgPrice = fill.avg;
       if (o.dryRun) lastExec = { at: Date.now(), signature, text: "Dry run: nothing was sent.", cls: "" };
       else {
-        // Every reply goes into the fills collection (id = the order's client id), filled or not.
+        
         try {
           if (inStore) Fan.store.set("fills", id, {
             at: Date.now(), env: o.env || "prod", game: h.gn || null, key: h.gk || null, bet: h.txt, ticker: h.tk, side: h.side, price: h.ask,
@@ -163,8 +163,8 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
             reply: JSON.parse(JSON.stringify(o))
           }).catch(() => {});
         } catch (e) {}
-        // The fill is known for certain from the order's own reply, so it is saved as a Kalshi ticket at once (contracts filled, total paid fee included).
-        if (o.filled > 0 && h.ticketFields && o.env !== "demo") {   // a demo order makes no ticket
+        
+        if (o.filled > 0 && h.ticketFields && o.env !== "demo") {   
           try {
             const { contracts: C, amount, american, cents, fee } = fill, ml = h.ticketFields.type === "Moneyline";
             addTicket({
@@ -177,11 +177,11 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
           } catch (e) {}
         }
         const paidUp = h.ticketCents != null && Math.round(h.ask * 100) !== h.ticketCents ? ` (ticket ${h.ticketCents}¢, limit ${Math.round(h.ask * 100)}¢)` : "", px = avgPrice != null ? ` at ${(avgPrice * 100).toFixed(1)}¢${paidUp}` : "", fee = o.average_fee_paid ? `, fee ${(o.average_fee_paid * 100).toFixed(1)}¢ each` : "";
-        const moved = (o.funded || []).map(f => `moved $${f.dollars.toFixed(2)} to shard ${f.to}`).join(", "), movedNote = moved ? `; ${moved}` : "";   // cash the order needed on its market's shard stays there
+        const moved = (o.funded || []).map(f => `moved $${f.dollars.toFixed(2)} to shard ${f.to}`).join(", "), movedNote = moved ? `; ${moved}` : "";   
         lastExec = { at: Date.now(), signature, cls: o.filled > 0 ? "ok" : "err", text: (o.filled > 0 ? `Filled ${o.filled} of ${o.requested}${px}${fee}${o.unfilled ? `; ${o.unfilled} not filled at ${Math.round(h.ask * 100)}¢ or better (canceled)` : ""}${env}` : `Nothing filled at ${Math.round(h.ask * 100)}¢ or better (canceled)${env}`) + movedNote };
       }
     } catch (e) {
-      // No reply, so no ticket from it: any fill of this order that reached the feed is saved from the feed, now and later.
+      
       const held = ownOrders.get(id) || []; ownOrders.delete(id);
       held.forEach(x => { try { Promise.resolve(saveFillTicket(x)).catch(() => {}); } catch (err) {} });
       const c = e && e.code, m = e && e.message;
@@ -193,8 +193,8 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     }
     execBusy = false; changed("exec");
   }
-  // The hedge suggestion's two settings, Lift and Capital, kept per browser (under Arm's old key, fan.arm). They shape the suggested bet everywhere, Execute's included. Arm's panel held them
-  // until Arm was taken out (Nov 3 2026); now they're the risk detail's, for any game with positions.
+  
+  
   const hedgeSet = { lift: RULES.hedge.LIFT, capital: RULES.hedge.CAPITAL * 100 };
   try { const s = JSON.parse(localStorage.getItem("fan.arm") || "{}"); ["lift", "capital"].forEach(k => { if (s[k] != null) hedgeSet[k] = s[k]; }); } catch (e) {}
   const applyHedgeRules = () => { RULES.hedge.LIFT = hedgeSet.lift; RULES.hedge.CAPITAL = hedgeSet.capital / 100; };
@@ -212,7 +212,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     box.append(row);
     return box;
   }
-  // The Ledger's Kalshi check: every fill on the account against the saved tickets, read when opened. Reads only.
+  
   let checkRun = 0;
   async function drawKalshiCheck() {
     const box = $("ledger"), run = ++checkRun;
@@ -235,8 +235,8 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     table.append(thead, body);
     box.replaceChildren(ledgerCard("Kalshi check", note, table));
   }
-  // PLACE sends the ticket to Kalshi: the ticket's price is the limit, immediate-or-cancel, contracts = what the amount buys with the fee. Tickers come from the slate's ladder,
-  // so moneylines and spread strikes on the ladder can be placed; totals and parlays cannot. Book only records a bet made elsewhere.
+  
+  
   function placeSpec() {
     if (!isKalshi()) return { why: "Only Kalshi orders can be placed" };
     if (mode !== "straight") return { why: "Parlays cannot be placed" };
@@ -250,7 +250,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
     if (n < 1) return { why: "Not enough for one contract with the fee" };
     return { h: { tk, side, n, ask: p, ticketCents: l.cents, txt, gk: l.key, gn: l.game, gt: l.kickoff, ticketFields: { type: l.type, side: l.side, ...(l.type !== "Moneyline" ? { line: l.line } : {}) } } };
   }
-  // What Place may pay above the ticket's price, kept per browser. 0 until the user sets it: Claude's default, and the order is as it always was.
+  
   try { const v = localStorage.getItem("fan.payup"); if (v != null) $("payup").value = v; } catch (e) {}
   $("payup").addEventListener("input", e => { try { localStorage.setItem("fan.payup", e.target.value); } catch (err) {} syncPlace(); });
   function syncPlace() {
@@ -259,7 +259,7 @@ import { ABBR, slateDocId } from "./leagues.js?v=mw47lj9q";
       const b = $("placeBtn"), s = placeSpec(), ok = !!s.h && !!Fan.trader && !execBusy;
       b.disabled = !ok; b.classList.toggle("ready", ok); b.textContent = execBusy ? "Sending…" : Fan.env === "demo" ? "Place (demo)" : "Place";
       b.title = ok ? `Buy ${s.h.n} ${s.h.side.toUpperCase()} on ${s.h.tk} at ${Math.round(s.h.ask * 100)}¢ or better, immediate-or-cancel` : s.h ? "Needs the connector (" + (Fan.traderWhy || "still checking") + ")" : s.why;
-    } catch (e) {}   // the first renders run before the ticket's state exists
+    } catch (e) {}   
   }
   $("placeBtn").addEventListener("click", async () => {
     const s = placeSpec();

@@ -1,16 +1,16 @@
-// Telecasts and the wall, in one module (the refactor, Nov 3 2026): the networks and where each comes from, what a game's Live telecast does, the wall, and the rest of the
-// settings window's Telecasts tab. base.js's cards call telecastFor and watchGame, and its league switch sendManifest, through later.
-import { Fan } from "./hosts.js?v=mw47lj9q";
-import { qrSvg } from "./qr.js?v=mw47lj9q";
-import { slateOfDay, abbr } from "./leagues.js?v=mw47lj9q";
-import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw47lj9q";
+
+
+import { Fan } from "./hosts.js?v=mw48ucq2";
+import { qrSvg } from "./qr.js?v=mw48ucq2";
+import { slateOfDay, abbr } from "./leagues.js?v=mw48ucq2";
+import { nflWeek, nbaDay, el, ALL_GAMES, leagueOf, leaguesOn, nick, timeZoned, shortDayFmt, changed, later } from "./base.js?v=mw48ucq2";
 Object.assign(later, { telecastFor, watchGame, sendManifest });
 
-// ---- The networks and their sources
-// The networks the slates name, each with a link the user pastes in the settings window. Claude's default list. Kept per browser.
-// Every network Claude knows of (the user's word, Nov 3 2026: "a link for every network you know of"): broadcast, national cable, streaming, then Colorado's own. allNetworks adds any other a game names, the regional ones mostly.
+
+
+
 const NETWORKS = ["CBS", "Fox", "NBC", "ABC", "CW", "ION", "ESPN", "ESPN2", "ESPNU", "ESPNews", "ESPN+", "ESPN Deportes", "TNT", "truTV", "TBS", "USA Network", "FS1", "FS2", "NFL Network", "NBA TV", "NHL Network", "MLB Network", "CBS Sports Network", "SEC Network", "BTN", "ACC Network", "Golf Channel",
-  "Peacock", "Prime Video", "Paramount+", "Netflix", "Apple TV", "HBO Max", "Disney+", "Hulu", "YouTube", "NFL+", "DAZN", "Altitude Sports"];   // the NBA's and NHL's national networks and Colorado's own (Nov 3 2026)
+  "Peacock", "Prime Video", "Paramount+", "Netflix", "Apple TV", "HBO Max", "Disney+", "Hulu", "YouTube", "NFL+", "DAZN", "Altitude Sports"];   
 let networkLinks = {};
 try { const v = JSON.parse(localStorage.getItem("fan.networks")); if (v && typeof v === "object") networkLinks = v; } catch (e) {}
 function setNetworkLink(n, url) {
@@ -19,41 +19,41 @@ function setNetworkLink(n, url) {
   sendManifest();
   changed("cards");
 }
-// The wall's manifest (the user's, Nov 3 2026): the computer that runs the wall hands its connector its network links and leagues, and a remote uses them as its own,
-// so nothing needs setting on a remote. A remote's links are the wall's, held in memory, never saved over its own.
-function sendManifest() { if (Fan.wall && Fan.door && !Fan.door.here) Fan.wall.act({ op: "manifest", links: Object.fromEntries(Object.entries(networkLinks).filter(([n]) => liveSource(n) === "link")), leagues: [...leaguesOn] }).catch(() => {}); }   // the links in use only: a remote can't tune this computer's HDHomeRun
-function useWallLinks(links) { if (links && typeof links === "object") { networkLinks = { ...links }; networkSource = Object.fromEntries(Object.keys(links).map(n => [n, "link"])); changed("cards"); } }   // a remote's sources are the wall's links, in memory too
-// The layouts a computer's telecasts can take on its monitor, each spot an equal share of it: rows, then columns. Picked in the wall's menu.
+
+
+function sendManifest() { if (Fan.wall && Fan.door && !Fan.door.here) Fan.wall.act({ op: "manifest", links: Object.fromEntries(Object.entries(networkLinks).filter(([n]) => liveSource(n) === "link")), leagues: [...leaguesOn] }).catch(() => {}); }   
+function useWallLinks(links) { if (links && typeof links === "object") { networkLinks = { ...links }; networkSource = Object.fromEntries(Object.keys(links).map(n => [n, "link"])); changed("cards"); } }   
+
 const TELECAST_LAYOUTS = [["1", 1, 1], ["2 stacked", 2, 1], ["3 stacked", 3, 1], ["2 across", 1, 2], ["2x2", 2, 2]];
-// Where each network comes from, by type (the user's, Nov 3 2026): "link", a link pasted from any streaming service (YouTube TV, Xfinity, Peacock); "hdhr", its channel on the HDHomeRun,
-// a tuner on the home network, played in VLC (Nov 2 2026); or "none". Other tuners join as types of their own. Kept per browser. With none picked: the HDHomeRun's channel where this browser
-// watched by HDHomeRun in the old Provider box (before 0.45.1), else a pasted link, else a channel.
-const BROADCAST = ["CBS", "Fox", "NBC", "ABC", "CW"];   // the networks an antenna gets
+
+
+
+const BROADCAST = ["CBS", "Fox", "NBC", "ABC", "CW"];   
 let hdhr = { ip: "", channels: {} }, networkSource = {}, oldSetup = "";
 try { oldSetup = localStorage.getItem("fan.watchSetup") || ""; const v = JSON.parse(localStorage.getItem("fan.hdhomerun")); if (v && typeof v === "object") hdhr = { ip: String(v.ip || ""), channels: v.channels && typeof v.channels === "object" ? v.channels : {} }; const s = JSON.parse(localStorage.getItem("fan.sources")); if (s && typeof s === "object") networkSource = s; } catch (e) {}
 function setHdhr(patch) { hdhr = { ...hdhr, ...patch }; try { localStorage.setItem("fan.hdhomerun", JSON.stringify(hdhr)); } catch (e) {} changed("cards"); }
 const sourceOf = n => networkSource[n] || (oldSetup === "hdhomerun" && hdhr.channels[n] ? "hdhr" : networkLinks[n] ? "link" : hdhr.channels[n] ? "hdhr" : "none");
 function setNetworkSource(n, s) { networkSource = { ...networkSource, [n]: s }; try { localStorage.setItem("fan.sources", JSON.stringify(networkSource)); } catch (e) {} sendManifest(); changed("cards"); }
-// A network's source when it's ready to play: its link, or its channel on an HDHomeRun with an address; else null.
+
 const liveSource = n => { const s = sourceOf(n); return s === "link" && /^https:\/\//i.test(networkLinks[n] || "") ? "link" : s === "hdhr" && hdhr.ip && hdhr.channels[n] ? "hdhr" : null; };
-// A game's networks: ESPN's list ("ESPN / ABC" is two), plus what ESPN's data leaves out, one rule a line: [when, has, add].
+
 const isMonday = g => new Date(g.t).toLocaleDateString("en-US", { weekday: "short", timeZone: "America/New_York" }) === "Mon";
-const NETWORK_RULES = [[isMonday, "ESPN", "ABC"]];   // ESPN's Monday night games are on ABC too [U, Nov 2 2026]
+const NETWORK_RULES = [[isMonday, "ESPN", "ABC"]];   
 const gameNetworks = g => { const nets = String(g.tv || "").split("/").map(n => n.trim()).filter(Boolean); NETWORK_RULES.forEach(([when, has, add]) => { if (nets.includes(has) && !nets.includes(add) && when(g)) nets.push(add); }); return nets; };
 const allNetworks = () => { const seen = new Set(NETWORKS); ALL_GAMES.forEach(g => gameNetworks(g).forEach(n => seen.add(n))); return [...seen]; };
-// What a game's Live telecast button does, so also whether it's lit: one decision for both. The first of its networks with a source ready to play, its HDHomeRun channel or its link; else null.
+
 function telecastFor(g) {
   const nets = gameNetworks(g), net = nets.find(liveSource);
   if (!net) return null;
   if (liveSource(net) === "hdhr") return { how: "hdhr", network: net, channel: hdhr.channels[net] };
   const ln = net;
-  // ESPN+ (ESPN Select) opens the game's own page on espn.com, whose Watch button plays it for a subscriber signed in there (the user's, Nov 3 2026); its pasted link only says the user has it
+  
   return { how: "link", network: ln, url: ln === "ESPN+" && g.eid ? `https://www.espn.com/${leagueOf(g).code.toLowerCase()}/game/_/gameId/${g.eid}` : networkLinks[ln] };
 }
-// A word at the bottom of the screen for a few seconds, for what a press couldn't do.
+
 function toast(text) { let t = document.querySelector(".toast"); if (!t) { t = el("div", "toast"); document.body.append(t); } t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 7000); }
-// Pressed: the HDHomeRun channel, tuned in VLC when that's installed, or else which channel to pick in the HDHomeRun app (which has no documented way to be opened on a channel);
-// or the network's link. NCAA FB's list, always on, opens YouTube TV's site when nothing is set.
+
+
 function watchGame(g) {
   const d = telecastFor(g);
   if (d && d.how === "hdhr") {
@@ -62,35 +62,35 @@ function watchGame(g) {
     Fan.playHdhr(hdhr.ip, d.channel).then(r => { if (!r.ok) toast(/VLC isn't installed/.test(r.error) ? say : "HDHomeRun: " + r.error); }, () => toast(say));
     return;
   }
-  // with a connector that runs a wall, this computer's telecasts go through it, in the monitor and layout the wall keeps for this computer (below); without one, in the connector's own choice of spot
+  
   if (d && Fan.wall) { Fan.wall.act({ op: "open", machine: "self", url: d.url }).then(r => { if (!r.ok) Fan.openTelecast(d.url); }, () => Fan.openTelecast(d.url)); return; }
   Fan.openTelecast(d ? d.url : "https://tv.youtube.com/");
 }
 
-// ---- The wall
-// The wall (PLAN.md E step 3; the user's, Nov 3 2026: "a sports bar controlling a bunch of screens they can see from one place"), at the top of the Telecasts tab: this computer and every
-// screen that joined its wall, with their monitors and the telecast windows on them, where they really sit, and the day's games to put on any of them. This page's connector keeps it;
-// the other computers are its screens (wall.rs in the connector). Tap a window for its sound, which mutes every other telecast on the wall; x closes it; Snap back puts a computer's
-// windows back in their spots; each computer's monitor and layout pick its spots.
-const WALL_MS = 3000;   // how often the open Telecasts tab reads the wall
+
+
+
+
+
+const WALL_MS = 3000;   
 let wallTimer = null, wallData = null, wallNote = "", wallBox = null, wallShown = "";
 
 const wallAct = (body, say) => Fan.wall.act(body).then(r => { wallNote = r.ok ? (say || "") : "Couldn't: " + r.error; readWall(); }, e => { wallNote = "Couldn't: " + e.message; drawWall(); });
 function readWall() { if (!Fan.wall) return; Fan.wall.get().then(d => { wallData = d; drawWall(); }, () => {}); }
 
-// One computer: its name and state, its monitors drawn to scale with its windows on them, its monitor and layout, and Snap back.
+
 function machineBox(m, sound) {
   const box = el("div", "wl-machine" + (m.online ? "" : " off")), head = el("div", "wl-head");
   head.append(el("b", null, m.name || "Screen"), el("span", "wl-state " + (m.online ? "on" : "off"), m.id === "self" ? "this computer" : m.online ? "on" : "asleep"));
   const snap = el("button", "settings-start", "Snap back"); snap.type = "button"; snap.disabled = !m.online;
   snap.addEventListener("click", () => wallAct({ op: "snap", machine: m.id }, `${m.name}: snapped back`));
   head.append(snap);
-  if (m.id !== "self" && !m.online) { const rm = el("button", "settings-start", "Remove"); rm.type = "button"; rm.title = "Take this computer off the wall; it can join again"; rm.addEventListener("click", () => wallAct({ op: "remove", machine: m.id }, `${m.name} removed`)); head.append(rm); }   // an asleep screen, which may be gone for good
+  if (m.id !== "self" && !m.online) { const rm = el("button", "settings-start", "Remove"); rm.type = "button"; rm.title = "Take this computer off the wall; it can join again"; rm.addEventListener("click", () => wallAct({ op: "remove", machine: m.id }, `${m.name} removed`)); head.append(rm); }   
   box.append(head);
   const ds = Array.isArray(m.displays) ? m.displays : [], ws = Array.isArray(m.windows) ? m.windows : [];
   if (!ds.length) { box.append(el("p", "settings-note", m.online ? "No monitors reported." : "Asleep or off: its screens come back when it does.")); return box; }
   const minX = Math.min(...ds.map(d => d.bounds.x)), minY = Math.min(...ds.map(d => d.bounds.y)), w = Math.max(...ds.map(d => d.bounds.x + d.bounds.width)) - minX, h = Math.max(...ds.map(d => d.bounds.y + d.bounds.height)) - minY, k = Math.min(360 / w, 300 / h);
-  const nameOf = (d, i) => (ds.length > 1 ? (i + 1) + " " : "") + (d.label || "Monitor");   // numbered on the map and in the menu alike, when there are several
+  const nameOf = (d, i) => (ds.length > 1 ? (i + 1) + " " : "") + (d.label || "Monitor");   
   const map = el("div", "wl-map"); map.style.width = Math.round(w * k) + "px"; map.style.height = Math.round(h * k) + "px";
   ds.forEach((d, i) => { const s = el("div", "wl-display"); s.style.cssText = `left:${Math.round((d.bounds.x - minX) * k)}px;top:${Math.round((d.bounds.y - minY) * k)}px;width:${Math.round(d.bounds.width * k)}px;height:${Math.round(d.bounds.height * k)}px`; s.append(el("small", null, nameOf(d, i))); map.append(s); });
   ws.forEach(win => {
@@ -105,8 +105,8 @@ function machineBox(m, sound) {
     map.append(t);
   });
   box.append(map);
-  // where its telecasts open, one menu of every monitor and layout (the user's, Nov 3 2026), kept by the hub for this computer. A monitor is matched as the connector does (spot_for):
-  // by name and size, then by position, so two of the same make are told apart.
+  
+  
   const p = m.pref || {}, pick = el("select", "settings-pick wl-pick");
   pick.setAttribute("aria-label", `Where ${m.name || "this computer"}'s telecasts open`);
   const def = el("option", null, "Fan's choice: the portrait monitor, 3 stacked"); def.value = ""; pick.append(def);
@@ -126,7 +126,7 @@ function machineBox(m, sound) {
   return box;
 }
 
-// The games to queue, every league that's on and not over (the user's, Nov 3 2026): today's and tomorrow's in a daily league, the current week's in the NFL. Each can go on any computer that's on.
+
 function gameRows(machines) {
   const wanted = g => { const l = g.league || "nfl"; if (!leaguesOn.has(l)) return false; return leagueOf(g).daily ? g.week === slateOfDay(l, nbaDay(0)) || g.week === slateOfDay(l, nbaDay(1)) : g.week === nflWeek(); };
   const games = ALL_GAMES.filter(g => !g.final && wanted(g)).sort((p, q) => Date.parse(p.t) - Date.parse(q.t));
@@ -139,7 +139,7 @@ function gameRows(machines) {
     const btns = el("span", "wl-go");
     if (!tv || tv.how !== "link") btns.append(el("small", "settings-note", tv ? "an HDHomeRun channel: from its card" : "no link for its network"));
     else {
-      if (Fan.door && Fan.door.here) { const b = el("button", "settings-start", "Here"); b.type = "button"; b.title = "Watch on this device"; b.addEventListener("click", () => window.open(tv.url, "_blank", "noopener")); btns.append(b); }   // a remote can watch on itself too, as a plain link
+      if (Fan.door && Fan.door.here) { const b = el("button", "settings-start", "Here"); b.type = "button"; b.title = "Watch on this device"; b.addEventListener("click", () => window.open(tv.url, "_blank", "noopener")); btns.append(b); }   
       on.forEach(m => { const b = el("button", "settings-start", m.name); b.type = "button"; b.title = `Watch on ${m.name}`; b.addEventListener("click", () => wallAct({ op: "open", machine: m.id, url: tv.url }, `Opening on ${m.name}`)); btns.append(b); });
     }
     row.append(btns);
@@ -148,7 +148,7 @@ function gameRows(machines) {
   return list;
 }
 
-// Redrawn only when something changed, and not while a menu in it is open, so a pick isn't snatched away.
+
 function drawWall() {
   const box = wallBox;
   if (!box || !box.isConnected) return;
@@ -162,7 +162,7 @@ function drawWall() {
   const off = el("button", "settings-start", "Sound off"); off.type = "button"; off.disabled = !wallData.sound;
   off.addEventListener("click", () => wallAct({ op: "sound", machine: "self", target: null }, "Sound off"));
   head.append(off);
-  // computers that found this wall and asked to join, waiting for the user
+  
   const asking = ms.filter(m => m.approved === false), shown = ms.filter(m => m.approved !== false), ask = el("div", "wl-asking");
   if (asking.length) {
     asking.forEach(m => {
@@ -181,7 +181,7 @@ function drawWall() {
   box.replaceChildren(head, ...(asking.length ? [ask] : []), body);
 }
 
-// The panel for the Telecasts tab, read every few seconds while it's on screen.
+
 function wallPanel() {
   wallBox = el("div", "wl-panel"); wallShown = "";
   drawWall(); readWall();
@@ -190,11 +190,11 @@ function wallPanel() {
   return wallBox;
 }
 
-// ---- The rest of the Telecasts tab, drawn by the settings window, which hands over its own redraw
+
 let redrawTab = () => {};
-// The Telecasts tab (the user's, Nov 3 2026: "a sports bar controlling a bunch of screens they can see from one place"): the wall first, this computer and every screen that
-// joined it, with the day's games; then its two switches, each with its own address; then, on a computer whose wall takes no one, joining another computer's wall as a screen.
-// Without a wall, a note: telecasts open as plain links.
+
+
+
 const telecastRows = () => {
   const grid = el("div", "settings-telecasts"), links = el("div");
   links.append(...networkRows(), ...captureRows());
@@ -202,9 +202,9 @@ const telecastRows = () => {
   grid.append(el("p", "settings-note", Fan.hostHello ? "This connector can't run a wall or place telecast windows, so a telecast opens as a plain link." : "Needs the Fan connector on this computer: it runs the wall and places each telecast's window. Without it, a telecast opens as a plain link."), links);
   return [grid];
 };
-// Wall setup (the user's, Nov 3 2026: "the first choice to make"), at the top of the tab and folding away once set: the two switches, or joining another wall. Open until something
-// is set, then as the user last left it, kept per browser. Folded, its title says how it's set.
-let setupOpen = null;   // this session's: the tab redraws as a switch changes, and the section stays as it was
+
+
+let setupOpen = null;   
 const wallSetup = parts => {
   const d = el("details", "settings-setup"), s = el("summary"), door = Fan.door && Fan.door.info, of = Fan.screen && Fan.screen.of;
   const set = !!(of || (door && (door.screens.on || door.remote.on)));
@@ -216,7 +216,7 @@ const wallSetup = parts => {
   d.append(s, ...parts);
   return d;
 };
-// The wall's two switches, on the computer that runs it: other computers may join as screens, and tablets or phones may control it. Each has its own code and address.
+
 const doorRows = () => {
   const box = el("div", "settings-door");
   if (!Fan.door) return box;
@@ -246,7 +246,7 @@ const doorRows = () => {
   draw();
   return box;
 };
-// This computer as a screen on another computer's wall: join with the screens address that one's Telecasts tab shows, or leave. Not while this computer's own wall takes screens.
+
 const screenRows = () => {
   const box = el("div", "settings-door");
   if (!Fan.screen || (Fan.door && Fan.door.info.screens.on)) return box;
@@ -257,7 +257,7 @@ const screenRows = () => {
       leave.addEventListener("click", () => { leave.disabled = true; Fan.screen.set({ op: "leave" }).then(() => redrawTab(), e => { box.append(el("p", "settings-note", "Couldn't: " + e.message)); leave.disabled = false; }); });
       const SAY = { waiting: `Waiting to be allowed: on that computer, Settings, Telecasts, Wall setup, Allow ${j.name}.`, refused: "That wall refused or removed this computer. Leave, then join again.", unreachable: "That wall isn't answering: its computer may be asleep or off." };
       box.replaceChildren(el("p", "settings-door-here", `This computer is a screen on the wall at ${j.wall}, as ${j.name}.${j.state === "on" ? " That wall puts telecasts here." : ""}`), ...(SAY[j.state] ? [el("p", "settings-note", SAY[j.state])] : []), leave);
-      if (j.state !== "on") setTimeout(() => { if (!box.isConnected || !Fan.hostHello) return; Fan.hostHello().then(h => { const was = JSON.stringify(Fan.screen.of); Fan.screen.of = h.screenOf || null; if (JSON.stringify(Fan.screen.of) !== was) redrawTab(); else draw(); }, () => {}); }, 3000);   // waiting: watch for the wall's answer
+      if (j.state !== "on") setTimeout(() => { if (!box.isConnected || !Fan.hostHello) return; Fan.hostHello().then(h => { const was = JSON.stringify(Fan.screen.of); Fan.screen.of = h.screenOf || null; if (JSON.stringify(Fan.screen.of) !== was) redrawTab(); else draw(); }, () => {}); }, 3000);   
       return;
     }
     const ip = el("input"), name = el("input"), go = el("button", "settings-start", "Join"), say = el("p", "settings-note", "");
@@ -266,7 +266,7 @@ const screenRows = () => {
     go.type = "button";
     go.addEventListener("click", () => { go.disabled = true; say.textContent = "Joining…"; Fan.screen.set({ op: "join", address: ip.value, name: name.value }).then(() => redrawTab(), e => { say.textContent = "Couldn't: " + e.message; go.disabled = false; }); });
     const row = el("div", "settings-join-row"); row.append(ip, go);
-    // Find walls: one ask on the home network; each wall that answers can be joined, and its computer allows it
+    
     const find = el("button", "settings-start settings-find-button", "Find walls"), found = el("div", "settings-found");
     find.type = "button";
     find.addEventListener("click", () => {
@@ -282,7 +282,7 @@ const screenRows = () => {
   draw();
   return box;
 };
-// The telecast router's probe (PLAN.md E): one press on a Sunday morning saves what Sunday Ticket's page shows in Fan's TV window, so Claude can build the link finder from it.
+
 const captureRows = () => {
   if (!Fan.captureTelecast) return [];
   const b = el("button", "settings-start", "Capture the TV window"), note = el("p", "settings-note", "For Sunday Ticket links. On a Sunday morning, open any telecast from Fan, go to Sunday Ticket in that window so the games show, then press this. It saves what the page shows on this computer, and presses nothing.");
@@ -293,8 +293,8 @@ const captureRows = () => {
   });
   return [el("h3", null, "Sunday Ticket"), note, b];
 };
-// The Telecasts tab's networks (the user's, Nov 3 2026: sources divided by type): each network's source, None, a link pasted from any streaming service, or its channel on the HDHomeRun,
-// from the list read from it when its address is set. Rescan reads the list again and fills in what it can match.
+
+
 const networkRows = () => {
   const box = el("div"), draw = () => {
     const note = el("p", "settings-note", "Where each network comes from: a link from any streaming service (YouTube TV, Xfinity, Peacock), copied from your browser while the channel plays, or its channel on your HDHomeRun" + (hdhr.ip ? "." : ", once its address is set in the Networks box on the Application tab."));
@@ -327,13 +327,13 @@ const networkRows = () => {
   draw();
   return [box];
 };
-const netCols = rows => { const d = el("div", "settings-network-cols"); d.append(...rows); return d; };   // the networks in two columns
-// The Networks box: the HDHomeRun's address, the one tuner so far; each network's source is picked on the Telecasts tab.
+const netCols = rows => { const d = el("div", "settings-network-cols"); d.append(...rows); return d; };   
+
 const networkPick = () => [el("small", null, "HDHomeRun"), hdhrBox()];
-// An HDHomeRun: its address on the user's network, then its channels read from it, each broadcast network matched to one. The match is guessed from Chicago's call signs and set by hand on the Telecasts tab.
-const CALL_SIGNS = { WBBM: "CBS", WFLD: "Fox", WMAQ: "NBC", WLS: "ABC", WGN: "CW", KCNC: "CBS", KDVR: "Fox", KUSA: "NBC", KMGH: "ABC", KWGN: "CW" };   // Chicago's, then Denver's
+
+const CALL_SIGNS = { WBBM: "CBS", WFLD: "Fox", WMAQ: "NBC", WLS: "ABC", WGN: "CW", KCNC: "CBS", KDVR: "Fox", KUSA: "NBC", KMGH: "ABC", KWGN: "CW" };   
 const guessOf = c => { const name = String(c.name || "").toUpperCase(), sign = name.split(/[-\s]/)[0]; return CALL_SIGNS[sign] || allNetworks().find(n => n.toUpperCase() === name || n.toUpperCase() === sign) || null; };
-let hdhrList = null;   // the device's channels, read this session
+let hdhrList = null;   
 const hdhrRead = () => Fan.hdhrLineup(hdhr.ip).then(r => {
   if (!r.ok) throw new Error(r.error);
   hdhrList = r.channels;

@@ -1,28 +1,28 @@
-// The sockets: what the page plugs into for records, lines and trading. Each is empty until something fills it, and the page works without any of them.
-//   Fan.store   a person's own records (wagers, fills, balances). SPEC section 16 has the contract.
-//   Fan.lines   lines and final scores: the same contract as the store, possibly read-only.
-//   Fan.trader  the connector that talks to a venue: call(tool, args) gives its answer, or throws with `code`.
-// Connecting fills them from the connector behind this page's address. With none, the store is this browser's own.
-// What the page has said about refreshes, kept until there's a connector to tell.
+
+
+
+
+
+
 let connectorPrefs = {}, connectorHere = false;
 const tellConnector = what => {
   Object.assign(connectorPrefs, what);
   if (connectorHere) window.fetch("/connector/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(what) }).catch(() => {});
 };
 const Fan = {
-  store: null, lines: null, trader: null, reads: null, traderWhy: "",   // reads: the connector before it takes orders: the fill feed and fresh prices, with Place off
-  account: null,   // opens the connector's key screen
-  screens: null,   // the computer's monitors, from the connector
-  openTelecast: url => { window.open(url, "_blank", "noopener"); },   // the connector sizes and places its own window; with none it's a plain link
-  setMarket: on => { tellConnector({ market: on }); },   // tells the connector whether anyone wants prices
-  startLink: "fan-connector://start",   // starts an installed connector. Windows runs what the install registered
-  localFan: "http://localhost:5180/",   // where it answers. A page on another site can't read it, but can tell a refusal from no answer, which is all it needs
+  store: null, lines: null, trader: null, reads: null, traderWhy: "",   
+  account: null,   
+  screens: null,   
+  openTelecast: url => { window.open(url, "_blank", "noopener"); },   
+  setMarket: on => { tellConnector({ market: on }); },   
+  startLink: "fan-connector://start",   
+  localFan: "http://localhost:5180/",   
   connectorUp: () => (Fan.hostHello ? Fan.hostHello() : window.fetch(Fan.localFan + "connector/hello", { mode: "no-cors" })),
-  setLeagues: list => { tellConnector({ leagues: list }); },   // tells the connector which leagues to refresh
-  setRoutes: r => { tellConnector(r); }   // { prices: [...] } or { orders: [...] }: the venues switched on for each
+  setLeagues: list => { tellConnector({ leagues: list }); },   
+  setRoutes: r => { tellConnector(r); }   
 };
 
-// A person's records in this browser's IndexedDB, for a page with no connector. The store contract, plus dump and restore for backups, and kept and keep for this browser's own settings about them.
+
 function browserStore(idb, name = "fan") {
   const opened = new Promise((ok, no) => {
     const r = idb.open(name, 1);
@@ -30,14 +30,14 @@ function browserStore(idb, name = "fan") {
     r.onsuccess = () => ok(r.result);
     r.onerror = () => no(r.error);
   });
-  const watchers = new Set(), changes = new Set();   // watchers: { col, fire }. changes: anything that wants to hear of every change, as backups do
+  const watchers = new Set(), changes = new Set();   
   const heard = col => { watchers.forEach(w => { if (w.col === col) w.fire(); }); changes.forEach(fn => fn(col)); };
-  const channel = window.BroadcastChannel ? new window.BroadcastChannel(name + "-records") : null;   // another tab's saves
+  const channel = window.BroadcastChannel ? new window.BroadcastChannel(name + "-records") : null;   
   if (channel) channel.onmessage = e => heard(e.data);
   const changed = cols => cols.forEach(c => { heard(c); if (channel) channel.postMessage(c); });
   const plain = v => JSON.parse(JSON.stringify(v));
   const asked = q => new Promise((ok, no) => { q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
-  // work(objectStore) runs in one transaction. Its answer counts once the transaction has finished, so a saved record is really saved.
+  
   const inTransaction = async (store, access, work) => {
     const tx = (await opened).transaction(store, access);
     let out;
@@ -81,7 +81,7 @@ function browserStore(idb, name = "fan") {
       q.onsuccess = () => { const c = q.result; if (!c) return ok(rows); rows.push({ col: c.key[0], id: c.key[1], data: c.value }); c.continue(); };
       q.onerror = () => no(q.error);
     })) }),
-    // All of a file or none of it. Records with the same id take the file's copy, and nothing else is removed.
+    
     restore: async file => {
       const rows = file && file.fan === 1 && file.records;
       if (!Array.isArray(rows) || rows.some(r => !r || typeof r.col !== "string" || typeof r.id !== "string" || r.data === undefined)) throw new Error("not a Fan export");
@@ -90,10 +90,10 @@ function browserStore(idb, name = "fan") {
       return rows.length;
     },
     kept: async key => { const v = await inTransaction("local", "readonly", s => asked(s.get(key))); return v === undefined ? null : v; },
-    keep: (key, value) => inTransaction("local", "readwrite", s => { if (value == null) s.delete(key); else s.put(value, key); })   // file handles can't go through JSON, so this is stored as it is
+    keep: (key, value) => inTransaction("local", "readwrite", s => { if (value == null) s.delete(key); else s.put(value, key); })   
   };
 }
-// The connector's records, over its web address. One long request at a time asks what changed, and each watcher re-reads what it follows.
+
 function connectorStore(ask) {
   const call = async (op, col, id, data) => {
     const r = await (await ask("/connector/store", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ op, col, id, data }) })).json();
@@ -109,7 +109,7 @@ function connectorStore(ask) {
         const hadNone = after == null;
         after = c.seq;
         if (!hadNone) watchers.forEach(w => { if (c.all || c.cols.includes(w.col)) w.fire(); });
-      } catch (e) { await new Promise(r => setTimeout(r, 5000)); }   // the connector is away: ask again when it may be back
+      } catch (e) { await new Promise(r => setTimeout(r, 5000)); }   
     }
     polling = false;
   };
@@ -131,13 +131,13 @@ function connectorStore(ask) {
     watchDoc: (col, id, fn, fail) => follow(col, async () => fn(await call("get", col, id)), fail)
   };
 }
-// The connector, when it serves this page: the same address that gave us the page.
+
 const connectorTrader = (ask, hi) => ({
   hello: async () => hi,
   call: async (tool, args) => {
     let r;
     try { r = await (await ask("/connector/call", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tool, args }) })).json(); }
-    catch (e) { throw Object.assign(new Error("The connector isn't answering"), { code: "server_unavailable", retryable: true, keepTrying: true }); }   // it can restart at any time, and comes back
+    catch (e) { throw Object.assign(new Error("The connector isn't answering"), { code: "server_unavailable", retryable: true, keepTrying: true }); }   
     if (!r.ok) throw Object.assign(new Error(r.error), { code: r.error });
     return r.result;
   }
@@ -151,28 +151,28 @@ Fan.connectStore = async () => {
     tellConnector(connectorPrefs);
   }
   if (hi) Fan.hostHello = () => window.fetch("/connector/hello").then(r => r.json());
-  if (hi && hi.login != null) Fan.setLogin = async on => {   // the login checkbox
+  if (hi && hi.login != null) Fan.setLogin = async on => {   
     const r = await (await window.fetch("/connector/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
     if (!r.ok) throw new Error(r.error);
   };
-  if (hi && hi.stop) Fan.stopConnector = async () => {   // the Stop button. It finishes what's under way, saves and ends
+  if (hi && hi.stop) Fan.stopConnector = async () => {   
     const r = await (await window.fetch("/connector/stop", { method: "POST" })).json();
     if (!r.ok) throw new Error(r.error);
   };
-  if (hi && hi.page) Fan.pageChoice = async action => {   // hold page updates, take the newest, or go back one: "hold", "release", "take", "back"
+  if (hi && hi.page) Fan.pageChoice = async action => {   
     const r = await (await window.fetch("/connector/page", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) })).json();
     if (!r.ok) throw new Error(r.error);
     return r.page;
   };
-  if (hi && hi.update) Fan.updateConnector = async () => {   // the Update button. The connector fetches the new program and replaces itself
+  if (hi && hi.update) Fan.updateConnector = async () => {   
     const r = await (await window.fetch("/connector/update", { method: "POST" })).json();
     if (!r.ok) throw new Error(r.error);
   };
-  if (hi && hi.algos) Fan.algos = {   // the algo runtime: the grid's rows and the console's lines after a number, and save, delete, state and the prompt's eval
+  if (hi && hi.algos) Fan.algos = {   
     read: after => window.fetch("/connector/algos" + (after == null ? "" : "?after=" + after)).then(r => r.json()),
     ask: q => window.fetch("/connector/algos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q) }).then(r => r.json())
   };
-  if (hi && hi.door && hi.wall) {   // the wall (wall.js, PLAN.md E step 3): this connector runs it; its home-network door's two switches, screens and remote control; and this computer as a screen on another's
+  if (hi && hi.door && hi.wall) {   
     const post = (path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.wall = { get: () => window.fetch("/connector/wall").then(r => r.json()), act: body => post("/connector/wall", body) };
     Fan.door = { info: hi.door, here: !!hi.fromRemote, set: (kind, on) => post("/connector/door", { kind, on }).then(r => { if (r.door) Fan.door.info = r.door; if (!r.ok) throw new Error(r.error); return r.door; }) };
@@ -181,16 +181,16 @@ Fan.connectStore = async () => {
   if (hi && hi.telecast) {
     const send =(path, body) => window.fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     Fan.openTelecast = (url, pref) => { send("/connector/telecast", { url, pref }).then(r => { if (!r.opened && !r.refused) window.open(url, "_blank", "noopener"); }, () => window.open(url, "_blank", "noopener")); };
-    if (hi.hdhomerun) {   // an HDHomeRun on the user's network, at the address they gave: its channels, and one played in VLC
+    if (hi.hdhomerun) {   
       Fan.hdhrLineup = ip => send("/connector/hdhomerun/lineup", { ip });
       Fan.playHdhr = (ip, channel) => send("/connector/hdhomerun/play", { ip, channel });
     }
-    Fan.captureTelecast = () => window.fetch("/connector/telecast/capture", { method: "POST" }).then(r => r.json());   // the telecast router's probe: what Fan's TV window shows, saved by the connector
+    Fan.captureTelecast = () => window.fetch("/connector/telecast/capture", { method: "POST" }).then(r => r.json());   
     if (hi.screens) Fan.screens = { list: () => window.fetch("/connector/screens").then(r => r.json()) };
   }
-  else if (window.indexedDB) {   // no lines here: this browser holds only the person's own records
+  else if (window.indexedDB) {   
     Fan.store = browserStore(window.indexedDB);
-    if (window.navigator && window.navigator.storage && window.navigator.storage.persist) window.navigator.storage.persist().catch(() => {});   // asks the browser not to clear them when space runs low
+    if (window.navigator && window.navigator.storage && window.navigator.storage.persist) window.navigator.storage.persist().catch(() => {});   
   }
   return Fan.store;
 };
@@ -202,15 +202,15 @@ Fan.connectTrader = async () => {
     const hi = answer && answer.ok ? await answer.json().catch(() => null) : null;
     if (!hi) return null;
     Fan.traderWhy = hi.ordersWhy || "";
-    if (window.BroadcastChannel) new window.BroadcastChannel("fan-connector").onmessage = () => window.location.reload();   // a key changed on the connector's key screen
-    if (hi.account) Fan.account = () => window.open("/connector/connect", "_blank");   // its own key screen
+    if (window.BroadcastChannel) new window.BroadcastChannel("fan-connector").onmessage = () => window.location.reload();   
+    if (hi.account) Fan.account = () => window.open("/connector/connect", "_blank");   
     if (hi.feed) Fan.reads = connectorTrader(window.fetch, hi);
-    if (hi.orders) Fan.trader = Fan.reads;   // until then Place and Execute stay off
+    if (hi.orders) Fan.trader = Fan.reads;   
     Fan.keyed = !!hi.env;
     Fan.env = hi.env || "";
-    // The live and demo keys, each with its own ledger (the user, Nov 4 2026: "hot swap between demo and live keys... switch ledgers and everything"): which are saved, and the switch.
+    
     Fan.keys = hi.keys || null;
-    // The user's own methods file (PLAN.md E, replaceable methods): read and saved through the connector, so this page and its engine run the same one.
+    
     if (hi.methods) Fan.methods = {
       get: async () => (await (await window.fetch("/connector/methods")).json()).text || null,
       set: async text => { const r = await (await window.fetch("/connector/methods", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) })).json(); if (!r.ok) throw new Error(r.error); },
@@ -218,10 +218,10 @@ Fan.connectTrader = async () => {
     if (hi.keys) Fan.useKey = async env => {
       const r = await (await window.fetch("/connector/key/use", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ env }) })).json();
       if (r.error) throw new Error(r.error);
-      if (window.BroadcastChannel) new window.BroadcastChannel("fan-connector").postMessage("key");   // other open pages reload too
+      if (window.BroadcastChannel) new window.BroadcastChannel("fan-connector").postMessage("key");   
       window.location.reload();
     };
-    Fan.setBet = async on => {   // Bet's checkbox. The connector holds the rule, so off refuses orders whatever the page does
+    Fan.setBet = async on => {   
       const r = await (await window.fetch("/connector/bet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) })).json();
       if (!r.ok) throw new Error(r.error);
       Fan.trader = r.orders ? Fan.reads : null;

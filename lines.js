@@ -1,20 +1,20 @@
-// Line refreshes: lines, finals and Playbook's history, pulled by the connector for its user from public feeds with no key (PLAN.md B6, Nov 3 2026). The connector runs this file from the page
-// it follows, in its engine on a thread of its own, so a change here lands with a page release; a copy is built into the program for when the page's is missing or broken. Carried over from
-// the connector's lines.rs and ingest.rs, and checked against them on the same real answers before they were retired (tools/dev/compare-lines.js).
-// It reaches the network only through fan.fetch, which keeps to the connector's list of hosts, and saves nothing: the connector saves what it returns and keeps the timer. A feed problem
-// comes back as an error for the connector to act on. No retries here, on purpose: the feeds are free (CLAUDE.md rule 7). The page never loads it.
-import { SHARED } from "./shared.js?v=mw47lj9q";
+
+
+
+
+
+import { SHARED } from "./shared.js?v=mw48ucq2";
 
 const Lines = (() => {
-  const MAX_GAP = 0.08;   // a wider book says nothing about the price
+  const MAX_GAP = 0.08;   
   const DAY = 864e5, HOUR = 36e5;
   const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-  // ---- Small things, each as the Rust had it ----
+  
   const obj = x => (x !== null && typeof x === "object" ? x : {});
   const arr = x => (Array.isArray(x) ? x : []);
   const str = x => (typeof x === "string" ? x : "");
-  // A price as Kalshi and Polymarket US write it: a number, or a number as text.
+  
   const num = v => (typeof v === "number" ? v : typeof v === "string" && /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v) ? Number(v) : null);
   const truthy = v => (v === 0 ? null : v);
   const american = p => (p > 0.5 ? -Math.round(100 * p / (1 - p)) : Math.round(100 * (1 - p) / p));
@@ -24,10 +24,10 @@ const Lines = (() => {
   const lastPart = t => t.split("-").pop();
   const fix = (map, c) => (Object.prototype.hasOwnProperty.call(map, c) ? map[c] : c);
   const label = n => n.charAt(0).toUpperCase() + n.slice(1);
-  // The pair with the lowest price, the first of equals.
+  
   const cheapest = pairs => pairs.reduce((b, p) => (b && !(p[1] < b[1]) ? b : p), null);
   const utcDay = (y, m, d) => { const t = Date.UTC(y, m - 1, d), x = new Date(t); return y >= 1000 && x.getUTCFullYear() === y && x.getUTCMonth() === m - 1 && x.getUTCDate() === d ? t : 0; };
-  // A time written as RFC 3339 ("2026-11-03T01:15:00Z"), in milliseconds, or null.
+  
   const rfc3339 = t => {
     const m = /^(\d{4})-(\d\d)-(\d\d)[Tt ](\d\d):(\d\d):(\d\d)(\.\d+)?([Zz]|([+-])(\d\d):(\d\d))$/.exec(str(t));
     if (!m || !utcDay(+m[1], +m[2], +m[3]) || +m[4] > 23 || +m[5] > 59 || +m[6] > 60) return null;
@@ -36,23 +36,23 @@ const Lines = (() => {
   };
   const whole = (s, signed) => ((signed ? /^[+-]?\d+$/ : /^\+?\d+$/).test(s) ? Number(s) : null);
 
-  // ---- The leagues, from the shared config ----
+  
   const league = code => { const d = SHARED.leagues[code]; return d && d.kalshi ? { code, ...d, daily: d.slate === "day" } : null; };
   const LEAGUES = Object.keys(SHARED.leagues).map(league).filter(Boolean);
-  // A slate's prefix for its game ids: "w8", "w20261102", "nhl20261102", and its meta document, Week 7's predating the tabs.
+  
   const slateTag = (lg, n) => lg.tag + n;
   const metaKey = (lg, n) => (lg.tag === "w" ? (n === 7 ? "meta" : "meta" + n) : "meta" + slateTag(lg, n));
-  // Week N's window: from the Wednesday before its Thursday to the Tuesday after (UTC midnights). A daily league's is its day.
+  
   const weekWindow = n => { const thu = Math.floor(SHARED.season.week8 / DAY) * DAY + DAY + (n - 8) * 7 * DAY; return [thu - DAY, thu + 5 * DAY]; };
   const windowOf = (lg, n) => { if (!lg.daily) return weekWindow(n); const d = utcDay(Math.floor(n / 10000), Math.floor(n / 100) % 100, n % 100); return [d, d]; };
 
-  // ---- The network, through the connector ----
+  
   const feedError = (status, message) => Object.assign(new Error(message), { status });
   const hostOf = url => url.split("/")[2] || "";
   const getText = (url, seconds) => { const r = fan.fetch(url, { timeout: seconds }); if (r.status < 200 || r.status > 299) throw feedError(r.status, `${r.status} from ${hostOf(url)}`); return r.text; };
   const getJson = url => { const t = getText(url, 20); try { return JSON.parse(t); } catch (e) { throw feedError(null, `bad answer from ${hostOf(url)}`); } };
 
-  // ---- Kalshi: one events listing per series ----
+  
   const kalshiEvents = (f, series) => {
     const out = [];
     for (let cursor = ""; ;) {
@@ -62,7 +62,7 @@ const Lines = (() => {
       if (!cursor) return out;
     }
   };
-  // "KXNFLGAME-26OCT29CARGB" with its markets: the away team comes first in the ticker.
+  
   const parseEvent = ev => {
     const key = lastPart(str(obj(ev).event_ticker));
     if (!/^\d\d[A-Z]{3}\d\d[A-Z]+$/.test(key)) return null;
@@ -74,7 +74,7 @@ const Lines = (() => {
     const home = away === undefined ? undefined : codes.find(c => c !== away && teams.endsWith(c));
     return home === undefined ? null : { date, rawAway: away, rawHome: home, key };
   };
-  // A slate's games from Kalshi: `n` is the NFL week, or a daily league's day as yyyymmdd.
+  
   const kalshi = (f, n, lg) => {
     const [from, to] = windowOf(lg, n), tick = c => fix(lg.codes, c), tag = slateTag(lg, n);
     const games = kalshiEvents(f, lg.kalshi + "GAME"), spreads = kalshiEvents(f, lg.kalshi + "SPREAD"), totals = kalshiEvents(f, lg.kalshi + "TOTAL");
@@ -104,9 +104,9 @@ const Lines = (() => {
     return out;
   };
 
-  // ---- Polymarket US: the exchange US users trade on, from its public gateway, no key ----
-  // A league's games come in one listing, each with its moneyline. Each game's full-game spreads and totals are then asked for by name, one request a game: its whole event is megabytes of props.
-  // A market is a yes on its long side: a team at a line, or the over. Its best ask buys that side, and one less its best bid buys the other.
+  
+  
+  
   const polyTeam = (ev, id, lg) => { const t = arr(obj(ev).teams).find(t => JSON.stringify(obj(t).id ?? null) === JSON.stringify(id ?? null)); return t && typeof t.abbreviation === "string" ? fix(lg.codes, t.abbreviation.toUpperCase()) : null; };
   const polyLongTeam = (ev, m, lg) => { if (!Array.isArray(obj(m).marketSides)) return null; const s = m.marketSides.find(s => obj(s).long === true); return s ? polyTeam(ev, s.teamId, lg) : null; };
   const polyQuotes = m => { const a = truthy(num(obj(obj(m).bestAskQuote).value)), b = num(obj(obj(m).bestBidQuote).value); return a === null || b === null ? null : [a, b]; };
@@ -114,7 +114,7 @@ const Lines = (() => {
     const [from, to] = windowOf(lg, n), tag = slateTag(lg, n), pm = lg.polymarket, out = [];
     const list = getJson(`${f.polymarket}/v2/leagues/${lg.code}/events?limit=100`);
     for (const ev of arr(obj(list).events)) {
-      const slug = str(obj(ev).slug), p = slug.split("-");   // "nfl-chi-sea-2026-11-02": away, home, the US date, as Kalshi orders them
+      const slug = str(obj(ev).slug), p = slug.split("-");   
       if (p.length !== 6 || p[0] !== lg.code) continue;
       const y = whole(p[3], true), mo = whole(p[4]), d = whole(p[5]);
       if (y === null || mo === null || d === null) continue;
@@ -146,9 +146,9 @@ const Lines = (() => {
     return out;
   };
 
-  // ---- The merge ----
+  
   const avg = a => a.reduce((s, x) => s + x, 0) / a.length;
-  // The strike nearest 50% from per-source ladders: strikes quoted by every source win over partial ones.
+  
   const pick = (ladders, key, mid) => {
     const groups = [];
     for (const l of ladders) for (const e of l) { const k = key(e), g = groups.find(g => g[0] === k); if (g) g[1].push(e); else groups.push([k, [e]]); }
@@ -157,10 +157,10 @@ const Lines = (() => {
     pool.sort((a, b) => cmp(score(a), score(b)));
     return pool.length ? pool[0][1] : null;
   };
-  // "Nov 3, 2026, 9:05 AM MT"
+  
   const asOf = now => { const t = fan.local(now, "America/Denver"), h = t.hour % 12 || 12; return `${label(MONTHS[t.month - 1].toLowerCase())} ${t.day}, ${t.year}, ${h}:${String(t.minute).padStart(2, "0")} ${t.hour < 12 ? "AM" : "PM"} MT`; };
 
-  // sources: [name, games] in order. liveOnly writes only games under way, with no meta. The answer: { docs: [[id, data]], meta: [id, data] or null }.
+  
   const merge = (sources, metaId, liveOnly, now, lg) => {
     const ids = [...new Set(sources.flatMap(s => s[1].map(g => g.id)))].sort(), docs = [];
     for (const id of ids) {
@@ -168,7 +168,7 @@ const Lines = (() => {
       const starts = gs.map(x => x[1].start).filter(s => s !== null), first = starts.length ? Math.min(...starts) : null, started = first !== null && now > first;
       if (liveOnly && !started) continue;
       let lad = null;
-      if (!liveOnly) {   // the ladder for in-game hedges, with both venues' asks side by side and Kalshi's market tickers
+      if (!liveOnly) {   
         const mlAway = {}, mlHome = {}, rungs = [];
         for (const [n, g] of gs) {
           const q = n === "kalshi" ? "k" : "p";
@@ -187,14 +187,14 @@ const Lines = (() => {
         const k = gs.find(x => x[0] === "kalshi");
         lad = { v: 2, at: now, ml: { away: mlAway, home: mlHome }, sp, tot: k ? k[1].totals.map(e => [e.k, f4(e.over), f4(e.under)]) : [] };
       }
-      if (started && gs.some(x => x[0] === "kalshi")) gs = gs.filter(x => x[0] === "kalshi");   // in-game the exchanges drift apart: use Kalshi alone, the deeper book
-      if (started && now > first + 4 * HOUR) continue;   // finished: keeps its saved lines
+      if (started && gs.some(x => x[0] === "kalshi")) gs = gs.filter(x => x[0] === "kalshi");   
+      if (started && now > first + 4 * HOUR) continue;   
       for (const [n, g] of gs) for (const e of g.spreads) e.src = label(n);
       const mls = gs.map(x => x[1].ml).filter(Boolean);
       if (!mls.length) continue;
       const ml = [american(lowest(mls.map(m => m[0]))), american(lowest(mls.map(m => m[1])))];
       const sp = pick(gs.map(x => x[1].spreads).filter(l => l.length), e => `${e.fav}|${e.k}`, e => e.mid), tt = pick(gs.map(x => x[1].totals).filter(l => l.length), e => String(e.k), e => e.mid);
-      // A market missing its spread or total still gives a line (the user's, Nov 3 2026: "get something up on the screen"): what's missing is flagged, noSp or noTot, over placeholder numbers the page dashes.
+      
       const fav = sp ? sp[0].fav : "home", k = sp ? sp[0].k : 0, favAsk = sp ? lowest(sp.map(e => e.favAsk)) : null, dogAsk = sp ? lowest(sp.map(e => e.dogAsk)) : null, favPrice = sp ? american(favAsk) : -110, dogPrice = sp ? american(dogAsk) : -110;
       const line = { sp: fav === "away" ? -k : k, spj: fav === "away" ? [favPrice, dogPrice] : [dogPrice, favPrice], tot: tt ? tt[0].k : (lg && lg.neutralTotal) || 45, toj: tt ? [american(lowest(tt.map(e => e.over))), american(lowest(tt.map(e => e.under)))] : [-110, -110], ml };
       if (!sp) line.noSp = true;
@@ -202,7 +202,7 @@ const Lines = (() => {
       const data = {};
       if (started) data.live = { ...line, at: now };
       else {
-        // The band the flagged-pair popup builds; see lines.js in the get-lines skill for what each rung means.
+        
         const k2 = Math.floor(k) + 4.5, dogSide = fav === "home" ? "away" : "home";
         const at = (side, strike) => gs.flatMap(x => x[1].spreads).filter(e => e.fav === side && e.k === strike).map(e => [e.src, e.dogAsk]);
         const c2 = sp ? cheapest(at(fav, k2)) : null;
@@ -222,7 +222,7 @@ const Lines = (() => {
     return { docs, meta: liveOnly ? null : [metaId, { asOf: asOf(now), source: `${sources.map(s => label(s[0])).join(" + ")} best ask`, at: now }] };
   };
 
-  // One pull of a league's slate, from the venues whose prices are on (`prices`). A full pull is Kalshi and, for a league with Polymarket US, it too; live is Kalshi alone.
+  
   const pull = (f, n, live, lg, now, prices) => {
     const on = v => prices.includes(v), id = metaKey(lg, n), none = { docs: [], meta: null };
     if (live || !lg.polymarket) return on("kalshi") ? merge([["kalshi", kalshi(f, n, lg)]], id, live, now, lg) : none;
@@ -230,7 +230,7 @@ const Lines = (() => {
     return sources.length ? merge(sources, id, false, now, lg) : none;
   };
 
-  // ---- Final scores from ESPN's public scoreboard: an NFL week's regular-season games, or a daily league's day ----
+  
   const finals = (f, lg, n) => {
     const q = lg.daily ? `dates=${n}&limit=40` : `seasontype=2&week=${n}&dates=${SHARED.season.year}`, docs = [];
     for (const e of arr(obj(getJson(`${f.espn}/apis/site/v2/sports/${lg.espn}/scoreboard?${q}`)).events)) {
@@ -244,7 +244,7 @@ const Lines = (() => {
     return docs;
   };
 
-  // ---- Playbook's history: finished regular-season games with closing lines, from nflverse's public games table ----
+  
   const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const trendsRows = (text, firstSeason) => {
     const lines = text.trim().split("\n"), head = (lines.shift() || "").split(","), rows = [];
@@ -257,21 +257,21 @@ const Lines = (() => {
     return rows;
   };
 
-  // ---- What to pull when: the connector asks every 30 seconds, and keeps the 15-minute and 5-minute turns itself ----
+  
   const nflWeek = at => 8 + Math.floor((at - SHARED.season.week8) / (7 * DAY));
   const denver = at => fan.local(at, "America/Denver");
   const ymd = t => t.year * 10000 + t.month * 100 + t.day;
-  // NFL live prices: Sunday 7 AM to 11:59 PM MT, Monday and Thursday 6 to 9:59 PM MT.
+  
   const liveWindow = at => { const t = denver(at); return t.weekday === 0 ? t.hour >= 7 : (t.weekday === 1 || t.weekday === 4) && t.hour >= 18 && t.hour <= 21; };
-  const dayWindow = at => denver(at).hour >= 9;   // a daily league's refreshes: 9 AM to 11:59 PM MT
-  // A step is [kind, league, slate]: "lines", "live" or "finals". prefs: { market (Bet tracking's prices), leagues, prices }.
+  const dayWindow = at => denver(at).hour >= 9;   
+  
   const steps = (at, p) => {
     const on = l => p.leagues.includes(l), n = nflWeek(at), out = [];
     if (on("nfl") && n >= 1 && n <= 17) {
       if (p.market) { out.push(["lines", "nfl", n]); if (n < 17) out.push(["lines", "nfl", n + 1]); }
       out.push(["finals", "nfl", n]);
     }
-    for (const lg of LEAGUES.filter(l => l.daily && on(l.code))) {   // a daily league: today and tomorrow's lines, today and yesterday's finals
+    for (const lg of LEAGUES.filter(l => l.daily && on(l.code))) {   
       if (!dayWindow(at)) break;
       const day = shift => ymd(denver(at + shift * DAY));
       if (p.market) out.push(["lines", lg.code, day(0)], ["lines", lg.code, day(1)]);
@@ -279,7 +279,7 @@ const Lines = (() => {
     }
     return out;
   };
-  // Between full turns, games under way, every 5 minutes: the NFL's in its live window; a daily league's today, 3 PM to 11:59 PM MT, from 10 AM on weekends (Nov 3 2026, so every league has in-game prices).
+  
   const dailyLive = at => { const t = denver(at); return t.hour >= (t.weekday === 0 || t.weekday === 6 ? 10 : 15); };
   const liveSteps = (at, p) => {
     const n = nflWeek(at), out = p.market && p.leagues.includes("nfl") && liveWindow(at) && n >= 1 && n <= 17 ? [["live", "nfl", n], ["finals", "nfl", n]] : [];
@@ -287,7 +287,7 @@ const Lines = (() => {
     return out;
   };
 
-  // One step, for the connector to save: { docs, meta }, or { error: { status, message } }. f: the feeds' addresses, { kalshi, polymarket, espn, gamesTable }.
+  
   const answer = job => { try { return job(); } catch (e) { return { error: { status: e && typeof e.status === "number" ? e.status : null, message: String((e && e.message) || e) } }; } };
   const run = (step, now, prices, f) => answer(() => {
     const [kind, code, n] = step, lg = league(code);

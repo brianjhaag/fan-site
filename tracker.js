@@ -1,14 +1,14 @@
-// Bet tracking: the wager ticket, Saved tickets, the Ledger. It keeps a person's records in Fan.store, or in this browser when there is none. The settings window's checkbox hides it.
-import { Fan } from "./hosts.js?v=mw47lj9q";
-import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, sportsbookAbbr, sportsbookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw47lj9q";
-import { setFold } from "./layout.js?v=mw47lj9q";
-import { TEAM, abbr } from "./leagues.js?v=mw47lj9q";
-import { setTrends } from "./panels.js?v=mw47lj9q";
+
+import { Fan } from "./hosts.js?v=mw48ucq2";
+import { calc, setWeirdFills, nick, $, FAN_CLASSES, GAMES, LG, allTickets, applySlate, betClass, clearPrices, sportsbookAbbr, sportsbookTag, centsOf, changed, curWeek, dayFmt, drawNow, drawStub, el, gameKey, gameLabel, helmImg, kalshiCalc, last, later, ledgerRows, legGame, legText, lineOf, lineOk, money, odds, profitOf, pts, riskGame, setRiskGame, setTickets, setPricesWanted, setTrackingOn, settleOf, showView, signedMoney, status, subView, switchWeek, teamLook, ticketLeagueOn, tickets, ticketsInView, timeFmt, timeZoned, marketWanted, pricesOn, trackingOn, tz, view, vigOf, weekNow } from "./base.js?v=mw48ucq2";
+import { setFold } from "./layout.js?v=mw48ucq2";
+import { TEAM, abbr } from "./leagues.js?v=mw48ucq2";
+import { setTrends } from "./panels.js?v=mw48ucq2";
   Object.assign(later, { syncPrices, sportsbookReport, enterMoneyline, enterSpread, enterTotal, showSaved, weekChanged });
   const SPORTSBOOKS = ["DraftKings", "FanDuel", "BetMGM", "Caesars", "bet365", "BetRivers", "ESPN Bet", "Fanatics", "Hard Rock Bet", "Circa Sports", "Bally Bet", "BetMonarch", "ClutchBet", "SBK", "SI Sportsbook", "Sporttrade", "Kalshi", "Betsafe", "Other"];
-  const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))}${g.line.noSp ? "" : " " + pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };   // no spread market yet: no spread named
+  const gameSpread = (g, short) => { const n = short ? abbr : (x => x); return `${n(nick(g, "away"))}${g.line.noSp ? "" : " " + pts(g.line.sp)} @ ${n(nick(g, "home"))}`; };   
   const vigText = v => v < -0.5 ? "−" + money(-v) : money(Math.max(0, v));
-  // One-time copy of this browser's saved wagers into the database, then the database becomes the source.
+  
   async function startRecords() {
     try {
       const store = Fan.store;
@@ -23,7 +23,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
       }
       inStore = true;
       try { store.watchDoc("meta", "balances", v => { if (v && v.books) { setBalances(v); changed("balances"); } }); } catch (e) {}
-      // Fills are the record (the user, Nov 3 2026): each Kalshi order's ticket takes its money from its fills, worked out here on every change of either.
+      
       let savedRows = [], fillRows = [];
       const show = () => { const v = calc.withFills(savedRows, fillRows, k => dayFmt.format(new Date(k)) + ", " + timeZoned(new Date(k))); setWeirdFills(v.weird); setTickets(v.tickets); };
       store.watch("fills", rows => { fillRows = rows; show(); }, () => {});
@@ -36,8 +36,8 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     } catch (e) { inStore = false; }
   }
 
-  // Backups of a browser's records (only a store with dump has this: elsewhere the host keeps its own). Export and Import work everywhere; automatic save needs a browser that can write to a file.
-  const BACKUP_DAYS = 7;   // Claude's default: the Fan button shows a dot after this long with no backup
+  
+  const BACKUP_DAYS = 7;   
   let backupAt = null, autoFile = null, autoOn = false, autoTimer = null, autoStop = null, backupDrawn = null;
   const backupStore = () => (Fan.store && Fan.store.dump ? Fan.store : null);
   const backupText = async () => JSON.stringify(await backupStore().dump());
@@ -105,7 +105,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     return [box];
   }
 
-  // Game dropdown grouped by day, in the viewer's time
+  
   const gameSelect = $("game"), gameBtn = $("gameBtn"), gameList = $("gameList");
   function buildGameSelect() {
   gameSelect.replaceChildren();
@@ -115,7 +115,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
   GAMES.forEach((g, i) => {
     const day = dayFmt.format(new Date(g.t));
     if (!groups.has(day)) { const og = document.createElement("optgroup"); og.label = day; groups.set(day, og); gameSelect.append(og); }
-    // Time on the left, matchup pushed to the right with non-breaking spaces (the select uses a monospace font).
+    
     const left = g.final ? "Final" : timeFmt.format(new Date(g.t));
     const gap = Math.max(2, optionWidth - left.length - gameSpread(g).length);
     groups.get(day).append(new Option(left + " ".repeat(gap) + gameSpread(g), i));
@@ -130,17 +130,17 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
   try { setTickets(JSON.parse(localStorage.getItem("fan.tickets") || "[]")); } catch (e) {}
   const persist = () => { try { localStorage.setItem("fan.tickets", JSON.stringify(allTickets)); } catch (e) {} };
 
-  // Wagers live in Fan.store when there is one.
-  // Without one, the browser's local storage above is the store.
-  let inStore = false;   // true once the store holds the wagers. The `fills` collection has one doc per Execute order (the order's own reply, kept as the record)
+  
+  
+  let inStore = false;   
   let ticketsLoaded, ticketsReady = new Promise(res => { ticketsLoaded = res; });
   function addTicket(t) {
     t.week = curWeek;
     if (inStore) { Fan.store.add("wagers", t).catch(() => { setTickets([...allTickets, t]); persist(); }); return; }
     setTickets([...allTickets, t]); persist();
   }
-  // Saved tickets grid: each wager parsed into columns, sortable by clicking a header.
-  // Each ticket is two rows: at = [grid row, grid column].
+  
+  
   const stampFmt = new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: tz });
   const COLS = [
     { k: "game", h: "Game", at: [1, 1], v: t => t.game.split(" at ").map(abbr).join(" @ ") },
@@ -171,14 +171,14 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     });
   }
 
-  // Delete a ticket: the first click on its X arms it (red); a second click within 3 seconds removes it. There is no undo.
+  
   function deleteTicket(t) {
     if (inStore && t.id) { Fan.store.del("wagers", t.id).catch(() => editMsg("Couldn't delete that ticket.")); return; }
     setTickets(allTickets.filter(x => x !== t)); persist();
   }
 
-  // In-place editing: click a cell in the grid, type, press Enter. Everything that depends on it is recalculated and saved.
-  // Type "B200" in the Wager cell to mark a bonus wager. Kalshi wagers are re-priced from the cents and dollars typed.
+  
+  
   const pickText = t => t.parlay ? `${t.legs.length} legs`
     : t.kalshi ? `${t.side}${t.type === "Moneyline" ? "" : " " + lineShown(t.type, t.line)} ${t.kalshi.cents}¢`
     : `${t.side} ${lineShown(t.type, t.line)}`;
@@ -193,7 +193,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     const kalshi = { cents, contracts: kc.C, fee: kc.fee };
     return { amount: kc.total, kalshi, ...(t.type === "Moneyline" ? { line: kc.american } : { odds: kc.american }), pick: pickText({ ...t, kalshi }) };
   }
-  function applyEdit(t, k, text) {      // returns an error message, or null once saved
+  function applyEdit(t, k, text) {      
     text = text.trim();
     if (k === "book") {
       if (!SPORTSBOOKS.includes(text) || text === "Kalshi" || t.kalshi) return "Pick one of the listed sportsbooks.";
@@ -278,10 +278,10 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     $("count").textContent = shown.length ? `(${q ? `${rows.length}/${shown.length}` : shown.length})` : "";
     if (!rows.length) { ul.append(el("li", "empty", shown.length ? "No matches." : "Tickets you save appear here.")); return; }
     rows.forEach(r => {
-      const li = el("li", r.t.fillId ? "row from-fill" : "row");   // from-fill: the ticket came from a Kalshi fill, not typed in by hand
+      const li = el("li", r.t.fillId ? "row from-fill" : "row");   
       if (r.t.parlay) li.title = r.t.legs.map(legText).join("\n");
       r.cells.forEach((v, i) => {
-        const c = COLS[i], editable = !r.t.fromFills && c.edit && c.edit(r.t);   // a real fill's ticket can't be edited (the user, Nov 3 2026)
+        const c = COLS[i], editable = !r.t.fromFills && c.edit && c.edit(r.t);   
         const cell = el("span", [c.ctr ? "ctr" : c.num ? "num" : "", editable ? "editable" : "", c.at[0] === 2 ? "row-two" : ""].filter(Boolean).join(" ") || null, v);
         cell.style.gridArea = `${c.at[0]} / ${c.at[1]}`;
         if (editable) { cell.title = "Click to edit"; cell.addEventListener("click", e => { e.stopPropagation(); startEdit(r.t, c, cell); }); }
@@ -298,15 +298,15 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
           armTimer = setTimeout(() => { del.classList.remove("arm"); del.title = "Delete ticket"; }, 3000);
         } else { clearTimeout(armTimer); deleteTicket(r.t); }
       });
-      if (!r.t.fromFills) li.append(del);   // nor deleted
-      // A parlay's legs are listed under its row, one per line, so the figures stay on a single line.
+      if (!r.t.fromFills) li.append(del);   
+      
       if (r.t.parlay) { const legs = el("div", "legs"); r.t.legs.forEach(l => legs.append(el("div", null, legText(l)))); li.append(legs); }
       ul.append(li);
     });
   }
   drawSavedHeads();
   $("search").addEventListener("input", drawSavedTickets);
-  // The saved tickets card has two tabs, the ticket list and the by-sportsbook summary.
+  
   function showSaved(tab) {
     document.querySelector(".saved").classList.toggle("show-sum", tab === "summary");
     $("tabTickets").setAttribute("aria-selected", String(tab === "tickets")); $("tabSummary").setAttribute("aria-selected", String(tab === "summary"));
@@ -315,15 +315,15 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
   $("tabSummary").addEventListener("click", () => showSaved("summary"));
 
 
-  // Summary tab of the saved tickets card: this week's bets by sportsbook. Wagered amounts are shown for every bet; returns and net cash only
-  // count bets that are decided (every leg final, or a parlay already lost on a leg), so the report fills in as games finish.
+  
+  
   function sportsbookReport(tickets) {
     const books = new Map();
     tickets.forEach(t => {
       const b = books.get(t.book) || { n: 0, cash: 0, bonus: 0, open: 0, won: 0, lost: 0, push: 0, ret: 0, net: 0, done: 0, vig: 0 };
       books.set(t.book, b);
       b.n++; if (t.bonus) b.bonus += t.amount; else b.cash += t.amount;
-      b.vig += vigOf(t);   // every bet, decided or not: the vig is paid when the bet is placed (a rebate counts negative)
+      b.vig += vigOf(t);   
       const st = settleOf(t);
       if (st.state === "pending") b.open++; else { b.done++; b[st.state]++; b.ret += st.payout; b.net += st.net; }
     });
@@ -347,19 +347,19 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
         el("td", done ? cls(b.net) : "dim", done ? signedMoney(b.net) : "—"));
       table.append(tr);
     };
-    line("All books", all, true);   // the totals lead the table, in place of a description row
+    line("All books", all, true);   
     rows.forEach(([name, b]) => line(name, b, false));
     pop.append(table);
     return pop;
   }
 
-  // Balances: what each sportsbook shows as available cash (saved in the shared db as meta/balances, these are the defaults).
+  
   let balances = { asOf: "", books: {} };
   const setBalances = b => { balances = b; };
-  // Ledger: one table by sportsbook over every week's wagers. A staked bet is no longer in the book's balance, so the account total is the
-  // balance plus the cash staked on open bets; open bonus stakes are shown beside it but are not cash and stay out of the total.
-  // Net cash counts settled wagers only (a lost bonus wager costs nothing).
-  // A sheet of ledger paper: a title, a line under it, then the table.
+  
+  
+  
+  
   function ledgerCard(title, sub, table) {
     const card = el("div", "ledger-card");
     card.append(el("h2", null, title), sub, table);
@@ -371,7 +371,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     const box = $("ledger");
     box.replaceChildren();
     const empty = () => ({ n: 0, cash: 0, bonus: 0, won: 0, lost: 0, push: 0, pend: 0, openCash: 0, openBonus: 0, net: 0 });
-    const counted = allTickets.filter(ticketLeagueOn);   // an off league's wagers stay in the records and out of here
+    const counted = allTickets.filter(ticketLeagueOn);   
     const books = ledgerRows(counted, t => t.book);
     Object.entries(balances.books).forEach(([n, v]) => { if (!books.has(n)) books.set(n, empty()); books.get(n).bal = v; });
     const total = b => (b.bal || 0) + b.openCash;
@@ -382,7 +382,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     const byClass = ledgerRows(counted, betClass);
     const cls = v => Math.round(v) < 0 ? "loss" : Math.round(v) > 0 ? null : "dim";
     const cent = v => "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const netText = v => { const r = Math.round(v); return r < 0 ? `(${money(-r)})` : r > 0 ? money(r) + " " : "— "; };   // a loss in parentheses, with the figures still lined up
+    const netText = v => { const r = Math.round(v); return r < 0 ? `(${money(-r)})` : r > 0 ? money(r) + " " : "— "; };   
     const table = el("table", "ledger-sheet"), thead = el("thead"), hr = el("tr");
     ["Sportsbook", "Balance", "Open bets", "Open cash stakes", "Open bonus stakes", "Account total", "Wagers", "Cash wagered", "Bonus wagered", "Won–Lost", "Net cash"].forEach(h => hr.append(el("th", null, h)));
     if (balances.asOf) hr.children[1].title = `Balances as of ${balances.asOf}`;
@@ -390,7 +390,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     thead.append(hr);
     const body = el("tbody");
     const section = title => { const tr = el("tr", "ledger-section"), td = el("td", null, title); td.colSpan = hr.children.length; tr.append(td); body.append(tr); };
-    // Balances aren't split by bet type, so those rows leave the Balance and Account total columns empty (hasBal false).
+    
     const line = (name, b, hasBal, rowClass) => {
       const tr = el("tr", rowClass), first = el("td");
       first.append(name);
@@ -409,20 +409,20 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     box.append(ledgerCard("Ledger", el("small", null, `All leagues, all weeks.${balances.asOf ? ` Balances as of ${balances.asOf}.` : ""}`), table));
   }
 
-  // Bet detail: pick a side, then enter the line you actually got (prefilled with the example line).
+  
   const parseLine = s => parseFloat(String(s).replace("−", "-").replace(/\s/g, ""));
   const sideLine = (g, type, i) => type === "Moneyline" ? g.line.ml[i] : type === "Spread" ? (i === 0 ? g.line.sp : -g.line.sp) : g.line.tot;
   const lineText = (type, n) => type === "Total" || n <= 0 ? String(n) : "+" + n;
   const lineShown = (type, n) => type === "Moneyline" ? odds(n) : type === "Spread" ? pts(n) : String(n);
 
-  // Kalshi is an exchange: a contract costs 1-99 cents and pays $1 if it wins, so its price is the market's win chance in percent.
-  // Moneyline is "team wins", spread is "team wins by over X", total is "over X points"; the other side buys the opposite contract.
-  // Wagers are stored at the equivalent American odds, so the rest of the accounting works unchanged.
+  
+  
+  
   const isKalshi = () => sportsbookSelect.value === "Kalshi";
   const centsOk = c => Number.isFinite(c) && c >= 1 && c <= 99;
 
   function drawPick() {
-    $("type").hidden = gameSelect.value === "";   // no bet type until a game is picked
+    $("type").hidden = gameSelect.value === "";   
     syncGame();
     const box = $("pick");
     box.replaceChildren();
@@ -434,7 +434,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     }
     const g = GAMES[gameSelect.value];
     const names = type.value === "Total" ? ["Over", "Under"] : [nick(g, "away"), nick(g, "home")];
-    // A parlay has one price for the whole ticket, so its legs carry no price (and a moneyline leg has nothing to enter).
+    
     const parlay = mode === "parlay", kal = isKalshi() && !parlay;
     const price = parlay || (type.value === "Moneyline" && !kal) ? null : el("input");
     if (price) {
@@ -452,14 +452,14 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
       const labelEl = el("label"), radioInput = el("input"), sp = el("span", null, s);
       radioInput.type = "radio"; radioInput.name = "pick"; radioInput.value = s;
       radioInput.addEventListener("change", () => {
-        if (g.noLine) return;   // no market here: the placeholder isn't a price, so the user types their own
+        if (g.noLine) return;   
         if (line) line.value = lineText(type.value, sideLine(g, type.value, i));
         if (price) {
           const am = type.value === "Moneyline" ? g.line.ml[i] : type.value === "Spread" ? g.line.spj[i] : g.line.toj[i];
           price.value = kal ? String(centsOf(am)) : lineText("Moneyline", am);
         }
       });
-      // Moneyline and spread pick a team, so each side takes that team's color.
+      
       if (type.value !== "Total") {
         labelEl.className = "team";
         const k = teamLook(g, i === 0 ? "away" : "home");
@@ -469,7 +469,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     });
     box.append(segmentBox);
     if (line && type.value !== "Moneyline") {
-      // Up and down arrows move the points by 0.5. On Kalshi the price follows to that strike's ask when the ladder has one.
+      
       const w = el("span", "tick");
       const step = d => {
         const i = [...segmentBox.querySelectorAll("input")].findIndex(r => r.checked), cur = parseLine(line.value), base = Number.isFinite(cur) ? cur : i >= 0 ? sideLine(g, type.value, i) : type.value === "Total" ? lineOf(g).tot : 0, n = base + d;
@@ -488,32 +488,32 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
       });
       w.prepend(line); box.append(w);
     } else if (line) box.append(line);
-    // Straight spread and total wagers also carry a price (the juice); a moneyline's line is its price.
+    
     if (price) {
       if (kal) { const w = el("span", "cent"); w.append(price, el("b", null, "¢")); box.append(w); } else box.append(price);
     }
     box.classList.toggle("has-price", !!price);
     box.classList.toggle("no-line", !line);
   }
-  // Fills the wager ticket from a game card's moneyline: Kalshi, $100, that side at Kalshi's own ask (live price once under way).
+  
   function enterMoneyline(g, n) {
     const lad = g.lad && g.lad.v === 2 && g.lad.ml && g.lad.ml[n ? "home" : "away"], ask = status(g)[1] !== "live" && lad && lad.k > 0 ? lad.k : null;
     enterTicket(g, "Moneyline", n, null, ask ? Math.round(ask * 100) : centsOf(lineOf(g).ml[n]));
   }
-  // The same from the card's spread: the underdog at the number shown, at Kalshi's ask for that strike when the ladder has it.
+  
   function enterSpread(g, n) {
     const L = lineOf(g), sp = n ? -L.sp : L.sp, fav = n ? "away" : "home";
     const row = g.lad && g.lad.v === 2 && status(g)[1] !== "live" && (g.lad.sp || []).find(r => r[0] === fav && r[1] === Math.abs(sp) && r[3] > 0);
     enterTicket(g, "Spread", n, sp, row ? Math.round(row[3] * 100) : centsOf(L.spj[n]));
   }
-  // The same from the card's total: n = 0 over, 1 under, at Kalshi's ask for that strike when the ladder has it.
+  
   function enterTotal(g, n) {
     const L = lineOf(g), row = g.lad && g.lad.v === 2 && status(g)[1] !== "live" && (g.lad.tot || []).find(r => r[0] === L.tot && r[n + 1] > 0);
     enterTicket(g, "Total", n, L.tot, row ? Math.round(row[n + 1] * 100) : centsOf(L.toj[n]));
   }
   function enterTicket(g, type, n, line, cents) {
-    setFold("ticket");   // the narrow layout's accordion shows the ticket being filled
-    if (riskGame) setRiskGame(null);   // the risk detail covers the ticket while a game is selected
+    setFold("ticket");   
+    if (riskGame) setRiskGame(null);   
     if (mode !== "straight") setMode("straight");
     sportsbookSelect.value = "Kalshi"; sportsbookSelect.dispatchEvent(new Event("input", { bubbles: true }));
     gameSelect.value = String(GAMES.indexOf(g)); gameSelect.dispatchEvent(new Event("input", { bubbles: true }));
@@ -526,10 +526,10 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     placeNote("");
     drawLegs();
   }
-  // The amount selects its content on focus, so typing replaces it. A mouse press would drop the selection, so the press only focuses.
+  
   $("amount").addEventListener("focus", e => e.target.select());
   $("amount").addEventListener("mousedown", e => { if (document.activeElement !== e.target) { e.preventDefault(); e.target.focus(); } });
-  // The chosen game sticks after saving and across reloads.
+  
   try {
     const i = GAMES.findIndex(g => gameKey(g) === localStorage.getItem("fan.game"));
     if (i >= 0) gameSelect.value = String(i);
@@ -541,11 +541,11 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
   $("type").addEventListener("input", drawPick);
 
   const placeNote = (text, cls) => { const m = $("placeMsg"); m.textContent = text; m.className = cls || ""; };
-  // Parlay: the legs added so far; the form holds the next leg. A leg is one pick (game, type, side, line, price).
-  // Combined odds multiply the legs' decimal odds. Books may quote a different price (boosts, same-game parlays), so it can be edited.
+  
+  
   let pendingLegs = [];
   let parlayEdited = false;
-  // The leg being typed: null if none started, false if incomplete, else the leg.
+  
   function readLeg() {
     const type = document.querySelector("input[name=btype]:checked");
     if (!type) return null;
@@ -560,7 +560,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     const g = GAMES[gameSelect.value];
     return { key: gameKey(g), game: gameLabel(g), kickoff: g.t, type: type.value, side: side.value, ...(line ? { line: parseLine(line.value) } : {}), ...(!parlay && !kal && type.value !== "Moneyline" ? { odds: parseLine(price.value) } : {}), ...(kal ? { cents: parseLine(price.value) } : {}) };
   }
-  // The wager card is modal: a straight ticket takes one leg; a parlay collects two or more.
+  
   let mode = "straight";
   const allLegs = () => { const c = readLeg(); return mode === "parlay" ? (c ? pendingLegs.concat(c) : pendingLegs.slice()) : (c ? [c] : []); };
   function setMode(m) {
@@ -597,7 +597,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     } else {
       $("parlayCalc").textContent = legCount + (lineOk("Moneyline", odd) && amt > 0 ? ` · to win ${money(profitOf(amt, odd))}` : "");
     }
-    // Kalshi: turn the dollars typed (fee included) into contracts.
+    
     const cents = mode === "parlay" ? odd : parseLine($("price")?.value), help = $("amountHelp");
     if (kal && amt > 0 && centsOk(cents)) {
       const kc = kalshiCalc(cents, amt);
@@ -641,7 +641,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     }
     pendingLegs.push(cur);
     parlayEdited = false;
-    gameSelect.value = "";   // each parlay leg picks its own game
+    gameSelect.value = "";   
     document.querySelectorAll("input[name=btype]").forEach(r => r.checked = false);
     drawPick(); drawLegs();
   });
@@ -649,11 +649,11 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
   ["game", "sportsbook", "amount", "type", "pick", "parlayRow"].forEach(id => $(id).addEventListener("input", () => {
     if ($(id).classList.contains("invalid")) check();
   }));
-  // Choosing or leaving Kalshi changes how the price is entered (cents instead of American odds).
+  
   let wasKalshi = false;
-  // The game picker: a button and a list over the whole wager card; it drives the hidden select and fires its input event, so the form works as before.
+  
   const helmetImg = n => TEAM[n] && TEAM[n].art ? helmImg(n, "picker-helm") : null;
-  function gameFace(g) {   // helmet, abbreviation and the visitor's spread @ helmet and abbreviation
+  function gameFace(g) {   
     const f = el("span", "gface"); f.style.display = "inline-flex"; f.style.alignItems = "center"; f.style.gap = "7px";
     [helmetImg(nick(g, "away")), el("span", null, abbr(nick(g, "away"))), el("span", "sp", g.noLine || g.line.noSp ? "" : pts(g.line.sp).replace(/\d+(\.\d+)?/, v => Number(v).toFixed(1))), el("span", "at", "@"), helmetImg(nick(g, "home")), el("span", null, abbr(nick(g, "home")))].forEach(x => x && f.append(x));
     return f;
@@ -682,8 +682,8 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
   }
   gameBtn.addEventListener("click", () => { if (gameList.hidden) openGames(); else closeGames(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !gameList.hidden) { closeGames(); gameBtn.focus(); } });
-  document.addEventListener("click", e => { if (!gameList.hidden && e.target !== gameSelect && !e.composedPath().includes($("gameBox"))) closeGames(); });   // composedPath, not contains(target): opening rebuilds the button's children, so a click on its text arrives from a node that is already detached   // a click on the list's non-row space is forwarded by the wrapping label to the hidden select: that is not an outside click
-  // The custom sportsbook list drives the hidden select and fires its input event, so the rest of the form works as before.
+  document.addEventListener("click", e => { if (!gameList.hidden && e.target !== gameSelect && !e.composedPath().includes($("gameBox"))) closeGames(); });   
+  
   const sportsbookBtn = $("sportsbookBtn"), sportsbookList = $("sportsbookList");
   const syncSportsbook = () => {
     sportsbookBtn.replaceChildren(sportsbookSelect.value ? sportsbookTag(sportsbookSelect.value) : el("span", "placeholder", "Select sportsbook"));
@@ -698,7 +698,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     sportsbookList.hidden = !open; sportsbookBtn.setAttribute("aria-expanded", String(open));
     if (open) sportsbookList.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
   });
-  sportsbookBtn.dataset.keys = "arrows";   // it handles its own keys, past the page's key layer (base.js)
+  sportsbookBtn.dataset.keys = "arrows";   
   sportsbookBtn.addEventListener("keydown", e => {
     if (e.key === "Escape") closeSportsbooks();
     else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -707,7 +707,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
       if (i >= 0 && i < SPORTSBOOKS.length) pickSportsbook(SPORTSBOOKS[i]);
     }
   });
-  document.addEventListener("click", e => { if (e.target !== sportsbookSelect && !e.composedPath().includes($("sportsbookBox"))) closeSportsbooks(); });   // same label forwarding as the game picker
+  document.addEventListener("click", e => { if (e.target !== sportsbookSelect && !e.composedPath().includes($("sportsbookBox"))) closeSportsbooks(); });   
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !sportsbookList.hidden) { closeSportsbooks(); sportsbookBtn.focus(); } });
   syncSportsbook();
   sportsbookSelect.addEventListener("input", () => {
@@ -728,7 +728,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     const base = { book: sportsbookSelect.value, amount: parseFloat($("amount").value), bonus: $("bonus").checked, createdAt: Date.now() };
     const whenOf = l => { const g = legGame(l); return dayFmt.format(new Date(g.t)) + ", " + timeZoned(new Date(g.t)); };
     const kal = isKalshi();
-    // A Kalshi order is stored at its total cost (contracts plus fee) and the equivalent American odds, plus the cents price it was bought at.
+    
     const kalshiRec = (cents, spent) => { const kc = kalshiCalc(cents, spent); return { kc, rec: { amount: kc.total, kalshi: { cents, contracts: kc.C, fee: kc.fee } } }; };
     if (legs.length === 1) {
       const l = legs[0], k = l.cents != null ? kalshiRec(l.cents, base.amount) : null;
@@ -747,7 +747,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     placeNote("");
     clearTicket();
   });
-  // The half-built wager belongs to the old week's games.
+  
   function weekChanged() {
     pendingLegs = []; parlayEdited = false; $("parlayOdds").value = "";
     document.querySelectorAll("input[name=btype]").forEach(r => r.checked = false);
@@ -760,7 +760,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     ["game", "sportsbook", "amount", "type", "pick", "parlayRow"].forEach(k => { $(k).classList.remove("invalid"); $(k + "Err").hidden = true; });
     drawLegs(); changed("tickets");
   }
-  // Prices follow Bet tracking and their own checkbox, and need a source. Off, the page holds no prices, and Graphs and Season stats' Trends, which are drawn from them, go.
+  
   function syncPrices() {
     const on = pricesOn();
     document.documentElement.classList.toggle("prices-off", !on);
@@ -776,7 +776,7 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     try { localStorage.setItem("fan.prices", on ? "on" : "off"); } catch (e) {}
     syncPrices();
   }
-  // The settings window's checkbox. Hiding changes only what shows: the records and everything calculated from them stay.
+  
   function setTracking(on) {
     setTrackingOn(on);
     document.documentElement.classList.toggle("tracking-off", !on);
@@ -784,9 +784,9 @@ import { setTrends } from "./panels.js?v=mw47lj9q";
     syncPrices();
     if (view === "ncaafb") showView(view);
     if (!on && view === "ledger") switchWeek(weekNow());
-    if (!on && riskGame) setRiskGame(null);   // the risk detail's column is gone
+    if (!on && riskGame) setRiskGame(null);   
     backupDue();
     drawNow();
-    window.dispatchEvent(new Event("resize"));   // the page refits as it does for a new window size
+    window.dispatchEvent(new Event("resize"));   
   }
 export { addTicket, balances, sportsbookReport, centsOk, clearTicket, enterMoneyline, enterSpread, enterTotal, gameSelect, inStore, isKalshi, ledgerCard, lineShown, mode, placeNote, readLeg, recordsItems, drawLedger, drawPick, drawSavedTickets, setBalances, setPrices, setTracking, showSaved, startRecords, ticketsReady, updateTicket, weekChanged };

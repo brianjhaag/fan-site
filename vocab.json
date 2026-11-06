@@ -23,7 +23,8 @@
     "A field of one or two letters is allowed only when fields lists it with what it holds. A field that starts with a capital is data, not a name: a team, a position, a station (KC, Chiefs, WR, KUSA).",
     "A name that isn't Fan's to choose is left alone: the web platform's (tools/dev/platform-names.json) and an outside source's fields (outside). An outside source's text is never written into the page as markup.",
     "A label on screen is English, so its words are free; a retired name in one isn't.",
-    "Stored names (record collections and fields, storage keys) change only with a migration, so a term keeps its stored name and the code maps it in one place."
+    "Stored names (record collections and fields, storage keys) change only with a migration, so a term keeps its stored name and the code maps it in one place.",
+    "A person is named by role, never by name: the User, an Alpha user. No one's name goes into a name, a comment, a label or anything that ships (the user, Nov 5 2026: \"We never want to use anybody's name\")."
   ],
 
   "parts": [
@@ -36,6 +37,8 @@
   "terms": [
     { "term": "Fan", "kind": "thing", "means": "The app; and the Fan button, which opens the settings window." },
     { "term": "Page", "kind": "thing", "means": "Fan's front end, the one web page in src/, wherever it's served from." },
+    { "term": "User", "kind": "idea", "means": "A person who runs Fan with their own data, on their own machine. Fan's people are named by role, never by name." },
+    { "term": "Alpha user", "kind": "idea", "means": "A user Fan does specific, rapid cycles with: builds for their setup, fixes from their reports. Their value is that they're a user; never named." },
     { "term": "Site", "kind": "thing", "means": "The public page on GitHub Pages, where every copy of Fan follows." },
     { "term": "Connector", "kind": "thing", "means": "The program on the user's computer that serves the page and holds what a browser can't: records, keys, orders, refreshes, algos.", "short": "con" },
     { "term": "Program", "kind": "thing", "means": "The connector's executable. A new program is a new minor version and a download." },

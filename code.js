@@ -1,23 +1,23 @@
-// The Code section (TRADING.md, Nov 3 2026): the algo grid, the code editor and the console with its prompt, in one page opened by the Code button, as Ledger is.
-// With a connector of 0.38 or later, the algos are the connector's algoRuntime's: kept in its records, checked, run and armed there, with or without a page open; the grid and the console show what it
-// reports, and the prompt runs there. With none, an algo is a draft kept in this browser, every one not approved, and the prompt answers from the page itself, saying so.
-import { Fan } from "./hosts.js?v=mw47lj9q";
-import { $, el, changed } from "./base.js?v=mw47lj9q";
-import { Calc } from "./calc.js?v=mw47lj9q";
 
-const KEPT = "fan.algos";   // the drafts, per browser, when there's no algoRuntime; draftsMoved into the connector the first time one is found
-const STATES = ["not approved", "off", "running", "armed"];   // TRADING.md: an algo's states, in order
-const SHARED_COLS = 3;   // the shared columns an algo writes to (TRADING.md: 3 for now)
-const POLL_MS = 1000;   // how often the open Code page reads the algoRuntime
+
+
+import { Fan } from "./hosts.js?v=mw48ucq2";
+import { $, el, changed } from "./base.js?v=mw48ucq2";
+import { Calc } from "./calc.js?v=mw48ucq2";
+
+const KEPT = "fan.algos";   
+const STATES = ["not approved", "off", "running", "armed"];   
+const SHARED_COLS = 3;   
+const POLL_MS = 1000;   
 let algos = [], pickedId = null;
 try { algos = JSON.parse(localStorage.getItem(KEPT) || "[]"); } catch (e) {}
 const keepAlgos = () => { if (algoRuntime()) return; try { localStorage.setItem(KEPT, JSON.stringify(algos)); } catch (e) {} };
 const withKids = (tag, cls, kids) => { const n = el(tag, cls); n.append(...kids); return n; };
 const pickedAlgo = () => algos.find(a => a.id === pickedId) || null;
 
-// ---- The user's own methods (PLAN.md E, replaceable methods; the user, Nov 4 2026: "I might want a user to just be able to replace it"): one file, kept by the connector
-// (methods/user.js), in the grid's first row. It sets UserMethods to the methods it replaces; Fan's own stay for the rest, and are Calc.fan.<name> to wrap. The page and the
-// connector's engine both put it in Fan's place, each checking it against calc.js's contract; the report says what was replaced, refused and why.
+
+
+
 const METHODS_ID = "__methods";
 let methodsText = null, methodsReport = null;
 const METHODS_STARTER = `// Your own methods, in Fan's place. Set UserMethods to the ones you replace; the rest stay Fan's.
@@ -28,7 +28,7 @@ var UserMethods = {
   // noVig: (ml, away) => Calc.fan.noVig(ml, away),
 };
 `;
-// Puts the user's file in Fan's place in this page and draws the board again on it. With no text given, it reads the connector's.
+
 async function useOwnMethods(text) {
   if (text === undefined) { if (!Fan.methods) return null; try { text = await Fan.methods.get(); } catch (e) { return null; } }
   methodsText = text || null;
@@ -55,7 +55,7 @@ function sayMethods(r) {
 const algoRuntime = () => Fan.algos || null;
 const STARTER = "// An algo: plain JavaScript, run by the connector on its global scope, fan, which it reads and never writes.\n// fan.on(event, fn) says what wakes it: start, tick, move, fill or order. fan.order({ ticker, side, count, price }) sends one when armed.\n\nfan.on(\"tick\", () => {\n});\n";
 
-// ---- The algoRuntime: what it last said, and what's promptHistory of it.
+
 let conSeq = null, codePoll = null, draftsMoved = false;
 const conSaid = [];
 function sayHere(k, t) { conSaid.push({ k, t }); if (conSaid.length > 1000) conSaid.splice(0, conSaid.length - 1000); }
@@ -65,7 +65,7 @@ async function askRuntime(q) {
   await readRuntime();
   return r;
 }
-// The rows and the new console lines. The editor isn't redrawn, so typing isn't lost; only the grid and the console are.
+
 async function readRuntime() {
   const rt = algoRuntime();
   if (!rt) return;
@@ -75,13 +75,13 @@ async function readRuntime() {
   if (!draftsMoved) { draftsMoved = true; await moveDrafts(r.algos); return readRuntime(); }
   const typed = pickedAlgo() && document.activeElement && document.activeElement.classList.contains("cd-text") ? pickedAlgo().code : null;
   algos = r.algos;
-  if (typed != null && pickedAlgo()) pickedAlgo().code = typed;   // what's being typed wins over the copy that was saved a moment ago
+  if (typed != null && pickedAlgo()) pickedAlgo().code = typed;   
   (r.lines || []).forEach(l => conSaid.push({ k: l.k, t: l.t, who: l.algo }));
   if (conSaid.length > 1000) conSaid.splice(0, conSaid.length - 1000);
   conSeq = r.seq;
   redrawLive();
 }
-// Drafts made in this browser before it had a algoRuntime go into the connector once, not approved, and leave the browser.
+
 async function moveDrafts(have) {
   let drafts = [];
   try { drafts = JSON.parse(localStorage.getItem(KEPT) || "[]"); } catch (e) {}
@@ -93,7 +93,7 @@ function startPolling() {
   codePoll = setInterval(() => { const page = $("code"); if (!page || page.hidden) { clearInterval(codePoll); codePoll = null; return; } readRuntime(); }, POLL_MS);
 }
 
-// ---- The editor: a text area over its own highlighted copy, with line numbers. Fan's global scope (fan.…) gets a color of its own, so the special dot reads at a glance (TRADING.md).
+
 const WORDS = new Set("await break case catch class const continue default delete do else export extends false finally for function if import in instanceof let new null of return super switch this throw true try typeof undefined var void while yield".split(" "));
 const escapeHtml = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 function highlight(src) {
@@ -117,17 +117,17 @@ function codeEditor() {
   let saving;
   text.addEventListener("input", () => {
     draw();
-    if (pickedId === METHODS_ID) {   // saved a moment after typing stops: to the connector, which reloads its engine on it, and into this page
+    if (pickedId === METHODS_ID) {   
       const v = text.value; clearTimeout(saving);
       saving = setTimeout(async () => { try { await Fan.methods.set(v); sayMethods(await useOwnMethods(v)); } catch (e) { sayHere("err", "methods: not saved: " + ((e && e.message) || e)); } const out = document.querySelector("#code .cd-out"); if (out) paintConsole(out); gridShown = ""; redrawLive(); }, 800);
       return;
     }
     const p = pickedAlgo(); if (!p) return;
     p.code = text.value; clearTimeout(saving);
-    saving = setTimeout(() => { if (algoRuntime()) askRuntime({ op: "save", id: p.id, code: p.code }); else keepAlgos(); }, algoRuntime() ? 600 : 300);   // saved, the algoRuntime takes it back to not approved
+    saving = setTimeout(() => { if (algoRuntime()) askRuntime({ op: "save", id: p.id, code: p.code }); else keepAlgos(); }, algoRuntime() ? 600 : 300);   
   });
   text.addEventListener("scroll", () => { painted.scrollTop = nums.scrollTop = text.scrollTop; painted.scrollLeft = text.scrollLeft; });
-  text.addEventListener("keydown", e => {   // Tab indents two spaces, Shift+Tab takes them back, rather than leaving the editor
+  text.addEventListener("keydown", e => {   
     if (e.key !== "Tab") return;
     e.preventDefault();
     const s = text.selectionStart, v = text.value, lineStart = v.lastIndexOf("\n", s - 1) + 1;
@@ -140,14 +140,14 @@ function codeEditor() {
   return box;
 }
 
-// ---- The grid: one row per algo, its name and state, then the 3 shared columns it writes to. The headers are the picked algo's names for them, or blank.
+
 function gridTable() {
   const a = pickedAlgo(), heads = ["Algo", "State", ...Array.from({ length: SHARED_COLS }, (_, i) => (a && a.cols && a.cols[i]) || "")];
   const table = el("table"), head = el("tr");
   heads.forEach(h => head.append(el("th", null, h)));
   table.append(withKids("thead", null, [head]));
   const body = el("tbody");
-  {   // the user's methods, the first row
+  {   
     const [st, why] = methodsState(), tr = el("tr", "cd-methods" + (pickedId === METHODS_ID ? " on" : "")), state = el("td", "cd-state" + (/error|refused/.test(st) ? " cd-err" : ""), st);
     state.title = why;
     const name = el("td", "cd-name", "Methods"); name.title = "Your own methods, in Fan's place: de-vigging, the margin model, the Handicap's fit and more";
@@ -166,7 +166,7 @@ function gridTable() {
   table.append(body);
   return table;
 }
-// The state buttons: Check takes a not-approved algo to off; Off, Run and Arm move an approved one. Only the user moves an algo between them.
+
 function stateButtons(a) {
   const st = a ? STATES.indexOf(a.state || STATES[0]) : -1;
   const b = (label, to, can, cls) => { const n = el("button", "cd-btn cd-st" + (cls ? " " + cls : ""), label); n.type = "button"; n.disabled = !a || !algoRuntime() || !can; n.addEventListener("click", () => askRuntime({ op: "state", id: a.id, state: STATES[to] })); return n; };
@@ -193,7 +193,7 @@ function algoGrid() {
   return box;
 }
 
-// ---- The console, shared by every algo, each line marked with its algo, and a prompt. With a algoRuntime the prompt runs there, on the global scope; without, in this page, marked so.
+
 let promptHistory = [], promptBack = -1;
 const printable = v => { if (typeof v === "string") return v; try { const s = JSON.stringify(v, null, 1); return s === undefined ? String(v) : s; } catch (e) { return String(v); } };
 function runHere(src) {
@@ -223,7 +223,7 @@ function consoleBox() {
   return box;
 }
 
-// What the algoRuntime reports, redrawn in place: the grid when its rows changed, unless a name is being typed or a Delete waits for its second press, and the console. Never the editor.
+
 let gridShown = "";
 function redrawLive() {
   const page = $("code");
@@ -233,7 +233,7 @@ function redrawLive() {
   if (out) paintConsole(out);
 }
 
-// The algos down the left; on the right the editor, taking most of the height, with the console and its prompt under it (the user, Nov 3 2026).
+
 function drawCodePage() {
   const page = $("code");
   if (!page) return;
