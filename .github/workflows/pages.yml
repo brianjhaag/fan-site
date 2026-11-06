@@ -22,3 +22,5 @@ jobs:
         with:
           path: .
       - uses: actions/deploy-pages@v4
+        with:
+          timeout: 1800000   # 30 minutes, not the default 10: 0.63.4's two deploys were cut off at 10, the second just as its files finished syncing (Nov 6 2026)
