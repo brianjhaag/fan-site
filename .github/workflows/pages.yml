@@ -23,4 +23,4 @@ jobs:
           path: .
       - uses: actions/deploy-pages@v4
         with:
-          timeout: 1800000   # 30 minutes, not the default 10: 0.63.4's two deploys were cut off at 10, the second just as its files finished syncing (Nov 6 2026)
+          timeout: 600000   # GitHub's maximum, 10 minutes: it caps anything longer (the 30 set here Nov 6 2026 never held). A deploy that runs over is caught by watchdog.yml, every 5 minutes

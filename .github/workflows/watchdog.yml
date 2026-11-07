@@ -1,0 +1,41 @@
+# Every 5 minutes (the user, Nov 6 2026: "some kind of check every 5 minutes to make sure the job is done when it should be"): when the web link doesn't serve this repo's
+# version.txt and no deploy has been under way for less than 15 minutes, anything stuck is cancelled and a fresh deploy goes. GitHub caps a Pages deploy at 10 minutes and its
+# queue can stall past that (0.64.0's two deploys, Nov 6 2026). Six fresh deploys of one commit and it stops and fails, so a broken commit shows red rather than looping.
+name: watchdog
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  group: fan-watchdog
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: version.txt
+          sparse-checkout-cone-mode: false
+      - name: The site serves this commit, or a deploy is on its way
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R: ${{ github.repository }}
+        run: |
+          want="$(cat version.txt)"
+          got="$(curl -fsS "https://brianjhaag.github.io/fan-site/version.txt?t=$(date +%s)" || true)"
+          if [ "$want" = "$got" ]; then echo "live: ${want%% *}"; exit 0; fi
+          echo "not live: the site serves '${got%% *}', this repo holds '${want%% *}'"
+          now=$(date +%s)
+          for row in $(gh run list -R "$R" --workflow pages.yml --limit 10 --json databaseId,status,createdAt -q '.[] | select(.status != "completed") | "\(.databaseId),\(.createdAt)"'); do
+            id="${row%%,*}"; started=$(date -d "${row#*,}" +%s)
+            if [ $((now - started)) -lt 900 ]; then echo "a deploy is under way: $id"; exit 0; fi
+            gh run cancel "$id" -R "$R" && echo "deploy $id stuck past 15 minutes: cancelled"
+          done
+          tries=$(gh run list -R "$R" --workflow pages.yml --commit "$GITHUB_SHA" --limit 20 --json event -q '[.[] | select(.event == "workflow_dispatch")] | length')
+          if [ "$tries" -ge 6 ]; then echo "::error::$tries fresh deploys of ${GITHUB_SHA:0:7} and the site still doesn't serve it: look at the pages runs"; exit 1; fi
+          gh workflow run pages.yml -R "$R" --ref main
+          echo "a fresh deploy started ($((tries + 1)) for this commit)"
