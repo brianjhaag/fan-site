@@ -1,20 +1,20 @@
 {
- "release": "0.63.6",
- "issued": 1794017548987,
+ "release": "0.64.0",
+ "issued": 1794018892036,
  "program": {
-  "version": "0.63.0",
+  "version": "0.64.0",
   "files": {
    "fan-connector-setup.exe": {
-    "version": "0.63.0",
-    "sha256": "e19c1682a8ca2d3f9382c4682fdb30fdbbffe6b75c62f2fa9347e9b2a8d4c33f"
+    "version": "0.64.0",
+    "sha256": "5a5bf923ee58ce0d580d050f6b3a921f71505fa2f7a5afdffadc69ea3b69074d"
    },
    "fan-connector-mac.zip": {
-    "version": "0.63.0",
-    "sha256": "1f35af57ede8a962eab58f970cfc5127dae573911ebbde8ab94919711e5a0fd0"
+    "version": "0.64.0",
+    "sha256": "a3a9add15ffacbce9c84bc5823ad89954c3759dc117b8d3223a3994f7727dbc9"
    },
    "fan-connector-chromebook": {
-    "version": "0.63.0",
-    "sha256": "3ea788eb6f9db39262795b43b7b82ecda8a3124bf1d3699bfbeb1efffd666c77"
+    "version": "0.64.0",
+    "sha256": "8c073742aec0c4f9e91a8fb2f03ca505c1a1aa16d37d355604fb59116a977db6"
    }
   }
  }
