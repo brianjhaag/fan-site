@@ -1,0 +1,189 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Every NFL game on one page: live scores, injuries, edges, schedules and telecasts. Nothing to install."><meta property="og:title" content="Fan"><meta property="og:description" content="Every NFL game on one page: live scores, injuries, edges, schedules and telecasts. Nothing to install."><meta property="og:type" content="website"><title>Fan</title>
+<link rel="icon" type="image/png" href="data/icon.png">
+<link rel="manifest" href="fan.webmanifest">
+<link rel="stylesheet" href="data/images.css?v=mw5nr7x2">
+<link rel="stylesheet" href="fan.css?v=mw5nr7x2">
+<script src="mode.js?v=mw5nr7x2"></script>
+
+<main>
+  <div class="strip">
+    <div class="strip-tabs pinned wk2" role="tablist" aria-label="Weeks 1-9">
+      <button type="button" class="day-arrow" id="dayPrev" aria-label="Earlier day" title="Earlier day" hidden><svg viewBox="0 0 12 20" width="12" height="20" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" role="tab" id="tab-week-1" aria-controls="slate" aria-selected="false" data-week="1">Week 1</button>
+      <button type="button" role="tab" id="tab-week-2" aria-controls="slate" aria-selected="false" data-week="2">Week 2</button>
+      <button type="button" role="tab" id="tab-week-3" aria-controls="slate" aria-selected="false" data-week="3">Week 3</button>
+      <button type="button" role="tab" id="tab-week-4" aria-controls="slate" aria-selected="false" data-week="4">Week 4</button>
+      <button type="button" role="tab" id="tab-week-5" aria-controls="slate" aria-selected="false" data-week="5">Week 5</button>
+      <button type="button" role="tab" id="tab-week-6" aria-controls="slate" aria-selected="false" data-week="6">Week 6</button>
+      <button type="button" role="tab" id="tab-week-7" aria-controls="slate" aria-selected="true" data-week="7">Week 7</button>
+      <button type="button" role="tab" id="tab-week-8" aria-controls="slate" aria-selected="false" data-week="8">Week 8</button>
+      <button type="button" role="tab" id="tab-week-9" aria-controls="slate" aria-selected="false" data-week="9">Week 9</button>
+      <button type="button" class="day-arrow" id="dayNext" aria-label="Later day" title="Later day" hidden><svg viewBox="0 0 12 20" width="12" height="20" aria-hidden="true"><path d="M2 2l8 8-8 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <div class="strip-tabs pinned wk2" role="tablist" aria-label="Weeks 10-17">
+      <button type="button" role="tab" id="tab-week-10" aria-controls="slate" aria-selected="false" data-week="10">Week 10</button>
+      <button type="button" role="tab" id="tab-week-11" aria-controls="slate" aria-selected="false" data-week="11">Week 11</button>
+      <button type="button" role="tab" id="tab-week-12" aria-controls="slate" aria-selected="false" data-week="12">Week 12</button>
+      <button type="button" role="tab" id="tab-week-13" aria-controls="slate" aria-selected="false" data-week="13">Week 13</button>
+      <button type="button" role="tab" id="tab-week-14" aria-controls="slate" aria-selected="false" data-week="14">Week 14</button>
+      <button type="button" role="tab" id="tab-week-15" aria-controls="slate" aria-selected="false" data-week="15">Week 15</button>
+      <button type="button" role="tab" id="tab-week-16" aria-controls="slate" aria-selected="false" data-week="16">Week 16</button>
+      <button type="button" role="tab" id="tab-week-17" aria-controls="slate" aria-selected="false" data-week="17">Week 17</button>
+    </div>
+    <div class="top-strip-menu" id="topStripMenu">
+      <span class="league-picker" id="leagueBox">
+        <button type="button" id="leaguePick" aria-haspopup="listbox" aria-expanded="false" aria-label="League"></button>
+        <ul class="league-picker-list" id="leagueList" role="listbox" aria-label="League" hidden></ul>
+        <span class="news-box" id="newsBox">
+          <button type="button" id="newsBtn" aria-expanded="false" aria-controls="newsPage">News</button>
+        </span>
+      </span>
+      <button type="button" id="leaderboardBtn" aria-expanded="false" aria-controls="leaderboardPage">Leaderboard</button>
+      <button type="button" id="fanBtn" aria-haspopup="dialog" aria-label="Fan, settings">Fan<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
+      <dialog class="settings-window" id="settingsWindow" aria-labelledby="settingsTitle">
+        <div class="settings-head"><div class="settings-title"><h2 id="settingsTitle"><span class="settings-mark">Fan</span> <span class="settings-sub">sports terminal</span></h2></div><button type="button" class="settings-start" id="newestBtn" hidden>Update to latest client</button><button type="button" id="settingsClose" aria-label="Close">&times;</button></div>
+        <div class="settings-tabs" id="settingsTabs" aria-label="Settings"></div>
+        <div id="settingsList"></div>
+      </dialog>
+    </div>
+  </div>
+  <section class="section-page bare" role="tabpanel" id="ledger" aria-labelledby="tab-ledger" hidden></section>
+  <section class="section-page graphs bare" role="tabpanel" id="graphs" aria-labelledby="tab-graphs" hidden></section>
+  <section class="section-page" role="tabpanel" id="handicap" aria-labelledby="tab-handicap" hidden></section>
+  <section class="section-page" id="ncaafb" hidden></section>
+  <section class="section-page code" role="tabpanel" id="code" aria-labelledby="tab-code" hidden></section>
+  <section class="overlay-page" id="newsPage" aria-label="News" hidden></section>
+  <section class="overlay-page" id="leaderboardPage" aria-label="Leaderboard" hidden></section>
+  <section class="pricing-panel" id="pricingPanel" aria-label="Pricing" hidden></section>
+  <div class="layout" role="tabpanel" id="slate" aria-labelledby="tab-week-7">
+   <div class="top">
+    <div class="col left">
+      <button type="button" class="fold-head" id="foldSaved" aria-expanded="false">Saved tickets</button>
+      <section class="totals" id="totals" aria-label="Totals for all games"></section>
+
+      <section class="saved" aria-label="Saved tickets">
+        <div class="saved-bar">
+          <div class="saved-tabs" role="tablist" aria-label="Saved tickets">
+            <button type="button" role="tab" id="tabTickets" aria-selected="true">Wagers <span id="count"></span></button>
+            <button type="button" role="tab" id="tabSummary" aria-selected="false">Summary</button>
+          </div>
+          <input id="search" type="search" placeholder="Search" aria-label="Search saved tickets" autocomplete="off">
+        </div>
+        <div class="saved-heads" id="heads"></div>
+        <div class="edit-note" id="editNote" role="status" hidden></div>
+        <ul id="list" aria-live="polite"></ul>
+        <div class="sum" id="sum"></div>
+      </section>
+
+      <button type="button" class="fold-head" id="foldTicket" aria-expanded="false">Wager ticket</button>
+      <form class="wager-ticket" id="wagerTicket" novalidate>
+        <div class="wager-ticket-body">
+          <div class="group">
+            <label for="sportsbook">
+              <select id="sportsbook" required hidden></select>
+              <span class="sportsbook-picker" id="sportsbookBox">
+                <button type="button" class="sportsbook-picker-btn" id="sportsbookBtn" aria-haspopup="listbox" aria-expanded="false"></button>
+                <ul class="sportsbook-picker-list" id="sportsbookList" role="listbox" aria-label="Sportsbook" hidden></ul>
+              </span>
+              <span class="err" id="sportsbookErr" hidden>Pick the sportsbook.</span>
+            </label>
+
+            <div class="amt-row">
+              <label for="amount">
+                <span class="money"><b>$</b><input id="amount" aria-label="Amount wagered" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0" required></span>
+                <span class="help" id="amountHelp"></span>
+                <span class="err" id="amountErr" hidden>Enter an amount greater than zero.</span>
+              </label>
+              <label class="check" for="bonus">
+                <input id="bonus" type="checkbox">
+                <span>Bonus</span>
+              </label>
+            <div class="tabs" role="tablist" aria-label="Wager kind">
+              <button type="button" role="tab" id="tabStraight" aria-selected="true">Straight</button>
+              <button type="button" role="tab" id="tabParlay" aria-selected="false">Parlay</button>
+            </div>
+            </div>
+          </div>
+
+          <div class="group bet">
+            <div class="legs" id="legs" hidden></div>
+            <label for="game">
+              <select id="game" aria-label="Game" required hidden></select>
+              <span class="game-picker" id="gameBox">
+                <button type="button" class="game-picker-btn" id="gameBtn" aria-haspopup="listbox" aria-expanded="false"></button>
+                <ul class="game-picker-list" id="gameList" role="listbox" aria-label="Game" hidden></ul>
+              </span>
+              <span class="err" id="gameErr" hidden>Pick the game you bet on.</span>
+            </label>
+            <fieldset class="types" id="type" aria-label="Bet type">
+              <div class="segments">
+                <label><input type="radio" name="btype" value="Moneyline"><span>Moneyline</span></label>
+                <label><input type="radio" name="btype" value="Spread"><span>Spread</span></label>
+                <label><input type="radio" name="btype" value="Total"><span>Total</span></label>
+              </div>
+              <span class="err" id="typeErr" hidden>Pick a bet type.</span>
+            </fieldset>
+
+            <div class="pick" id="pick" role="group" aria-label="Bet detail"></div>
+            <span class="err" id="pickErr" hidden>Pick a side and enter the line and price you got.</span>
+            <button type="button" class="add-leg" id="addLeg" hidden>+ Add leg</button>
+            <div class="parlay-row" id="parlayRow" hidden>
+              <label for="parlayOdds">
+                <span class="lbl" id="parlayLbl">Parlay odds</span>
+                <input id="parlayOdds" type="text" inputmode="decimal" autocomplete="off" placeholder="+264">
+              </label>
+              <span class="calc" id="parlayCalc"></span>
+            </div>
+            <span class="err" id="parlayRowErr" hidden>Enter the parlay odds from your book, 100 or more in either direction.</span>
+          </div>
+        </div>
+
+        <div class="tear" aria-hidden="true"></div>
+
+        <div class="wager-ticket-foot">
+          <span id="placeMsg" role="status"></span>
+          <button class="wager-ticket-button book" type="submit" title="Record a bet you already made">Book</button>
+          <label class="payup" id="payupBox" title="How many cents above the ticket's price Place may pay if the market moved. It still fills at the best price there is.">Up <input id="payup" type="number" min="0" max="98" step="1" value="0" aria-label="Cents Place may pay above the ticket's price">¢</label>
+          <button class="wager-ticket-button place" id="placeBtn" type="button" disabled>Place</button>
+        </div>
+      </form>
+      <section class="risk-detail rk-off" id="riskDetail" aria-hidden="true"></section>
+    </div>
+
+    <section class="col" aria-label="Week 7 slate">
+      <div>
+        <div class="games" id="games"></div>
+      </div>
+    </section>
+   </div>
+  </div>
+</main>
+<div class="strip bottom" aria-label="Bottom tab strip">
+  <fan-info-line>
+    <h2 id="slateHead"><span id="slateTitle" hidden>Week 7</span></h2>
+    <span class="price-dot" id="priceDot" aria-hidden="true" hidden></span>
+    <small id="feedNote"></small>
+    <small id="slateNote"></small>
+    <span class="bye-box"><b class="byeLabel" id="byeLabel">Byes:</b><span class="byes" id="byes"></span></span>
+    <small id="infoVer"></small>
+  </fan-info-line>
+  <div class="strip-row2">
+    <div class="strip-left">
+      <div class="strip-tabs pinned section-tabs graphs-tab" role="tablist" aria-label="Graphs">
+        <button type="button" role="tab" id="tab-graphs" aria-controls="graphs" aria-selected="false">Graphs</button>
+      </div>
+      <div class="strip-tabs pinned section-tabs" id="bottomSectionTabs" aria-label="Section views"></div>
+    </div>
+    <div class="strip-tabs pinned section-tabs page-tabs" role="tablist" aria-label="Pricing and Handicap">
+      <button type="button" role="tab" id="pricingBtn" aria-controls="pricingPanel" aria-selected="false">Pricing</button>
+      <button type="button" role="tab" id="tab-handicap" aria-controls="handicap" aria-selected="false">Handicap</button>
+    </div>
+    <div class="strip-tabs pinned ledger-tab" role="tablist" aria-label="Ledger">
+      <button type="button" role="tab" id="tab-code" aria-controls="code" aria-selected="false">Code</button>
+      <button type="button" role="tab" id="tab-ledger" aria-controls="ledger" aria-selected="false">Ledger</button>
+    </div>
+  </div></div>
+<div class="band" id="band" aria-hidden="true"></div>
+
+<script type="module" src="launch.js?v=mw5nr7x2"></script>
+<script type="module" src="start.js?v=mw5nr7x2"></script>
